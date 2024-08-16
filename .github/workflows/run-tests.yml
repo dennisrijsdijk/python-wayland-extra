@@ -1,0 +1,35 @@
+
+name: Run develop tests
+
+on:
+  push:
+    branches: [ "develop", "main" ]
+  pull_request:
+    branches: [ "develop", "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: |
+            3.8
+            3.9
+            3.10
+            3.11
+            3.12
+      - name: Install headless wayland support
+        run: sudo apt-get install -y xwayland-run weston
+      - name: Install Hatch
+        run: pipx install hatch
+      - name: Run lint check
+        run: hatch fmt
+      - name: Run tests
+        run: wlheadless-run -c weston -- hatch test

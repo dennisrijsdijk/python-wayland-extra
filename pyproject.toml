@@ -1,0 +1,104 @@
+[build-system]
+requires = ["hatchling", "black", "lxml", "requests", "pytest", "ruff"]
+build-backend = "hatchling.build"
+
+[project]
+name = "libwayland"
+dynamic = ["version"]
+description = 'An implementation of the Wayland protocol with no external dependencies.'
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+keywords = []
+authors = [
+  { name = "Graham King", email = "grking.email@gmail.com" },
+]
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython"
+]
+dependencies = []
+
+[project.optional-dependencies]
+build = ["lxml", "requests"]
+
+[project.urls]
+Homepage = "https://github.com/grking/libwayland"
+Documentation = "https://github.com/grking/libwayland#readme"
+Issues = "https://github.com/grking/libwayland/issues"
+Source = "https://github.com/grking/libwayland"
+
+[tool.hatch.version]
+path = "wayland/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:wayland tests}"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.vscode",
+  "example.py"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["wayland"]
+
+[tool.coverage.run]
+source_pkgs = ["libwayland", "tests"]
+branch = true
+parallel = true
+omit = [
+  "wayland/__about__.py",
+]
+
+[tool.coverage.paths]
+libwayland = ["wayland"]
+tests = ["tests", "*/wayland/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+preview = false
+extend-select = ["C901"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["F403"]  # import *
+"parser.py" = ["S320"]  # lxml
+"proxy.py" = ["SLF001"]  # private members
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+    "-q"
+]
+
+[tool.ruff]
+line-length = 88
+exclude = [
+  "wayland/__init__.pyi",
+]
+
+[tool.pylint]
+ignore-patterns = "*.pyi"

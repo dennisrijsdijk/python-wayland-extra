@@ -1,0 +1,5217 @@
+{
+ "wl_display": {
+  "events": [
+   {
+    "name": "error",
+    "args": [
+     {
+      "name": "object_id",
+      "type": "object"
+     },
+     {
+      "name": "code",
+      "type": "uint"
+     },
+     {
+      "name": "message",
+      "type": "string"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "delete_id",
+    "args": [
+     {
+      "name": "id",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "sync",
+    "args": [
+     {
+      "name": "callback",
+      "type": "new_id",
+      "interface": "wl_callback"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "get_registry",
+    "args": [
+     {
+      "name": "registry",
+      "type": "new_id",
+      "interface": "wl_registry"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wl_registry": {
+  "events": [
+   {
+    "name": "global_",
+    "args": [
+     {
+      "name": "name",
+      "type": "uint"
+     },
+     {
+      "name": "interface",
+      "type": "string"
+     },
+     {
+      "name": "version",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "global_remove",
+    "args": [
+     {
+      "name": "name",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "bind",
+    "args": [
+     {
+      "name": "name",
+      "type": "uint"
+     },
+     {
+      "name": "interface",
+      "type": "string"
+     },
+     {
+      "name": "version",
+      "type": "uint"
+     },
+     {
+      "name": "id",
+      "type": "new_id"
+     }
+    ],
+    "opcode": 0
+   }
+  ]
+ },
+ "wl_compositor": {
+  "events": [],
+  "methods": [
+   {
+    "name": "create_surface",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "create_region",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_region"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wl_shm_pool": {
+  "events": [],
+  "methods": [
+   {
+    "name": "create_buffer",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_buffer"
+     },
+     {
+      "name": "offset",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     },
+     {
+      "name": "stride",
+      "type": "int"
+     },
+     {
+      "name": "format",
+      "type": "uint",
+      "enum": "wl_shm.format"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   },
+   {
+    "name": "resize",
+    "args": [
+     {
+      "name": "size",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "wl_shm": {
+  "events": [
+   {
+    "name": "format",
+    "args": [
+     {
+      "name": "format",
+      "type": "uint",
+      "enum": "format"
+     }
+    ],
+    "opcode": 0
+   }
+  ],
+  "methods": [
+   {
+    "name": "create_pool",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_shm_pool"
+     },
+     {
+      "name": "fd",
+      "type": "fd"
+     },
+     {
+      "name": "size",
+      "type": "int"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "release",
+    "type": "destructor",
+    "since": "2",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "wl_buffer": {
+  "events": [
+   {
+    "name": "release",
+    "args": [],
+    "opcode": 0
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "wl_data_offer": {
+  "events": [
+   {
+    "name": "offer",
+    "args": [
+     {
+      "name": "mime_type",
+      "type": "string"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "source_actions",
+    "since": "3",
+    "args": [
+     {
+      "name": "source_actions",
+      "type": "uint",
+      "enum": "wl_data_device_manager.dnd_action"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "action",
+    "since": "3",
+    "args": [
+     {
+      "name": "dnd_action",
+      "type": "uint",
+      "enum": "wl_data_device_manager.dnd_action"
+     }
+    ],
+    "opcode": 2
+   }
+  ],
+  "methods": [
+   {
+    "name": "accept",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "mime_type",
+      "type": "string",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "receive",
+    "args": [
+     {
+      "name": "mime_type",
+      "type": "string"
+     },
+     {
+      "name": "fd",
+      "type": "fd"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 2
+   },
+   {
+    "name": "finish",
+    "since": "3",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "set_actions",
+    "since": "3",
+    "args": [
+     {
+      "name": "dnd_actions",
+      "type": "uint",
+      "enum": "wl_data_device_manager.dnd_action"
+     },
+     {
+      "name": "preferred_action",
+      "type": "uint",
+      "enum": "wl_data_device_manager.dnd_action"
+     }
+    ],
+    "opcode": 4
+   }
+  ]
+ },
+ "wl_data_source": {
+  "events": [
+   {
+    "name": "target",
+    "args": [
+     {
+      "name": "mime_type",
+      "type": "string",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "send",
+    "args": [
+     {
+      "name": "mime_type",
+      "type": "string"
+     },
+     {
+      "name": "fd",
+      "type": "fd"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "cancelled",
+    "args": [],
+    "opcode": 2
+   },
+   {
+    "name": "dnd_drop_performed",
+    "since": "3",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "dnd_finished",
+    "since": "3",
+    "args": [],
+    "opcode": 4
+   },
+   {
+    "name": "action",
+    "since": "3",
+    "args": [
+     {
+      "name": "dnd_action",
+      "type": "uint",
+      "enum": "wl_data_device_manager.dnd_action"
+     }
+    ],
+    "opcode": 5
+   }
+  ],
+  "methods": [
+   {
+    "name": "offer",
+    "args": [
+     {
+      "name": "mime_type",
+      "type": "string"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   },
+   {
+    "name": "set_actions",
+    "since": "3",
+    "args": [
+     {
+      "name": "dnd_actions",
+      "type": "uint",
+      "enum": "wl_data_device_manager.dnd_action"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "wl_data_device": {
+  "events": [
+   {
+    "name": "data_offer",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_data_offer"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "enter",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "x",
+      "type": "fixed"
+     },
+     {
+      "name": "y",
+      "type": "fixed"
+     },
+     {
+      "name": "id",
+      "type": "object",
+      "interface": "wl_data_offer",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "leave",
+    "args": [],
+    "opcode": 2
+   },
+   {
+    "name": "motion",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "x",
+      "type": "fixed"
+     },
+     {
+      "name": "y",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "drop",
+    "args": [],
+    "opcode": 4
+   },
+   {
+    "name": "selection",
+    "args": [
+     {
+      "name": "id",
+      "type": "object",
+      "interface": "wl_data_offer",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 5
+   }
+  ],
+  "methods": [
+   {
+    "name": "start_drag",
+    "args": [
+     {
+      "name": "source",
+      "type": "object",
+      "interface": "wl_data_source",
+      "allow-null": "true"
+     },
+     {
+      "name": "origin",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "icon",
+      "type": "object",
+      "interface": "wl_surface",
+      "allow-null": "true"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "set_selection",
+    "args": [
+     {
+      "name": "source",
+      "type": "object",
+      "interface": "wl_data_source",
+      "allow-null": "true"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "release",
+    "type": "destructor",
+    "since": "2",
+    "args": [],
+    "opcode": 2
+   }
+  ]
+ },
+ "wl_data_device_manager": {
+  "events": [],
+  "methods": [
+   {
+    "name": "create_data_source",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_data_source"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "get_data_device",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_data_device"
+     },
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wl_shell": {
+  "events": [],
+  "methods": [
+   {
+    "name": "get_shell_surface",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_shell_surface"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 0
+   }
+  ]
+ },
+ "wl_shell_surface": {
+  "events": [
+   {
+    "name": "ping",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "configure",
+    "args": [
+     {
+      "name": "edges",
+      "type": "uint",
+      "enum": "resize"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "popup_done",
+    "args": [],
+    "opcode": 2
+   }
+  ],
+  "methods": [
+   {
+    "name": "pong",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "move",
+    "args": [
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "resize",
+    "args": [
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "edges",
+      "type": "uint",
+      "enum": "resize"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "set_toplevel",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "set_transient",
+    "args": [
+     {
+      "name": "parent",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "flags",
+      "type": "uint",
+      "enum": "transient"
+     }
+    ],
+    "opcode": 4
+   },
+   {
+    "name": "set_fullscreen",
+    "args": [
+     {
+      "name": "method",
+      "type": "uint",
+      "enum": "fullscreen_method"
+     },
+     {
+      "name": "framerate",
+      "type": "uint"
+     },
+     {
+      "name": "output",
+      "type": "object",
+      "interface": "wl_output",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 5
+   },
+   {
+    "name": "set_popup",
+    "args": [
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "parent",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "flags",
+      "type": "uint",
+      "enum": "transient"
+     }
+    ],
+    "opcode": 6
+   },
+   {
+    "name": "set_maximized",
+    "args": [
+     {
+      "name": "output",
+      "type": "object",
+      "interface": "wl_output",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 7
+   },
+   {
+    "name": "set_title",
+    "args": [
+     {
+      "name": "title",
+      "type": "string"
+     }
+    ],
+    "opcode": 8
+   },
+   {
+    "name": "set_class",
+    "args": [
+     {
+      "name": "class_",
+      "type": "string"
+     }
+    ],
+    "opcode": 9
+   }
+  ]
+ },
+ "wl_surface": {
+  "events": [
+   {
+    "name": "enter",
+    "args": [
+     {
+      "name": "output",
+      "type": "object",
+      "interface": "wl_output"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "leave",
+    "args": [
+     {
+      "name": "output",
+      "type": "object",
+      "interface": "wl_output"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "preferred_buffer_scale",
+    "since": "6",
+    "args": [
+     {
+      "name": "factor",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "preferred_buffer_transform",
+    "since": "6",
+    "args": [
+     {
+      "name": "transform",
+      "type": "uint",
+      "enum": "wl_output.transform"
+     }
+    ],
+    "opcode": 3
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "attach",
+    "args": [
+     {
+      "name": "buffer",
+      "type": "object",
+      "interface": "wl_buffer",
+      "allow-null": "true"
+     },
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "damage",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "frame",
+    "args": [
+     {
+      "name": "callback",
+      "type": "new_id",
+      "interface": "wl_callback"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "set_opaque_region",
+    "args": [
+     {
+      "name": "region",
+      "type": "object",
+      "interface": "wl_region",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 4
+   },
+   {
+    "name": "set_input_region",
+    "args": [
+     {
+      "name": "region",
+      "type": "object",
+      "interface": "wl_region",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 5
+   },
+   {
+    "name": "commit",
+    "args": [],
+    "opcode": 6
+   },
+   {
+    "name": "set_buffer_transform",
+    "since": "2",
+    "args": [
+     {
+      "name": "transform",
+      "type": "int",
+      "enum": "wl_output.transform"
+     }
+    ],
+    "opcode": 7
+   },
+   {
+    "name": "set_buffer_scale",
+    "since": "3",
+    "args": [
+     {
+      "name": "scale",
+      "type": "int"
+     }
+    ],
+    "opcode": 8
+   },
+   {
+    "name": "damage_buffer",
+    "since": "4",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 9
+   },
+   {
+    "name": "offset",
+    "since": "5",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     }
+    ],
+    "opcode": 10
+   }
+  ]
+ },
+ "wl_seat": {
+  "events": [
+   {
+    "name": "capabilities",
+    "args": [
+     {
+      "name": "capabilities",
+      "type": "uint",
+      "enum": "capability"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "name",
+    "since": "2",
+    "args": [
+     {
+      "name": "name",
+      "type": "string"
+     }
+    ],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "get_pointer",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_pointer"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "get_keyboard",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_keyboard"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "get_touch",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_touch"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "release",
+    "type": "destructor",
+    "since": "5",
+    "args": [],
+    "opcode": 3
+   }
+  ]
+ },
+ "wl_pointer": {
+  "events": [
+   {
+    "name": "enter",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "surface_x",
+      "type": "fixed"
+     },
+     {
+      "name": "surface_y",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "leave",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "motion",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "surface_x",
+      "type": "fixed"
+     },
+     {
+      "name": "surface_y",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "button",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "button",
+      "type": "uint"
+     },
+     {
+      "name": "state",
+      "type": "uint",
+      "enum": "button_state"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "axis",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "axis",
+      "type": "uint",
+      "enum": "axis"
+     },
+     {
+      "name": "value",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 4
+   },
+   {
+    "name": "frame",
+    "since": "5",
+    "args": [],
+    "opcode": 5
+   },
+   {
+    "name": "axis_source",
+    "since": "5",
+    "args": [
+     {
+      "name": "axis_source",
+      "type": "uint",
+      "enum": "axis_source"
+     }
+    ],
+    "opcode": 6
+   },
+   {
+    "name": "axis_stop",
+    "since": "5",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "axis",
+      "type": "uint",
+      "enum": "axis"
+     }
+    ],
+    "opcode": 7
+   },
+   {
+    "name": "axis_discrete",
+    "since": "5",
+    "deprecated-since": "8",
+    "args": [
+     {
+      "name": "axis",
+      "type": "uint",
+      "enum": "axis"
+     },
+     {
+      "name": "discrete",
+      "type": "int"
+     }
+    ],
+    "opcode": 8
+   },
+   {
+    "name": "axis_value120",
+    "since": "8",
+    "args": [
+     {
+      "name": "axis",
+      "type": "uint",
+      "enum": "axis"
+     },
+     {
+      "name": "value120",
+      "type": "int"
+     }
+    ],
+    "opcode": 9
+   },
+   {
+    "name": "axis_relative_direction",
+    "since": "9",
+    "args": [
+     {
+      "name": "axis",
+      "type": "uint",
+      "enum": "axis"
+     },
+     {
+      "name": "direction",
+      "type": "uint",
+      "enum": "axis_relative_direction"
+     }
+    ],
+    "opcode": 10
+   }
+  ],
+  "methods": [
+   {
+    "name": "set_cursor",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface",
+      "allow-null": "true"
+     },
+     {
+      "name": "hotspot_x",
+      "type": "int"
+     },
+     {
+      "name": "hotspot_y",
+      "type": "int"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "release",
+    "type": "destructor",
+    "since": "3",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "wl_keyboard": {
+  "events": [
+   {
+    "name": "keymap",
+    "args": [
+     {
+      "name": "format",
+      "type": "uint",
+      "enum": "keymap_format"
+     },
+     {
+      "name": "fd",
+      "type": "fd"
+     },
+     {
+      "name": "size",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "enter",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "keys",
+      "type": "array"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "leave",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "key",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "key",
+      "type": "uint"
+     },
+     {
+      "name": "state",
+      "type": "uint",
+      "enum": "key_state"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "modifiers",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "mods_depressed",
+      "type": "uint"
+     },
+     {
+      "name": "mods_latched",
+      "type": "uint"
+     },
+     {
+      "name": "mods_locked",
+      "type": "uint"
+     },
+     {
+      "name": "group",
+      "type": "uint"
+     }
+    ],
+    "opcode": 4
+   },
+   {
+    "name": "repeat_info",
+    "since": "4",
+    "args": [
+     {
+      "name": "rate",
+      "type": "int"
+     },
+     {
+      "name": "delay",
+      "type": "int"
+     }
+    ],
+    "opcode": 5
+   }
+  ],
+  "methods": [
+   {
+    "name": "release",
+    "type": "destructor",
+    "since": "3",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "wl_touch": {
+  "events": [
+   {
+    "name": "down",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "id",
+      "type": "int"
+     },
+     {
+      "name": "x",
+      "type": "fixed"
+     },
+     {
+      "name": "y",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "up",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "id",
+      "type": "int"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "motion",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "id",
+      "type": "int"
+     },
+     {
+      "name": "x",
+      "type": "fixed"
+     },
+     {
+      "name": "y",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "frame",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "cancel",
+    "args": [],
+    "opcode": 4
+   },
+   {
+    "name": "shape",
+    "since": "6",
+    "args": [
+     {
+      "name": "id",
+      "type": "int"
+     },
+     {
+      "name": "major",
+      "type": "fixed"
+     },
+     {
+      "name": "minor",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 5
+   },
+   {
+    "name": "orientation",
+    "since": "6",
+    "args": [
+     {
+      "name": "id",
+      "type": "int"
+     },
+     {
+      "name": "orientation",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 6
+   }
+  ],
+  "methods": [
+   {
+    "name": "release",
+    "type": "destructor",
+    "since": "3",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "wl_output": {
+  "events": [
+   {
+    "name": "geometry",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "physical_width",
+      "type": "int"
+     },
+     {
+      "name": "physical_height",
+      "type": "int"
+     },
+     {
+      "name": "subpixel",
+      "type": "int",
+      "enum": "subpixel"
+     },
+     {
+      "name": "make",
+      "type": "string"
+     },
+     {
+      "name": "model",
+      "type": "string"
+     },
+     {
+      "name": "transform",
+      "type": "int",
+      "enum": "transform"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "mode",
+    "args": [
+     {
+      "name": "flags",
+      "type": "uint",
+      "enum": "mode"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     },
+     {
+      "name": "refresh",
+      "type": "int"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "done",
+    "since": "2",
+    "args": [],
+    "opcode": 2
+   },
+   {
+    "name": "scale",
+    "since": "2",
+    "args": [
+     {
+      "name": "factor",
+      "type": "int"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "name",
+    "since": "4",
+    "args": [
+     {
+      "name": "name",
+      "type": "string"
+     }
+    ],
+    "opcode": 4
+   },
+   {
+    "name": "description",
+    "since": "4",
+    "args": [
+     {
+      "name": "description",
+      "type": "string"
+     }
+    ],
+    "opcode": 5
+   }
+  ],
+  "methods": [
+   {
+    "name": "release",
+    "type": "destructor",
+    "since": "3",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "wl_region": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "add",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "subtract",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "wl_subcompositor": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_subsurface",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_subsurface"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "parent",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wl_subsurface": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_position",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "place_above",
+    "args": [
+     {
+      "name": "sibling",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "place_below",
+    "args": [
+     {
+      "name": "sibling",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "set_sync",
+    "args": [],
+    "opcode": 4
+   },
+   {
+    "name": "set_desync",
+    "args": [],
+    "opcode": 5
+   }
+  ]
+ },
+ "wl_callback": {
+  "events": [
+   {
+    "name": "done",
+    "type": "destructor",
+    "args": [
+     {
+      "name": "callback_data",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   }
+  ],
+  "methods": []
+ },
+ "zwp_linux_dmabuf_v1": {
+  "events": [
+   {
+    "name": "format",
+    "args": [
+     {
+      "name": "format",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "modifier",
+    "since": "3",
+    "args": [
+     {
+      "name": "format",
+      "type": "uint"
+     },
+     {
+      "name": "modifier_hi",
+      "type": "uint"
+     },
+     {
+      "name": "modifier_lo",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "create_params",
+    "args": [
+     {
+      "name": "params_id",
+      "type": "new_id",
+      "interface": "zwp_linux_buffer_params_v1"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "get_default_feedback",
+    "since": "4",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "zwp_linux_dmabuf_feedback_v1"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "get_surface_feedback",
+    "since": "4",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "zwp_linux_dmabuf_feedback_v1"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 3
+   }
+  ]
+ },
+ "zwp_linux_buffer_params_v1": {
+  "events": [
+   {
+    "name": "created",
+    "args": [
+     {
+      "name": "buffer",
+      "type": "new_id",
+      "interface": "wl_buffer"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "failed",
+    "args": [],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "add",
+    "args": [
+     {
+      "name": "fd",
+      "type": "fd"
+     },
+     {
+      "name": "plane_idx",
+      "type": "uint"
+     },
+     {
+      "name": "offset",
+      "type": "uint"
+     },
+     {
+      "name": "stride",
+      "type": "uint"
+     },
+     {
+      "name": "modifier_hi",
+      "type": "uint"
+     },
+     {
+      "name": "modifier_lo",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "create",
+    "args": [
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     },
+     {
+      "name": "format",
+      "type": "uint"
+     },
+     {
+      "name": "flags",
+      "type": "uint",
+      "enum": "flags"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "create_immed",
+    "since": "2",
+    "args": [
+     {
+      "name": "buffer_id",
+      "type": "new_id",
+      "interface": "wl_buffer"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     },
+     {
+      "name": "format",
+      "type": "uint"
+     },
+     {
+      "name": "flags",
+      "type": "uint",
+      "enum": "flags"
+     }
+    ],
+    "opcode": 3
+   }
+  ]
+ },
+ "zwp_linux_dmabuf_feedback_v1": {
+  "events": [
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "format_table",
+    "args": [
+     {
+      "name": "fd",
+      "type": "fd"
+     },
+     {
+      "name": "size",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "main_device",
+    "args": [
+     {
+      "name": "device",
+      "type": "array"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "tranche_done",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "tranche_target_device",
+    "args": [
+     {
+      "name": "device",
+      "type": "array"
+     }
+    ],
+    "opcode": 4
+   },
+   {
+    "name": "tranche_formats",
+    "args": [
+     {
+      "name": "indices",
+      "type": "array"
+     }
+    ],
+    "opcode": 5
+   },
+   {
+    "name": "tranche_flags",
+    "args": [
+     {
+      "name": "flags",
+      "type": "uint",
+      "enum": "tranche_flags"
+     }
+    ],
+    "opcode": 6
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "wp_presentation": {
+  "events": [
+   {
+    "name": "clock_id",
+    "args": [
+     {
+      "name": "clk_id",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "feedback",
+    "args": [
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "callback",
+      "type": "new_id",
+      "interface": "wp_presentation_feedback"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_presentation_feedback": {
+  "events": [
+   {
+    "name": "sync_output",
+    "args": [
+     {
+      "name": "output",
+      "type": "object",
+      "interface": "wl_output"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "presented",
+    "type": "destructor",
+    "args": [
+     {
+      "name": "tv_sec_hi",
+      "type": "uint"
+     },
+     {
+      "name": "tv_sec_lo",
+      "type": "uint"
+     },
+     {
+      "name": "tv_nsec",
+      "type": "uint"
+     },
+     {
+      "name": "refresh",
+      "type": "uint"
+     },
+     {
+      "name": "seq_hi",
+      "type": "uint"
+     },
+     {
+      "name": "seq_lo",
+      "type": "uint"
+     },
+     {
+      "name": "flags",
+      "type": "uint",
+      "enum": "kind"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "discarded",
+    "type": "destructor",
+    "args": [],
+    "opcode": 2
+   }
+  ],
+  "methods": []
+ },
+ "zwp_tablet_manager_v2": {
+  "events": [],
+  "methods": [
+   {
+    "name": "get_tablet_seat",
+    "args": [
+     {
+      "name": "tablet_seat",
+      "type": "new_id",
+      "interface": "zwp_tablet_seat_v2"
+     },
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "zwp_tablet_seat_v2": {
+  "events": [
+   {
+    "name": "tablet_added",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "zwp_tablet_v2"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "tool_added",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "zwp_tablet_tool_v2"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "pad_added",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "zwp_tablet_pad_v2"
+     }
+    ],
+    "opcode": 2
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "zwp_tablet_tool_v2": {
+  "events": [
+   {
+    "name": "type",
+    "args": [
+     {
+      "name": "tool_type",
+      "type": "uint",
+      "enum": "type"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "hardware_serial",
+    "args": [
+     {
+      "name": "hardware_serial_hi",
+      "type": "uint"
+     },
+     {
+      "name": "hardware_serial_lo",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "hardware_id_wacom",
+    "args": [
+     {
+      "name": "hardware_id_hi",
+      "type": "uint"
+     },
+     {
+      "name": "hardware_id_lo",
+      "type": "uint"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "capability",
+    "args": [
+     {
+      "name": "capability",
+      "type": "uint",
+      "enum": "capability"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 4
+   },
+   {
+    "name": "removed",
+    "args": [],
+    "opcode": 5
+   },
+   {
+    "name": "proximity_in",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "tablet",
+      "type": "object",
+      "interface": "zwp_tablet_v2"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 6
+   },
+   {
+    "name": "proximity_out",
+    "args": [],
+    "opcode": 7
+   },
+   {
+    "name": "down",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 8
+   },
+   {
+    "name": "up",
+    "args": [],
+    "opcode": 9
+   },
+   {
+    "name": "motion",
+    "args": [
+     {
+      "name": "x",
+      "type": "fixed"
+     },
+     {
+      "name": "y",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 10
+   },
+   {
+    "name": "pressure",
+    "args": [
+     {
+      "name": "pressure",
+      "type": "uint"
+     }
+    ],
+    "opcode": 11
+   },
+   {
+    "name": "distance",
+    "args": [
+     {
+      "name": "distance",
+      "type": "uint"
+     }
+    ],
+    "opcode": 12
+   },
+   {
+    "name": "tilt",
+    "args": [
+     {
+      "name": "tilt_x",
+      "type": "fixed"
+     },
+     {
+      "name": "tilt_y",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 13
+   },
+   {
+    "name": "rotation",
+    "args": [
+     {
+      "name": "degrees",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 14
+   },
+   {
+    "name": "slider",
+    "args": [
+     {
+      "name": "position",
+      "type": "int"
+     }
+    ],
+    "opcode": 15
+   },
+   {
+    "name": "wheel",
+    "args": [
+     {
+      "name": "degrees",
+      "type": "fixed"
+     },
+     {
+      "name": "clicks",
+      "type": "int"
+     }
+    ],
+    "opcode": 16
+   },
+   {
+    "name": "button",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "button",
+      "type": "uint"
+     },
+     {
+      "name": "state",
+      "type": "uint",
+      "enum": "button_state"
+     }
+    ],
+    "opcode": 17
+   },
+   {
+    "name": "frame",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     }
+    ],
+    "opcode": 18
+   }
+  ],
+  "methods": [
+   {
+    "name": "set_cursor",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface",
+      "allow-null": "true"
+     },
+     {
+      "name": "hotspot_x",
+      "type": "int"
+     },
+     {
+      "name": "hotspot_y",
+      "type": "int"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "zwp_tablet_v2": {
+  "events": [
+   {
+    "name": "name",
+    "args": [
+     {
+      "name": "name",
+      "type": "string"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "id",
+    "args": [
+     {
+      "name": "vid",
+      "type": "uint"
+     },
+     {
+      "name": "pid",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "path",
+    "args": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "removed",
+    "args": [],
+    "opcode": 4
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "zwp_tablet_pad_ring_v2": {
+  "events": [
+   {
+    "name": "source",
+    "args": [
+     {
+      "name": "source",
+      "type": "uint",
+      "enum": "source"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "angle",
+    "args": [
+     {
+      "name": "degrees",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "stop",
+    "args": [],
+    "opcode": 2
+   },
+   {
+    "name": "frame",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     }
+    ],
+    "opcode": 3
+   }
+  ],
+  "methods": [
+   {
+    "name": "set_feedback",
+    "args": [
+     {
+      "name": "description",
+      "type": "string"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "zwp_tablet_pad_strip_v2": {
+  "events": [
+   {
+    "name": "source",
+    "args": [
+     {
+      "name": "source",
+      "type": "uint",
+      "enum": "source"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "position",
+    "args": [
+     {
+      "name": "position",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "stop",
+    "args": [],
+    "opcode": 2
+   },
+   {
+    "name": "frame",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     }
+    ],
+    "opcode": 3
+   }
+  ],
+  "methods": [
+   {
+    "name": "set_feedback",
+    "args": [
+     {
+      "name": "description",
+      "type": "string"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "zwp_tablet_pad_group_v2": {
+  "events": [
+   {
+    "name": "buttons",
+    "args": [
+     {
+      "name": "buttons",
+      "type": "array"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "ring",
+    "args": [
+     {
+      "name": "ring",
+      "type": "new_id",
+      "interface": "zwp_tablet_pad_ring_v2"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "strip",
+    "args": [
+     {
+      "name": "strip",
+      "type": "new_id",
+      "interface": "zwp_tablet_pad_strip_v2"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "modes",
+    "args": [
+     {
+      "name": "modes",
+      "type": "uint"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 4
+   },
+   {
+    "name": "mode_switch",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "mode",
+      "type": "uint"
+     }
+    ],
+    "opcode": 5
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "zwp_tablet_pad_v2": {
+  "events": [
+   {
+    "name": "group",
+    "args": [
+     {
+      "name": "pad_group",
+      "type": "new_id",
+      "interface": "zwp_tablet_pad_group_v2"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "path",
+    "args": [
+     {
+      "name": "path",
+      "type": "string"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "buttons",
+    "args": [
+     {
+      "name": "buttons",
+      "type": "uint"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "button",
+    "args": [
+     {
+      "name": "time",
+      "type": "uint"
+     },
+     {
+      "name": "button",
+      "type": "uint"
+     },
+     {
+      "name": "state",
+      "type": "uint",
+      "enum": "button_state"
+     }
+    ],
+    "opcode": 4
+   },
+   {
+    "name": "enter",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "tablet",
+      "type": "object",
+      "interface": "zwp_tablet_v2"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 5
+   },
+   {
+    "name": "leave",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 6
+   },
+   {
+    "name": "removed",
+    "args": [],
+    "opcode": 7
+   }
+  ],
+  "methods": [
+   {
+    "name": "set_feedback",
+    "args": [
+     {
+      "name": "button",
+      "type": "uint"
+     },
+     {
+      "name": "description",
+      "type": "string"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_viewporter": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_viewport",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_viewport"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_viewport": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_source",
+    "args": [
+     {
+      "name": "x",
+      "type": "fixed"
+     },
+     {
+      "name": "y",
+      "type": "fixed"
+     },
+     {
+      "name": "width",
+      "type": "fixed"
+     },
+     {
+      "name": "height",
+      "type": "fixed"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "set_destination",
+    "args": [
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "xdg_wm_base": {
+  "events": [
+   {
+    "name": "ping",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "create_positioner",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "xdg_positioner"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "get_xdg_surface",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "xdg_surface"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "pong",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 3
+   }
+  ]
+ },
+ "xdg_positioner": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_size",
+    "args": [
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "set_anchor_rect",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "set_anchor",
+    "args": [
+     {
+      "name": "anchor",
+      "type": "uint",
+      "enum": "anchor"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "set_gravity",
+    "args": [
+     {
+      "name": "gravity",
+      "type": "uint",
+      "enum": "gravity"
+     }
+    ],
+    "opcode": 4
+   },
+   {
+    "name": "set_constraint_adjustment",
+    "args": [
+     {
+      "name": "constraint_adjustment",
+      "type": "uint",
+      "enum": "constraint_adjustment"
+     }
+    ],
+    "opcode": 5
+   },
+   {
+    "name": "set_offset",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     }
+    ],
+    "opcode": 6
+   },
+   {
+    "name": "set_reactive",
+    "since": "3",
+    "args": [],
+    "opcode": 7
+   },
+   {
+    "name": "set_parent_size",
+    "since": "3",
+    "args": [
+     {
+      "name": "parent_width",
+      "type": "int"
+     },
+     {
+      "name": "parent_height",
+      "type": "int"
+     }
+    ],
+    "opcode": 8
+   },
+   {
+    "name": "set_parent_configure",
+    "since": "3",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 9
+   }
+  ]
+ },
+ "xdg_surface": {
+  "events": [
+   {
+    "name": "configure",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_toplevel",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "xdg_toplevel"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "get_popup",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "xdg_popup"
+     },
+     {
+      "name": "parent",
+      "type": "object",
+      "interface": "xdg_surface",
+      "allow-null": "true"
+     },
+     {
+      "name": "positioner",
+      "type": "object",
+      "interface": "xdg_positioner"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "set_window_geometry",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "ack_configure",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 4
+   }
+  ]
+ },
+ "xdg_toplevel": {
+  "events": [
+   {
+    "name": "configure",
+    "args": [
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     },
+     {
+      "name": "states",
+      "type": "array"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "close",
+    "args": [],
+    "opcode": 1
+   },
+   {
+    "name": "configure_bounds",
+    "since": "4",
+    "args": [
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "wm_capabilities",
+    "since": "5",
+    "args": [
+     {
+      "name": "capabilities",
+      "type": "array"
+     }
+    ],
+    "opcode": 3
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_parent",
+    "args": [
+     {
+      "name": "parent",
+      "type": "object",
+      "interface": "xdg_toplevel",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "set_title",
+    "args": [
+     {
+      "name": "title",
+      "type": "string"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "set_app_id",
+    "args": [
+     {
+      "name": "app_id",
+      "type": "string"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "show_window_menu",
+    "args": [
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     }
+    ],
+    "opcode": 4
+   },
+   {
+    "name": "move",
+    "args": [
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 5
+   },
+   {
+    "name": "resize",
+    "args": [
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "edges",
+      "type": "uint",
+      "enum": "resize_edge"
+     }
+    ],
+    "opcode": 6
+   },
+   {
+    "name": "set_max_size",
+    "args": [
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 7
+   },
+   {
+    "name": "set_min_size",
+    "args": [
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 8
+   },
+   {
+    "name": "set_maximized",
+    "args": [],
+    "opcode": 9
+   },
+   {
+    "name": "unset_maximized",
+    "args": [],
+    "opcode": 10
+   },
+   {
+    "name": "set_fullscreen",
+    "args": [
+     {
+      "name": "output",
+      "type": "object",
+      "interface": "wl_output",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 11
+   },
+   {
+    "name": "unset_fullscreen",
+    "args": [],
+    "opcode": 12
+   },
+   {
+    "name": "set_minimized",
+    "args": [],
+    "opcode": 13
+   }
+  ]
+ },
+ "xdg_popup": {
+  "events": [
+   {
+    "name": "configure",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "popup_done",
+    "args": [],
+    "opcode": 1
+   },
+   {
+    "name": "repositioned",
+    "since": "3",
+    "args": [
+     {
+      "name": "token",
+      "type": "uint"
+     }
+    ],
+    "opcode": 2
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "grab",
+    "args": [
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     },
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "reposition",
+    "since": "3",
+    "args": [
+     {
+      "name": "positioner",
+      "type": "object",
+      "interface": "xdg_positioner"
+     },
+     {
+      "name": "token",
+      "type": "uint"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "wp_alpha_modifier_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_surface",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_alpha_modifier_surface_v1"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_alpha_modifier_surface_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_multiplier",
+    "args": [
+     {
+      "name": "factor",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_content_type_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_surface_content_type",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_content_type_v1"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_content_type_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_content_type",
+    "args": [
+     {
+      "name": "content_type",
+      "type": "uint",
+      "enum": "type"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_cursor_shape_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_pointer",
+    "args": [
+     {
+      "name": "cursor_shape_device",
+      "type": "new_id",
+      "interface": "wp_cursor_shape_device_v1"
+     },
+     {
+      "name": "pointer",
+      "type": "object",
+      "interface": "wl_pointer"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "get_tablet_tool_v2",
+    "args": [
+     {
+      "name": "cursor_shape_device",
+      "type": "new_id",
+      "interface": "wp_cursor_shape_device_v1"
+     },
+     {
+      "name": "tablet_tool",
+      "type": "object",
+      "interface": "zwp_tablet_tool_v2"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "wp_cursor_shape_device_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_shape",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "shape",
+      "type": "uint",
+      "enum": "shape"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_drm_lease_device_v1": {
+  "events": [
+   {
+    "name": "drm_fd",
+    "args": [
+     {
+      "name": "fd",
+      "type": "fd"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "connector",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_drm_lease_connector_v1"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 2
+   },
+   {
+    "name": "released",
+    "type": "destructor",
+    "args": [],
+    "opcode": 3
+   }
+  ],
+  "methods": [
+   {
+    "name": "create_lease_request",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_drm_lease_request_v1"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "release",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_drm_lease_connector_v1": {
+  "events": [
+   {
+    "name": "name",
+    "args": [
+     {
+      "name": "name",
+      "type": "string"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "description",
+    "args": [
+     {
+      "name": "description",
+      "type": "string"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "connector_id",
+    "args": [
+     {
+      "name": "connector_id",
+      "type": "uint"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "withdrawn",
+    "args": [],
+    "opcode": 4
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "wp_drm_lease_request_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "request_connector",
+    "args": [
+     {
+      "name": "connector",
+      "type": "object",
+      "interface": "wp_drm_lease_connector_v1"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "submit",
+    "type": "destructor",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_drm_lease_v1"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_drm_lease_v1": {
+  "events": [
+   {
+    "name": "lease_fd",
+    "args": [
+     {
+      "name": "leased_fd",
+      "type": "fd"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "finished",
+    "args": [],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "ext_foreign_toplevel_list_v1": {
+  "events": [
+   {
+    "name": "toplevel",
+    "args": [
+     {
+      "name": "toplevel",
+      "type": "new_id",
+      "interface": "ext_foreign_toplevel_handle_v1"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "finished",
+    "args": [],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "stop",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "ext_foreign_toplevel_handle_v1": {
+  "events": [
+   {
+    "name": "closed",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 1
+   },
+   {
+    "name": "title",
+    "args": [
+     {
+      "name": "title",
+      "type": "string"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "app_id",
+    "args": [
+     {
+      "name": "app_id",
+      "type": "string"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "identifier",
+    "args": [
+     {
+      "name": "identifier",
+      "type": "string"
+     }
+    ],
+    "opcode": 4
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "ext_idle_notifier_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_idle_notification",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "ext_idle_notification_v1"
+     },
+     {
+      "name": "timeout",
+      "type": "uint"
+     },
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "ext_idle_notification_v1": {
+  "events": [
+   {
+    "name": "idled",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "resumed",
+    "args": [],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "ext_image_capture_source_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "ext_output_image_capture_source_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "create_source",
+    "args": [
+     {
+      "name": "source",
+      "type": "new_id",
+      "interface": "ext_image_capture_source_v1"
+     },
+     {
+      "name": "output",
+      "type": "object",
+      "interface": "wl_output"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "ext_foreign_toplevel_image_capture_source_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "create_source",
+    "args": [
+     {
+      "name": "source",
+      "type": "new_id",
+      "interface": "ext_image_capture_source_v1"
+     },
+     {
+      "name": "toplevel_handle",
+      "type": "object",
+      "interface": "ext_foreign_toplevel_handle_v1"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "ext_image_copy_capture_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "create_session",
+    "args": [
+     {
+      "name": "session",
+      "type": "new_id",
+      "interface": "ext_image_copy_capture_session_v1"
+     },
+     {
+      "name": "source",
+      "type": "object",
+      "interface": "ext_image_capture_source_v1"
+     },
+     {
+      "name": "options",
+      "type": "uint",
+      "enum": "options"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "create_pointer_cursor_session",
+    "args": [
+     {
+      "name": "session",
+      "type": "new_id",
+      "interface": "ext_image_copy_capture_cursor_session_v1"
+     },
+     {
+      "name": "source",
+      "type": "object",
+      "interface": "ext_image_capture_source_v1"
+     },
+     {
+      "name": "pointer",
+      "type": "object",
+      "interface": "wl_pointer"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 2
+   }
+  ]
+ },
+ "ext_image_copy_capture_session_v1": {
+  "events": [
+   {
+    "name": "buffer_size",
+    "args": [
+     {
+      "name": "width",
+      "type": "uint"
+     },
+     {
+      "name": "height",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "shm_format",
+    "args": [
+     {
+      "name": "format",
+      "type": "uint",
+      "enum": "wl_shm.format"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "dmabuf_device",
+    "args": [
+     {
+      "name": "device",
+      "type": "array"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "dmabuf_format",
+    "args": [
+     {
+      "name": "format",
+      "type": "uint"
+     },
+     {
+      "name": "modifiers",
+      "type": "array"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 4
+   },
+   {
+    "name": "stopped",
+    "args": [],
+    "opcode": 5
+   }
+  ],
+  "methods": [
+   {
+    "name": "create_frame",
+    "args": [
+     {
+      "name": "frame",
+      "type": "new_id",
+      "interface": "ext_image_copy_capture_frame_v1"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "ext_image_copy_capture_frame_v1": {
+  "events": [
+   {
+    "name": "transform",
+    "args": [
+     {
+      "name": "transform",
+      "type": "uint",
+      "enum": "wl_output.transform"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "damage",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "presentation_time",
+    "args": [
+     {
+      "name": "tv_sec_hi",
+      "type": "uint"
+     },
+     {
+      "name": "tv_sec_lo",
+      "type": "uint"
+     },
+     {
+      "name": "tv_nsec",
+      "type": "uint"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "ready",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "failed",
+    "args": [
+     {
+      "name": "reason",
+      "type": "uint",
+      "enum": "failure_reason"
+     }
+    ],
+    "opcode": 4
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "attach_buffer",
+    "args": [
+     {
+      "name": "buffer",
+      "type": "object",
+      "interface": "wl_buffer"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "damage_buffer",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     },
+     {
+      "name": "width",
+      "type": "int"
+     },
+     {
+      "name": "height",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "capture",
+    "args": [],
+    "opcode": 3
+   }
+  ]
+ },
+ "ext_image_copy_capture_cursor_session_v1": {
+  "events": [
+   {
+    "name": "enter",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "leave",
+    "args": [],
+    "opcode": 1
+   },
+   {
+    "name": "position",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "hotspot",
+    "args": [
+     {
+      "name": "x",
+      "type": "int"
+     },
+     {
+      "name": "y",
+      "type": "int"
+     }
+    ],
+    "opcode": 3
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_capture_session",
+    "args": [
+     {
+      "name": "session",
+      "type": "new_id",
+      "interface": "ext_image_copy_capture_session_v1"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "ext_session_lock_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "lock",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "ext_session_lock_v1"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "ext_session_lock_v1": {
+  "events": [
+   {
+    "name": "locked",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "finished",
+    "args": [],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_lock_surface",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "ext_session_lock_surface_v1"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     },
+     {
+      "name": "output",
+      "type": "object",
+      "interface": "wl_output"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "unlock_and_destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 2
+   }
+  ]
+ },
+ "ext_session_lock_surface_v1": {
+  "events": [
+   {
+    "name": "configure",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "width",
+      "type": "uint"
+     },
+     {
+      "name": "height",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "ack_configure",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "ext_transient_seat_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "create",
+    "args": [
+     {
+      "name": "seat",
+      "type": "new_id",
+      "interface": "ext_transient_seat_v1"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "ext_transient_seat_v1": {
+  "events": [
+   {
+    "name": "ready",
+    "args": [
+     {
+      "name": "global_name",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "denied",
+    "args": [],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "wp_fractional_scale_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_fractional_scale",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_fractional_scale_v1"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_fractional_scale_v1": {
+  "events": [
+   {
+    "name": "preferred_scale",
+    "args": [
+     {
+      "name": "scale",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "wp_linux_drm_syncobj_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_surface",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_linux_drm_syncobj_surface_v1"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "import_timeline",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_linux_drm_syncobj_timeline_v1"
+     },
+     {
+      "name": "fd",
+      "type": "fd"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "wp_linux_drm_syncobj_timeline_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   }
+  ]
+ },
+ "wp_linux_drm_syncobj_surface_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_acquire_point",
+    "args": [
+     {
+      "name": "timeline",
+      "type": "object",
+      "interface": "wp_linux_drm_syncobj_timeline_v1"
+     },
+     {
+      "name": "point_hi",
+      "type": "uint"
+     },
+     {
+      "name": "point_lo",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "set_release_point",
+    "args": [
+     {
+      "name": "timeline",
+      "type": "object",
+      "interface": "wp_linux_drm_syncobj_timeline_v1"
+     },
+     {
+      "name": "point_hi",
+      "type": "uint"
+     },
+     {
+      "name": "point_lo",
+      "type": "uint"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "wp_security_context_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "create_listener",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_security_context_v1"
+     },
+     {
+      "name": "listen_fd",
+      "type": "fd"
+     },
+     {
+      "name": "close_fd",
+      "type": "fd"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_security_context_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_sandbox_engine",
+    "args": [
+     {
+      "name": "name",
+      "type": "string"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "set_app_id",
+    "args": [
+     {
+      "name": "app_id",
+      "type": "string"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "set_instance_id",
+    "args": [
+     {
+      "name": "instance_id",
+      "type": "string"
+     }
+    ],
+    "opcode": 3
+   },
+   {
+    "name": "commit",
+    "args": [],
+    "opcode": 4
+   }
+  ]
+ },
+ "wp_single_pixel_buffer_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "create_u32_rgba_buffer",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wl_buffer"
+     },
+     {
+      "name": "r",
+      "type": "uint"
+     },
+     {
+      "name": "g",
+      "type": "uint"
+     },
+     {
+      "name": "b",
+      "type": "uint"
+     },
+     {
+      "name": "a",
+      "type": "uint"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_tearing_control_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_tearing_control",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "wp_tearing_control_v1"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "wp_tearing_control_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "set_presentation_hint",
+    "args": [
+     {
+      "name": "hint",
+      "type": "uint",
+      "enum": "presentation_hint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ },
+ "xdg_activation_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_activation_token",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "xdg_activation_token_v1"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "activate",
+    "args": [
+     {
+      "name": "token",
+      "type": "string"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "xdg_activation_token_v1": {
+  "events": [
+   {
+    "name": "done",
+    "args": [
+     {
+      "name": "token",
+      "type": "string"
+     }
+    ],
+    "opcode": 0
+   }
+  ],
+  "methods": [
+   {
+    "name": "set_serial",
+    "args": [
+     {
+      "name": "serial",
+      "type": "uint"
+     },
+     {
+      "name": "seat",
+      "type": "object",
+      "interface": "wl_seat"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "set_app_id",
+    "args": [
+     {
+      "name": "app_id",
+      "type": "string"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "set_surface",
+    "args": [
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 2
+   },
+   {
+    "name": "commit",
+    "args": [],
+    "opcode": 3
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 4
+   }
+  ]
+ },
+ "xdg_wm_dialog_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_xdg_dialog",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "xdg_dialog_v1"
+     },
+     {
+      "name": "toplevel",
+      "type": "object",
+      "interface": "xdg_toplevel"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "xdg_dialog_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_modal",
+    "args": [],
+    "opcode": 1
+   },
+   {
+    "name": "unset_modal",
+    "args": [],
+    "opcode": 2
+   }
+  ]
+ },
+ "xdg_toplevel_drag_manager_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_xdg_toplevel_drag",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "xdg_toplevel_drag_v1"
+     },
+     {
+      "name": "data_source",
+      "type": "object",
+      "interface": "wl_data_source"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "xdg_toplevel_drag_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "attach",
+    "args": [
+     {
+      "name": "toplevel",
+      "type": "object",
+      "interface": "xdg_toplevel"
+     },
+     {
+      "name": "x_offset",
+      "type": "int"
+     },
+     {
+      "name": "y_offset",
+      "type": "int"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "xdg_toplevel_icon_manager_v1": {
+  "events": [
+   {
+    "name": "icon_size",
+    "args": [
+     {
+      "name": "size",
+      "type": "int"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "done",
+    "args": [],
+    "opcode": 1
+   }
+  ],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "create_icon",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "xdg_toplevel_icon_v1"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "set_icon",
+    "args": [
+     {
+      "name": "toplevel",
+      "type": "object",
+      "interface": "xdg_toplevel"
+     },
+     {
+      "name": "icon",
+      "type": "object",
+      "interface": "xdg_toplevel_icon_v1",
+      "allow-null": "true"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "xdg_toplevel_icon_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "set_name",
+    "args": [
+     {
+      "name": "icon_name",
+      "type": "string"
+     }
+    ],
+    "opcode": 1
+   },
+   {
+    "name": "add_buffer",
+    "args": [
+     {
+      "name": "buffer",
+      "type": "object",
+      "interface": "wl_buffer"
+     },
+     {
+      "name": "scale",
+      "type": "int"
+     }
+    ],
+    "opcode": 2
+   }
+  ]
+ },
+ "xwayland_shell_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 0
+   },
+   {
+    "name": "get_xwayland_surface",
+    "args": [
+     {
+      "name": "id",
+      "type": "new_id",
+      "interface": "xwayland_surface_v1"
+     },
+     {
+      "name": "surface",
+      "type": "object",
+      "interface": "wl_surface"
+     }
+    ],
+    "opcode": 1
+   }
+  ]
+ },
+ "xwayland_surface_v1": {
+  "events": [],
+  "methods": [
+   {
+    "name": "set_serial",
+    "args": [
+     {
+      "name": "serial_lo",
+      "type": "uint"
+     },
+     {
+      "name": "serial_hi",
+      "type": "uint"
+     }
+    ],
+    "opcode": 0
+   },
+   {
+    "name": "destroy",
+    "type": "destructor",
+    "args": [],
+    "opcode": 1
+   }
+  ]
+ }
+}

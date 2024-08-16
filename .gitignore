@@ -1,0 +1,9 @@
+*.png
+*.jpg
+**/__pycache__
+wayland/cache/*.xml
+.venv
+wayland.log
+dist/
+.*_cache
+.vscode
