@@ -29,15 +29,73 @@ from copy import deepcopy
 import requests
 from lxml import etree
 
-from wayland import get_package_root
 from wayland.log import log
 
 
 class WaylandParser:
-    def __init__(self, *, use_cache=True):
+    def __init__(self):
         self.interfaces = {}
-        self.use_cache = use_cache
         self.headers = []
+
+    def get_remote_uris(self):
+        # Download the latest protocols
+        domain = "https://gitlab.freedesktop.org"
+        project = "projects/wayland%2Fwayland-protocols"
+        url = f"{domain}/api/v4/{project}/repository/"
+        paths = ["staging", "stable"]
+        xml_uris = []
+        for path in paths:
+            log.info(f"Searching for {path} Wayland protocol definitions")
+            page = 1
+            while True:
+                params = {
+                    "per_page": 100,
+                    "page": page,
+                    "path": path,
+                    "recursive": True,
+                }
+
+                # Get all objects
+                response = requests.get(url=f"{url}/tree", params=params, timeout=30)
+                if not response.ok:
+                    response.raise_for_status()
+
+                # If nothing we are done
+                if not len(response.json()):
+                    break
+
+                page += 1
+
+                # Add xml files to our list
+                xml_uris.extend(
+                    [
+                        f"{url}/blobs/{x['id']}/raw"
+                        for x in response.json()
+                        if os.path.splitext(x["path"])[-1] == ".xml"
+                    ]
+                )
+
+        xml_uris.insert(
+            0,
+            "https://gitlab.freedesktop.org/wayland/wayland/-/raw/main/protocol/wayland.xml",
+        )
+
+        return xml_uris
+
+    def get_local_files(self):
+        # XXX: Not sure this assumption holds everywhere?
+        protocol_dirs = [
+            "/usr/share/wayland",
+            "/usr/share/wayland-protocols",
+        ]
+        xml_files = []
+        for directory in protocol_dirs:
+            log.info(f"Searching for local files in {directory}")
+            for root, _, files in os.walk(directory):
+                xml_files.extend(
+                    [os.path.join(root, x) for x in files if x.endswith(".xml")]
+                )
+        return xml_files
 
     def to_json(self, *, minimise=True):
         protocols = deepcopy(self.interfaces)
@@ -61,7 +119,7 @@ class WaylandParser:
         # Check for python keyword collision
         if keyword.iskeyword(method["name"]):
             method["name"] = method["name"] + "_"
-            log.warning(f"Renamed request to {method['name']}")
+            log.info(f"Renamed request to {method['name']}")
         if interface not in self.interfaces:
             self.interfaces[interface] = {"events": [], "methods": []}
         methods = self.interfaces.get(interface, {}).get("methods", [])
@@ -72,7 +130,7 @@ class WaylandParser:
         # Check for python keyword collision
         if keyword.iskeyword(event["name"]):
             event["name"] = event["name"] + "_"
-            log.warning(f"Renamed event to {event['name']}")
+            log.info(f"Renamed event to {event['name']}")
         if interface not in self.interfaces:
             self.interfaces[interface] = {"events": [], "methods": []}
         events = self.interfaces.get(interface, {}).get("events", [])
@@ -84,23 +142,15 @@ class WaylandParser:
             raise ValueError(msg)
         events.append(event)
 
-    def load_file(self, path):
+    def parse(self, path):
         if not path.strip():
             return
         if path.startswith("http"):
-            filename = f"{get_package_root()}/cache/{os.path.basename(path)}"
-            if self.use_cache and os.path.exists(filename):
-                log.warning(f"Using local cached version of {os.path.basename(path)}")
-                tree = etree.parse(filename)
+            response = requests.get(path, timeout=20)
+            if response.ok:
+                tree = etree.fromstring(response.content)
             else:
-                log.warning(f"Downloading {os.path.basename(path)}")
-                result = requests.get(path, timeout=20)
-                if result.ok:
-                    with open(filename, "wb") as infile:
-                        infile.write(result.content)
-                    tree = etree.parse(filename)
-                else:
-                    raise RuntimeError("Could not download " + path)
+                response.raise_for_status()
         else:
             tree = etree.parse(path)
 

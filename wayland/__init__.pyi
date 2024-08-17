@@ -2729,6 +2729,2459 @@ class wl_callback:
             """
             ...
 
+class wp_alpha_modifier_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the alpha modifier manager object
+        
+        Destroy the alpha modifier manager. This doesn't destroy objects
+        created with the manager.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_surface(surface: object) -> wp_alpha_modifier_surface_v1:
+        """
+        create a new toplevel decoration object
+        
+        Create a new alpha modifier surface object associated with the
+        given wl_surface. If there is already such an object associated with
+        the wl_surface, the already_constructed error will be raised.
+        """
+        ...
+
+class wp_alpha_modifier_surface_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the alpha modifier object
+        
+        This destroys the object, and is equivalent to set_multiplier with
+        a value of UINT32_MAX, with the same double-buffered semantics as
+        set_multiplier.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def set_multiplier(factor: uint) -> None:
+        """
+        specify the alpha multiplier
+        
+        Sets the alpha multiplier for the surface. The alpha multiplier is
+        double-buffered state, see wl_surface.commit for details.
+        
+        This factor is applied in the compositor's blending space, as an
+        additional step after the processing of per-pixel alpha values for the
+        wl_surface. The exact meaning of the factor is thus undefined, unless
+        the blending space is specified in a different extension.
+        
+        This multiplier is applied even if the buffer attached to the
+        wl_surface doesn't have an alpha channel; in that case an alpha value
+        of one is used instead.
+        
+        Zero means completely transparent, UINT32_MAX means completely opaque.
+        """
+        ...
+
+class wp_content_type_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the content type manager object
+        
+        Destroy the content type manager. This doesn't destroy objects created
+        with the manager.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_surface_content_type(surface: object) -> wp_content_type_v1:
+        """
+        create a new toplevel decoration object
+        
+        Create a new content type object associated with the given surface.
+        
+        Creating a wp_content_type_v1 from a wl_surface which already has one
+        attached is a client error: already_constructed.
+        """
+        ...
+
+class wp_content_type_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the content type object
+        
+        Switch back to not specifying the content type of this surface. This is
+        equivalent to setting the content type to none, including double
+        buffering semantics. See set_content_type for details.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def set_content_type(content_type: uint) -> None:
+        """
+        specify the content type
+        
+        Set the surface content type. This informs the compositor that the
+        client believes it is displaying buffers matching this content type.
+        
+        This is purely a hint for the compositor, which can be used to adjust
+        its behavior or hardware settings to fit the presented content best.
+        
+        The content type is double-buffered state, see wl_surface.commit for
+        details.
+        """
+        ...
+
+class wp_cursor_shape_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        
+        Destroy the cursor shape manager.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_pointer(pointer: object) -> wp_cursor_shape_device_v1:
+        """
+        manage the cursor shape of a pointer device
+        
+        Obtain a wp_cursor_shape_device_v1 for a wl_pointer object.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def get_tablet_tool_v2(tablet_tool: object) -> wp_cursor_shape_device_v1:
+        """
+        manage the cursor shape of a tablet tool device
+        
+        Obtain a wp_cursor_shape_device_v1 for a zwp_tablet_tool_v2 object.
+        """
+        ...
+
+class wp_cursor_shape_device_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the cursor shape device
+        
+        Destroy the cursor shape device.
+        
+        The device cursor shape remains unchanged.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def set_shape(serial: uint, shape: uint) -> None:
+        """
+        set device cursor to the shape
+        
+        Sets the device cursor to the specified shape. The compositor will
+        change the cursor image based on the specified shape.
+        
+        The cursor actually changes only if the input device focus is one of
+        the requesting client's surfaces. If any, the previous cursor image
+        (surface or shape) is replaced.
+        
+        The "shape" argument must be a valid enum entry, otherwise the
+        invalid_shape protocol error is raised.
+        
+        This is similar to the wl_pointer.set_cursor and
+        zwp_tablet_tool_v2.set_cursor requests, but this request accepts a
+        shape instead of contents in the form of a surface. Clients can mix
+        set_cursor and set_shape requests.
+        
+        The serial parameter must match the latest wl_pointer.enter or
+        zwp_tablet_tool_v2.proximity_in serial number sent to the client.
+        Otherwise the request will be ignored.
+        """
+        ...
+
+class wp_drm_lease_device_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def create_lease_request() -> wp_drm_lease_request_v1:
+        """
+        create a lease request object
+        
+        Creates a lease request object.
+        
+        See the documentation for wp_drm_lease_request_v1 for details.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def release() -> None:
+        """
+        release this object
+        
+        Indicates the client no longer wishes to use this object. In response
+        the compositor will immediately send the released event and destroy
+        this object. It can however not guarantee that the client won't receive
+        connector events before the released event. The client must not send any
+        requests after this one, doing so will raise a wl_display error.
+        Existing connectors, lease request and leases will not be affected.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def drm_fd(fd: fd) -> None:
+            """
+            open a non-master fd for this DRM node
+            
+            The compositor will send this event when the wp_drm_lease_device_v1
+            global is bound, although there are no guarantees as to how long this
+            takes - the compositor might need to wait until regaining DRM master.
+            The included fd is a non-master DRM file descriptor opened for this
+            device and the compositor must not authenticate it.
+            The purpose of this event is to give the client the ability to
+            query DRM and discover information which may help them pick the
+            appropriate DRM device or select the appropriate connectors therein.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def connector(id: wp_drm_lease_connector_v1) -> None:
+            """
+            advertise connectors available for leases
+            
+            The compositor will use this event to advertise connectors available for
+            lease by clients. This object may be passed into a lease request to
+            indicate the client would like to lease that connector, see
+            wp_drm_lease_request_v1.request_connector for details. While the
+            compositor will make a best effort to not send disconnected connectors,
+            no guarantees can be made.
+            
+            The compositor must send the drm_fd event before sending connectors.
+            After the drm_fd event it will send all available connectors but may
+            send additional connectors at any time.
+            """
+            ...
+
+        # opcode 2
+        @staticmethod
+        def done() -> None:
+            """
+            signals grouping of connectors
+            
+            The compositor will send this event to indicate that it has sent all
+            currently available connectors after the client binds to the global or
+            when it updates the connector list, for example on hotplug, drm master
+            change or when a leased connector becomes available again. It will
+            similarly send this event to group wp_drm_lease_connector_v1.withdrawn
+            events of connectors of this device.
+            """
+            ...
+
+        # opcode 3
+        @staticmethod
+        def released() -> None:
+            """
+            the compositor has finished using the device
+            
+            This event is sent in response to the release request and indicates
+            that the compositor is done sending connector events.
+            The compositor will destroy this object immediately after sending the
+            event and it will become invalid. The client should release any
+            resources associated with this device after receiving this event.
+            """
+            ...
+
+class wp_drm_lease_connector_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy connector
+        
+        The client may send this request to indicate that it will not use this
+        connector. Clients are encouraged to send this after receiving the
+        "withdrawn" event so that the server can release the resources
+        associated with this connector offer. Neither existing lease requests
+        nor leases will be affected.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def name(name: string) -> None:
+            """
+            name
+            
+            The compositor sends this event once the connector is created to
+            indicate the name of this connector. This will not change for the
+            duration of the Wayland session, but is not guaranteed to be consistent
+            between sessions.
+            
+            If the compositor supports wl_output version 4 and this connector
+            corresponds to a wl_output, the compositor should use the same name as
+            for the wl_output.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def description(description: string) -> None:
+            """
+            description
+            
+            The compositor sends this event once the connector is created to provide
+            a human-readable description for this connector, which may be presented
+            to the user. The compositor may send this event multiple times over the
+            lifetime of this object to reflect changes in the description.
+            """
+            ...
+
+        # opcode 2
+        @staticmethod
+        def connector_id(connector_id: uint) -> None:
+            """
+            connector_id
+            
+            The compositor sends this event once the connector is created to
+            indicate the DRM object ID which represents the underlying connector
+            that is being offered. Note that the final lease may include additional
+            object IDs, such as CRTCs and planes.
+            """
+            ...
+
+        # opcode 3
+        @staticmethod
+        def done() -> None:
+            """
+            all properties have been sent
+            
+            This event is sent after all properties of a connector have been sent.
+            This allows changes to the properties to be seen as atomic even if they
+            happen via multiple events.
+            """
+            ...
+
+        # opcode 4
+        @staticmethod
+        def withdrawn() -> None:
+            """
+            lease offer withdrawn
+            
+            Sent to indicate that the compositor will no longer honor requests for
+            DRM leases which include this connector. The client may still issue a
+            lease request including this connector, but the compositor will send
+            wp_drm_lease_v1.finished without issuing a lease fd. Compositors are
+            encouraged to send this event when they lose access to connector, for
+            example when the connector is hot-unplugged, when the connector gets
+            leased to a client or when the compositor loses DRM master.
+            """
+            ...
+
+class wp_drm_lease_request_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def request_connector(connector: object) -> None:
+        """
+        request a connector for this lease
+        
+        Indicates that the client would like to lease the given connector.
+        This is only used as a suggestion, the compositor may choose to
+        include any resources in the lease it issues, or change the set of
+        leased resources at any time. Compositors are however encouraged to
+        include the requested connector and other resources necessary
+        to drive the connected output in the lease.
+        
+        Requesting a connector that was created from a different lease device
+        than this lease request raises the wrong_device error. Requesting a
+        connector twice will raise the duplicate_connector error.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def submit() -> wp_drm_lease_v1:
+        """
+        submit the lease request
+        
+        Submits the lease request and creates a new wp_drm_lease_v1 object.
+        After calling submit the compositor will immediately destroy this
+        object, issuing any more requests will cause a wl_display error.
+        The compositor doesn't make any guarantees about the events of the
+        lease object, clients cannot expect an immediate response.
+        Not requesting any connectors before submitting the lease request
+        will raise the empty_lease error.
+        """
+        ...
+
+class wp_drm_lease_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroys the lease object
+        
+        The client should send this to indicate that it no longer wishes to use
+        this lease. The compositor should use drmModeRevokeLease on the
+        appropriate file descriptor, if necessary.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def lease_fd(leased_fd: fd) -> None:
+            """
+            shares the DRM file descriptor
+            
+            This event returns a file descriptor suitable for use with DRM-related
+            ioctls. The client should use drmModeGetLease to enumerate the DRM
+            objects which have been leased to them. The compositor guarantees it
+            will not use the leased DRM objects itself until it sends the finished
+            event. If the compositor cannot or will not grant a lease for the
+            requested connectors, it will not send this event, instead sending the
+            finished event.
+            
+            The compositor will send this event at most once during this objects
+            lifetime.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def finished() -> None:
+            """
+            sent when the lease has been revoked
+            
+            The compositor uses this event to either reject a lease request, or if
+            it previously sent a lease_fd, to notify the client that the lease has
+            been revoked. If the client requires a new lease, they should destroy
+            this object and submit a new lease request. The compositor will send
+            no further events for this object after sending the finish event.
+            Compositors should revoke the lease when any of the leased resources
+            become unavailable, namely when a hot-unplug occurs or when the
+            compositor loses DRM master.
+            """
+            ...
+
+class ext_foreign_toplevel_list_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def stop() -> None:
+        """
+        stop sending events
+        
+        This request indicates that the client no longer wishes to receive
+        events for new toplevels.
+        
+        The Wayland protocol is asynchronous, meaning the compositor may send
+        further toplevel events until the stop request is processed.
+        The client should wait for a ext_foreign_toplevel_list_v1.finished
+        event before destroying this object.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the ext_foreign_toplevel_list_v1 object
+        
+        This request should be called either when the client will no longer
+        use the ext_foreign_toplevel_list_v1 or after the finished event
+        has been received to allow destruction of the object.
+        
+        If a client wishes to destroy this object it should send a
+        ext_foreign_toplevel_list_v1.stop request and wait for a ext_foreign_toplevel_list_v1.finished
+        event, then destroy the handles and then this object.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def toplevel(toplevel: ext_foreign_toplevel_handle_v1) -> None:
+            """
+            a toplevel has been created
+            
+            This event is emitted whenever a new toplevel window is created. It is
+            emitted for all toplevels, regardless of the app that has created them.
+            
+            All initial properties of the toplevel (identifier, title, app_id) will be sent
+            immediately after this event using the corresponding events for
+            ext_foreign_toplevel_handle_v1. The compositor will use the
+            ext_foreign_toplevel_handle_v1.done event to indicate when all data has
+            been sent.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def finished() -> None:
+            """
+            the compositor has finished with the toplevel manager
+            
+            This event indicates that the compositor is done sending events
+            to this object. The client should destroy the object.
+            See ext_foreign_toplevel_list_v1.destroy for more information.
+            
+            The compositor must not send any more toplevel events after this event.
+            """
+            ...
+
+class ext_foreign_toplevel_handle_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the ext_foreign_toplevel_handle_v1 object
+        
+        This request should be used when the client will no longer use the handle
+        or after the closed event has been received to allow destruction of the
+        object.
+        
+        When a handle is destroyed, a new handle may not be created by the server
+        until the toplevel is unmapped and then remapped. Destroying a toplevel handle
+        is not recommended unless the client is cleaning up child objects
+        before destroying the ext_foreign_toplevel_list_v1 object, the toplevel
+        was closed or the toplevel handle will not be used in the future.
+        
+        Other protocols which extend the ext_foreign_toplevel_handle_v1
+        interface should require destructors for extension interfaces be
+        called before allowing the toplevel handle to be destroyed.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def closed() -> None:
+            """
+            the toplevel has been closed
+            
+            The server will emit no further events on the ext_foreign_toplevel_handle_v1
+            after this event. Any requests received aside from the destroy request must
+            be ignored. Upon receiving this event, the client should destroy the handle.
+            
+            Other protocols which extend the ext_foreign_toplevel_handle_v1
+            interface must also ignore requests other than destructors.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def done() -> None:
+            """
+            all information about the toplevel has been sent
+            
+            This event is sent after all changes in the toplevel state have
+            been sent.
+            
+            This allows changes to the ext_foreign_toplevel_handle_v1 properties
+            to be atomically applied. Other protocols which extend the
+            ext_foreign_toplevel_handle_v1 interface may use this event to also
+            atomically apply any pending state.
+            
+            This event must not be sent after the ext_foreign_toplevel_handle_v1.closed
+            event.
+            """
+            ...
+
+        # opcode 2
+        @staticmethod
+        def title(title: string) -> None:
+            """
+            title change
+            
+            The title of the toplevel has changed.
+            
+            The configured state must not be applied immediately. See
+            ext_foreign_toplevel_handle_v1.done for details.
+            """
+            ...
+
+        # opcode 3
+        @staticmethod
+        def app_id(app_id: string) -> None:
+            """
+            app_id change
+            
+            The app id of the toplevel has changed.
+            
+            The configured state must not be applied immediately. See
+            ext_foreign_toplevel_handle_v1.done for details.
+            """
+            ...
+
+        # opcode 4
+        @staticmethod
+        def identifier(identifier: string) -> None:
+            """
+            a stable identifier for a toplevel
+            
+            This identifier is used to check if two or more toplevel handles belong
+            to the same toplevel.
+            
+            The identifier is useful for command line tools or privileged clients
+            which may need to reference an exact toplevel across processes or
+            instances of the ext_foreign_toplevel_list_v1 global.
+            
+            The compositor must only send this event when the handle is created.
+            
+            The identifier must be unique per toplevel and it's handles. Two different
+            toplevels must not have the same identifier. The identifier is only valid
+            as long as the toplevel is mapped. If the toplevel is unmapped the identifier
+            must not be reused. An identifier must not be reused by the compositor to
+            ensure there are no races when sharing identifiers between processes.
+            
+            An identifier is a string that contains up to 32 printable ASCII bytes.
+            An identifier must not be an empty string. It is recommended that a
+            compositor includes an opaque generation value in identifiers. How the
+            generation value is used when generating the identifier is implementation
+            dependent.
+            """
+            ...
+
+class ext_idle_notifier_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        
+        Destroy the manager object. All objects created via this interface
+        remain valid.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_idle_notification(timeout: uint, seat: object) -> ext_idle_notification_v1:
+        """
+        create a notification object
+        
+        Create a new idle notification object.
+        
+        The notification object has a minimum timeout duration and is tied to a
+        seat. The client will be notified if the seat is inactive for at least
+        the provided timeout. See ext_idle_notification_v1 for more details.
+        
+        A zero timeout is valid and means the client wants to be notified as
+        soon as possible when the seat is inactive.
+        """
+        ...
+
+class ext_idle_notification_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the notification object
+        
+        Destroy the notification object.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def idled() -> None:
+            """
+            notification object is idle
+            
+            This event is sent when the notification object becomes idle.
+            
+            It's a compositor protocol error to send this event twice without a
+            resumed event in-between.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def resumed() -> None:
+            """
+            notification object is no longer idle
+            
+            This event is sent when the notification object stops being idle.
+            
+            It's a compositor protocol error to send this event twice without an
+            idled event in-between. It's a compositor protocol error to send this
+            event prior to any idled event.
+            """
+            ...
+
+class ext_image_capture_source_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        
+        Destroys the image capture source. This request may be sent at any time
+        by the client.
+        """
+        ...
+
+class ext_output_image_capture_source_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def create_source(output: object) -> ext_image_capture_source_v1:
+        """
+        create source object for output
+        
+        Creates a source object for an output. Images captured from this source
+        will show the same content as the output. Some elements may be omitted,
+        such as cursors and overlays that have been marked as transparent to
+        capturing.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        
+        Destroys the manager. This request may be sent at any time by the client
+        and objects created by the manager will remain valid after its
+        destruction.
+        """
+        ...
+
+class ext_foreign_toplevel_image_capture_source_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def create_source(toplevel_handle: object) -> ext_image_capture_source_v1:
+        """
+        create source object for foreign toplevel
+        
+        Creates a source object for a foreign toplevel handle. Images captured
+        from this source will show the same content as the toplevel.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        
+        Destroys the manager. This request may be sent at any time by the client
+        and objects created by the manager will remain valid after its
+        destruction.
+        """
+        ...
+
+class ext_image_copy_capture_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def create_session(source: object, options: uint) -> ext_image_copy_capture_session_v1:
+        """
+        capture an image capture source
+        
+        Create a capturing session for an image capture source.
+        
+        If the paint_cursors option is set, cursors shall be composited onto
+        the captured frame. The cursor must not be composited onto the frame
+        if this flag is not set.
+        
+        If the options bitfield is invalid, the invalid_option protocol error
+        is sent.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def create_pointer_cursor_session(source: object, pointer: object) -> ext_image_copy_capture_cursor_session_v1:
+        """
+        capture the pointer cursor of an image capture source
+        
+        Create a cursor capturing session for the pointer of an image capture
+        source.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        
+        Destroy the manager object.
+        
+        Other objects created via this interface are unaffected.
+        """
+        ...
+
+class ext_image_copy_capture_session_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def create_frame() -> ext_image_copy_capture_frame_v1:
+        """
+        create a frame
+        
+        Create a capture frame for this session.
+        
+        At most one frame object can exist for a given session at any time. If
+        a client sends a create_frame request before a previous frame object
+        has been destroyed, the duplicate_frame protocol error is raised.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        
+        Destroys the session. This request can be sent at any time by the
+        client.
+        
+        This request doesn't affect ext_image_copy_capture_frame_v1 objects created by
+        this object.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def buffer_size(width: uint, height: uint) -> None:
+            """
+            image capture source dimensions
+            
+            Provides the dimensions of the source image in buffer pixel coordinates.
+            
+            The client must attach buffers that match this size.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def shm_format(format: uint) -> None:
+            """
+            shm buffer format
+            
+            Provides the format that must be used for shared-memory buffers.
+            
+            This event may be emitted multiple times, in which case the client may
+            choose any given format.
+            """
+            ...
+
+        # opcode 2
+        @staticmethod
+        def dmabuf_device(device: array) -> None:
+            """
+            dma-buf device
+            
+            This event advertises the device buffers must be allocated on for
+            dma-buf buffers.
+            
+            In general the device is a DRM node. The DRM node type (primary vs.
+            render) is unspecified. Clients must not rely on the compositor sending
+            a particular node type. Clients cannot check two devices for equality
+            by comparing the dev_t value.
+            """
+            ...
+
+        # opcode 3
+        @staticmethod
+        def dmabuf_format(format: uint, modifiers: array) -> None:
+            """
+            dma-buf format
+            
+            Provides the format that must be used for dma-buf buffers.
+            
+            The client may choose any of the modifiers advertised in the array of
+            64-bit unsigned integers.
+            
+            This event may be emitted multiple times, in which case the client may
+            choose any given format.
+            """
+            ...
+
+        # opcode 4
+        @staticmethod
+        def done() -> None:
+            """
+            all constraints have been sent
+            
+            This event is sent once when all buffer constraint events have been
+            sent.
+            
+            The compositor must always end a batch of buffer constraint events with
+            this event, regardless of whether it sends the initial constraints or
+            an update.
+            """
+            ...
+
+        # opcode 5
+        @staticmethod
+        def stopped() -> None:
+            """
+            session is no longer available
+            
+            This event indicates that the capture session has stopped and is no
+            longer available. This can happen in a number of cases, e.g. when the
+            underlying source is destroyed, if the user decides to end the image
+            capture, or if an unrecoverable runtime error has occurred.
+            
+            The client should destroy the session after receiving this event.
+            """
+            ...
+
+class ext_image_copy_capture_frame_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy this object
+        
+        Destroys the session. This request can be sent at any time by the
+        client.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def attach_buffer(buffer: object) -> None:
+        """
+        attach buffer to session
+        
+        Attach a buffer to the session.
+        
+        The wl_buffer.release request is unused.
+        
+        The new buffer replaces any previously attached buffer.
+        
+        This request must not be sent after capture, or else the
+        already_captured protocol error is raised.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def damage_buffer(x: int, y: int, width: int, height: int) -> None:
+        """
+        damage buffer
+        
+        Apply damage to the buffer which is to be captured next. This request
+        may be sent multiple times to describe a region.
+        
+        The client indicates the accumulated damage since this wl_buffer was
+        last captured. During capture, the compositor will update the buffer
+        with at least the union of the region passed by the client and the
+        region advertised by ext_image_copy_capture_frame_v1.damage.
+        
+        When a wl_buffer is captured for the first time, or when the client
+        doesn't track damage, the client must damage the whole buffer.
+        
+        This is for optimisation purposes. The compositor may use this
+        information to reduce copying.
+        
+        These coordinates originate from the upper left corner of the buffer.
+        
+        If x or y are strictly negative, or if width or height are negative or
+        zero, the invalid_buffer_damage protocol error is raised.
+        
+        This request must not be sent after capture, or else the
+        already_captured protocol error is raised.
+        """
+        ...
+
+    # opcode 3
+    @staticmethod
+    def capture() -> None:
+        """
+        capture a frame
+        
+        Capture a frame.
+        
+        Unless this is the first successful captured frame performed in this
+        session, the compositor may wait an indefinite amount of time for the
+        source content to change before performing the copy.
+        
+        This request may only be sent once, or else the already_captured
+        protocol error is raised. A buffer must be attached before this request
+        is sent, or else the no_buffer protocol error is raised.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def transform(transform: uint) -> None:
+            """
+            buffer transform
+            
+            This event is sent before the ready event and holds the transform that
+            the compositor has applied to the buffer contents.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def damage(x: int, y: int, width: int, height: int) -> None:
+            """
+            buffer damaged region
+            
+            This event is sent before the ready event. It may be generated multiple
+            times to describe a region.
+            
+            The first captured frame in a session will always carry full damage.
+            Subsequent frames' damaged regions describe which parts of the buffer
+            have changed since the last ready event.
+            
+            These coordinates originate in the upper left corner of the buffer.
+            """
+            ...
+
+        # opcode 2
+        @staticmethod
+        def presentation_time(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
+            """
+            presentation time of the frame
+            
+            This event indicates the time at which the frame is presented to the
+            output in system monotonic time. This event is sent before the ready
+            event.
+            
+            The timestamp is expressed as tv_sec_hi, tv_sec_lo, tv_nsec triples,
+            each component being an unsigned 32-bit value. Whole seconds are in
+            tv_sec which is a 64-bit value combined from tv_sec_hi and tv_sec_lo,
+            and the additional fractional part in tv_nsec as nanoseconds. Hence,
+            for valid timestamps tv_nsec must be in [0, 999999999].
+            """
+            ...
+
+        # opcode 3
+        @staticmethod
+        def ready() -> None:
+            """
+            frame is available for reading
+            
+            Called as soon as the frame is copied, indicating it is available
+            for reading.
+            
+            The buffer may be re-used by the client after this event.
+            
+            After receiving this event, the client must destroy the object.
+            """
+            ...
+
+        # opcode 4
+        @staticmethod
+        def failed(reason: uint) -> None:
+            """
+            capture failed
+            
+            This event indicates that the attempted frame copy has failed.
+            
+            After receiving this event, the client must destroy the object.
+            """
+            ...
+
+class ext_image_copy_capture_cursor_session_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        
+        Destroys the session. This request can be sent at any time by the
+        client.
+        
+        This request doesn't affect ext_image_copy_capture_frame_v1 objects created by
+        this object.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_capture_session() -> ext_image_copy_capture_session_v1:
+        """
+        get image copy captuerer session
+        
+        Gets the image copy capture session for this cursor session.
+        
+        The session will produce frames of the cursor image. The compositor may
+        pause the session when the cursor leaves the captured area.
+        
+        This request must not be sent more than once, or else the
+        duplicate_session protocol error is raised.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def enter() -> None:
+            """
+            cursor entered captured area
+            
+            Sent when a cursor enters the captured area. It shall be generated
+            before the "position" and "hotspot" events when and only when a cursor
+            enters the area.
+            
+            The cursor enters the captured area when the cursor image intersects
+            with the captured area. Note, this is different from e.g.
+            wl_pointer.enter.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def leave() -> None:
+            """
+            cursor left captured area
+            
+            Sent when a cursor leaves the captured area. No "position" or "hotspot"
+            event is generated for the cursor until the cursor enters the captured
+            area again.
+            """
+            ...
+
+        # opcode 2
+        @staticmethod
+        def position(x: int, y: int) -> None:
+            """
+            position changed
+            
+            Cursors outside the image capture source do not get captured and no
+            event will be generated for them.
+            
+            The given position is the position of the cursor's hotspot and it is
+            relative to the main buffer's top left corner in transformed buffer
+            pixel coordinates. The coordinates may be negative or greater than the
+            main buffer size.
+            """
+            ...
+
+        # opcode 3
+        @staticmethod
+        def hotspot(x: int, y: int) -> None:
+            """
+            hotspot changed
+            
+            The hotspot describes the offset between the cursor image and the
+            position of the input device.
+            
+            The given coordinates are the hotspot's offset from the origin in
+            buffer coordinates.
+            
+            Clients should not apply the hotspot immediately: the hotspot becomes
+            effective when the next ext_image_copy_capture_frame_v1.ready event is received.
+            
+            Compositors may delay this event until the client captures a new frame.
+            """
+            ...
+
+class ext_session_lock_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the session lock manager object
+        
+        This informs the compositor that the session lock manager object will
+        no longer be used. Existing objects created through this interface
+        remain valid.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def lock() -> ext_session_lock_v1:
+        """
+        attempt to lock the session
+        
+        This request creates a session lock and asks the compositor to lock the
+        session. The compositor will send either the ext_session_lock_v1.locked
+        or ext_session_lock_v1.finished event on the created object in
+        response to this request.
+        """
+        ...
+
+class ext_session_lock_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the session lock
+        
+        This informs the compositor that the lock object will no longer be
+        used. Existing objects created through this interface remain valid.
+        
+        After this request is made, lock surfaces created through this object
+        should be destroyed by the client as they will no longer be used by
+        the compositor.
+        
+        It is a protocol error to make this request if the locked event was
+        sent, the unlock_and_destroy request must be used instead.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_lock_surface(surface: object, output: object) -> ext_session_lock_surface_v1:
+        """
+        create a lock surface for a given output
+        
+        The client is expected to create lock surfaces for all outputs
+        currently present and any new outputs as they are advertised. These
+        won't be displayed by the compositor unless the lock is successful
+        and the locked event is sent.
+        
+        Providing a wl_surface which already has a role or already has a buffer
+        attached or committed is a protocol error, as is attaching/committing
+        a buffer before the first ext_session_lock_surface_v1.configure event.
+        
+        Attempting to create more than one lock surface for a given output
+        is a duplicate_output protocol error.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def unlock_and_destroy() -> None:
+        """
+        unlock the session, destroying the object
+        
+        This request indicates that the session should be unlocked, for
+        example because the user has entered their password and it has been
+        verified by the client.
+        
+        This request also informs the compositor that the lock object will
+        no longer be used and should be destroyed. Existing objects created
+        through this interface remain valid.
+        
+        After this request is made, lock surfaces created through this object
+        should be destroyed by the client as they will no longer be used by
+        the compositor.
+        
+        It is a protocol error to make this request if the locked event has
+        not been sent. In that case, the lock object must be destroyed using
+        the destroy request.
+        
+        Note that a correct client that wishes to exit directly after unlocking
+        the session must use the wl_display.sync request to ensure the server
+        receives and processes the unlock_and_destroy request. Otherwise
+        there is no guarantee that the server has unlocked the session due
+        to the asynchronous nature of the Wayland protocol. For example,
+        the server might terminate the client with a protocol error before
+        it processes the unlock_and_destroy request.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def locked() -> None:
+            """
+            session successfully locked
+            
+            This client is now responsible for displaying graphics while the
+            session is locked and deciding when to unlock the session.
+            
+            The locked event must not be sent until a new "locked" frame has been
+            presented on all outputs and no security sensitive normal/unlocked
+            content is possibly visible.
+            
+            If this event is sent, making the destroy request is a protocol error,
+            the lock object must be destroyed using the unlock_and_destroy request.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def finished() -> None:
+            """
+            the session lock object should be destroyed
+            
+            The compositor has decided that the session lock should be destroyed
+            as it will no longer be used by the compositor. Exactly when this
+            event is sent is compositor policy, but it must never be sent more
+            than once for a given session lock object.
+            
+            This might be sent because there is already another ext_session_lock_v1
+            object held by a client, or the compositor has decided to deny the
+            request to lock the session for some other reason. This might also
+            be sent because the compositor implements some alternative, secure
+            way to authenticate and unlock the session.
+            
+            The finished event should be sent immediately on creation of this
+            object if the compositor decides that the locked event will not
+            be sent.
+            
+            If the locked event is sent on creation of this object the finished
+            event may still be sent at some later time in this object's
+            lifetime. This is compositor policy.
+            
+            Upon receiving this event, the client should make either the destroy
+            request or the unlock_and_destroy request, depending on whether or
+            not the locked event was received on this object.
+            """
+            ...
+
+class ext_session_lock_surface_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the lock surface object
+        
+        This informs the compositor that the lock surface object will no
+        longer be used.
+        
+        It is recommended for a lock client to destroy lock surfaces if
+        their corresponding wl_output global is removed.
+        
+        If a lock surface on an active output is destroyed before the
+        ext_session_lock_v1.unlock_and_destroy event is sent, the compositor
+        must fall back to rendering a solid color.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def ack_configure(serial: uint) -> None:
+        """
+        ack a configure event
+        
+        When a configure event is received, if a client commits the surface
+        in response to the configure event, then the client must make an
+        ack_configure request sometime before the commit request, passing
+        along the serial of the configure event.
+        
+        If the client receives multiple configure events before it can
+        respond to one, it only has to ack the last configure event.
+        
+        A client is not required to commit immediately after sending an
+        ack_configure request - it may even ack_configure several times
+        before its next surface commit.
+        
+        A client may send multiple ack_configure requests before committing,
+        but only the last request sent before a commit indicates which
+        configure event the client really is responding to.
+        
+        Sending an ack_configure request consumes the configure event
+        referenced by the given serial, as well as all older configure events
+        sent on this object.
+        
+        It is a protocol error to issue multiple ack_configure requests
+        referencing the same configure event or to issue an ack_configure
+        request referencing a configure event older than the last configure
+        event acked for a given lock surface.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def configure(serial: uint, width: uint, height: uint) -> None:
+            """
+            the client should resize its surface
+            
+            This event is sent once on binding the interface and may be sent again
+            at the compositor's discretion, for example if output geometry changes.
+            
+            The width and height are in surface-local coordinates and are exact
+            requirements. Failing to match these surface dimensions in the next
+            commit after acking a configure is a protocol error.
+            """
+            ...
+
+class ext_transient_seat_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def create() -> ext_transient_seat_v1:
+        """
+        create a transient seat
+        
+        Create a new seat that is removed when the client side transient seat
+        object is destroyed.
+        
+        The actual seat may be removed sooner, in which case the transient seat
+        object shall become inert.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        
+        Destroy the manager.
+        
+        All objects created by the manager will remain valid until they are
+        destroyed themselves.
+        """
+        ...
+
+class ext_transient_seat_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy transient seat
+        
+        When the transient seat object is destroyed by the client, the
+        associated seat created by the compositor is also destroyed.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def ready(global_name: uint) -> None:
+            """
+            transient seat is ready
+            
+            This event advertises the global name for the wl_seat to be used with
+            wl_registry_bind.
+            
+            It is sent exactly once, immediately after the transient seat is created
+            and the new "wl_seat" global is advertised, if and only if the creation
+            of the transient seat was allowed.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def denied() -> None:
+            """
+            transient seat creation denied
+            
+            The event informs the client that the compositor denied its request to
+            create a transient seat.
+            
+            It is sent exactly once, immediately after the transient seat object is
+            created, if and only if the creation of the transient seat was denied.
+            
+            After receiving this event, the client should destroy the object.
+            """
+            ...
+
+class wp_fractional_scale_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        unbind the fractional surface scale interface
+        
+        Informs the server that the client will not be using this protocol
+        object anymore. This does not affect any other objects,
+        wp_fractional_scale_v1 objects included.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_fractional_scale(surface: object) -> wp_fractional_scale_v1:
+        """
+        extend surface interface for scale information
+        
+        Create an add-on object for the the wl_surface to let the compositor
+        request fractional scales. If the given wl_surface already has a
+        wp_fractional_scale_v1 object associated, the fractional_scale_exists
+        protocol error is raised.
+        """
+        ...
+
+class wp_fractional_scale_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        remove surface scale information for surface
+        
+        Destroy the fractional scale object. When this object is destroyed,
+        preferred_scale events will no longer be sent.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def preferred_scale(scale: uint) -> None:
+            """
+            notify of new preferred scale
+            
+            Notification of a new preferred scale for this surface that the
+            compositor suggests that the client should use.
+            
+            The sent scale is the numerator of a fraction with a denominator of 120.
+            """
+            ...
+
+class wp_linux_drm_syncobj_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy explicit synchronization factory object
+        
+        Destroy this explicit synchronization factory object. Other objects
+        shall not be affected by this request.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_surface(surface: object) -> wp_linux_drm_syncobj_surface_v1:
+        """
+        extend surface interface for explicit synchronization
+        
+        Instantiate an interface extension for the given wl_surface to provide
+        explicit synchronization.
+        
+        If the given wl_surface already has an explicit synchronization object
+        associated, the surface_exists protocol error is raised.
+        
+        Graphics APIs, like EGL or Vulkan, that manage the buffer queue and
+        commits of a wl_surface themselves, are likely to be using this
+        extension internally. If a client is using such an API for a
+        wl_surface, it should not directly use this extension on that surface,
+        to avoid raising a surface_exists protocol error.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def import_timeline(fd: fd) -> wp_linux_drm_syncobj_timeline_v1:
+        """
+        import a DRM syncobj timeline
+        
+        Import a DRM synchronization object timeline.
+        
+        If the FD cannot be imported, the invalid_timeline error is raised.
+        """
+        ...
+
+class wp_linux_drm_syncobj_timeline_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the timeline
+        
+        Destroy the synchronization object timeline. Other objects are not
+        affected by this request, in particular timeline points set by
+        set_acquire_point and set_release_point are not unset.
+        """
+        ...
+
+class wp_linux_drm_syncobj_surface_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the surface synchronization object
+        
+        Destroy this surface synchronization object.
+        
+        Any timeline point set by this object with set_acquire_point or
+        set_release_point since the last commit may be discarded by the
+        compositor. Any timeline point set by this object before the last
+        commit will not be affected.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def set_acquire_point(timeline: object, point_hi: uint, point_lo: uint) -> None:
+        """
+        set the acquire timeline point
+        
+        Set the timeline point that must be signalled before the compositor may
+        sample from the buffer attached with wl_surface.attach.
+        
+        The 64-bit unsigned value combined from point_hi and point_lo is the
+        point value.
+        
+        The acquire point is double-buffered state, and will be applied on the
+        next wl_surface.commit request for the associated surface. Thus, it
+        applies only to the buffer that is attached to the surface at commit
+        time.
+        
+        If an acquire point has already been attached during the same commit
+        cycle, the new point replaces the old one.
+        
+        If the associated wl_surface was destroyed, a no_surface error is
+        raised.
+        
+        If at surface commit time there is a pending acquire timeline point set
+        but no pending buffer attached, a no_buffer error is raised. If at
+        surface commit time there is a pending buffer attached but no pending
+        acquire timeline point set, the no_acquire_point protocol error is
+        raised.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def set_release_point(timeline: object, point_hi: uint, point_lo: uint) -> None:
+        """
+        set the release timeline point
+        
+        Set the timeline point that must be signalled by the compositor when it
+        has finished its usage of the buffer attached with wl_surface.attach
+        for the relevant commit.
+        
+        Once the timeline point is signaled, and assuming the associated buffer
+        is not pending release from other wl_surface.commit requests, no
+        additional explicit or implicit synchronization with the compositor is
+        required to safely re-use the buffer.
+        
+        Note that clients cannot rely on the release point being always
+        signaled after the acquire point: compositors may release buffers
+        without ever reading from them. In addition, the compositor may use
+        different presentation paths for different commits, which may have
+        different release behavior. As a result, the compositor may signal the
+        release points in a different order than the client committed them.
+        
+        Because signaling a timeline point also signals every previous point,
+        it is generally not safe to use the same timeline object for the
+        release points of multiple buffers. The out-of-order signaling
+        described above may lead to a release point being signaled before the
+        compositor has finished reading. To avoid this, it is strongly
+        recommended that each buffer should use a separate timeline for its
+        release points.
+        
+        The 64-bit unsigned value combined from point_hi and point_lo is the
+        point value.
+        
+        The release point is double-buffered state, and will be applied on the
+        next wl_surface.commit request for the associated surface. Thus, it
+        applies only to the buffer that is attached to the surface at commit
+        time.
+        
+        If a release point has already been attached during the same commit
+        cycle, the new point replaces the old one.
+        
+        If the associated wl_surface was destroyed, a no_surface error is
+        raised.
+        
+        If at surface commit time there is a pending release timeline point set
+        but no pending buffer attached, a no_buffer error is raised. If at
+        surface commit time there is a pending buffer attached but no pending
+        release timeline point set, the no_release_point protocol error is
+        raised.
+        """
+        ...
+
+class wp_security_context_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager object
+        
+        Destroy the manager. This doesn't destroy objects created with the
+        manager.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def create_listener(listen_fd: fd, close_fd: fd) -> wp_security_context_v1:
+        """
+        create a new security context
+        
+        Creates a new security context with a socket listening FD.
+        
+        The compositor will accept new client connections on listen_fd.
+        listen_fd must be ready to accept new connections when this request is
+        sent by the client. In other words, the client must call bind(2) and
+        listen(2) before sending the FD.
+        
+        close_fd is a FD closed by the client when the compositor should stop
+        accepting new connections on listen_fd.
+        
+        The compositor must continue to accept connections on listen_fd when
+        the Wayland client which created the security context disconnects.
+        
+        After sending this request, closing listen_fd and close_fd remains the
+        only valid operation on them.
+        """
+        ...
+
+class wp_security_context_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the security context object
+        
+        Destroy the security context object.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def set_sandbox_engine(name: string) -> None:
+        """
+        set the sandbox engine
+        
+        Attach a unique sandbox engine name to the security context. The name
+        should follow the reverse-DNS style (e.g. "org.flatpak").
+        
+        A list of well-known engines is maintained at:
+        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
+        
+        It is a protocol error to call this request twice. The already_set
+        error is sent in this case.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def set_app_id(app_id: string) -> None:
+        """
+        set the application ID
+        
+        Attach an application ID to the security context.
+        
+        The application ID is an opaque, sandbox-specific identifier for an
+        application. See the well-known engines document for more details:
+        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
+        
+        The compositor may use the application ID to group clients belonging to
+        the same security context application.
+        
+        Whether this request is optional or not depends on the sandbox engine used.
+        
+        It is a protocol error to call this request twice. The already_set
+        error is sent in this case.
+        """
+        ...
+
+    # opcode 3
+    @staticmethod
+    def set_instance_id(instance_id: string) -> None:
+        """
+        set the instance ID
+        
+        Attach an instance ID to the security context.
+        
+        The instance ID is an opaque, sandbox-specific identifier for a running
+        instance of an application. See the well-known engines document for
+        more details:
+        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
+        
+        Whether this request is optional or not depends on the sandbox engine used.
+        
+        It is a protocol error to call this request twice. The already_set
+        error is sent in this case.
+        """
+        ...
+
+    # opcode 4
+    @staticmethod
+    def commit() -> None:
+        """
+        register the security context
+        
+        Atomically register the new client and attach the security context
+        metadata.
+        
+        If the provided metadata is inconsistent or does not match with out of
+        band metadata (see
+        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md),
+        the invalid_metadata error may be sent eventually.
+        
+        It's a protocol error to send any request other than "destroy" after
+        this request. In this case, the already_used error is sent.
+        """
+        ...
+
+class wp_single_pixel_buffer_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        
+        Destroy the wp_single_pixel_buffer_manager_v1 object.
+        
+        The child objects created via this interface are unaffected.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def create_u32_rgba_buffer(r: uint, g: uint, b: uint, a: uint) -> wl_buffer:
+        """
+        create a 1×1 buffer from 32-bit RGBA values
+        
+        Create a single-pixel buffer from four 32-bit RGBA values.
+        
+        Unless specified in another protocol extension, the RGBA values use
+        pre-multiplied alpha.
+        
+        The width and height of the buffer are 1.
+        """
+        ...
+
+class wp_tearing_control_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy tearing control factory object
+        
+        Destroy this tearing control factory object. Other objects, including
+        wp_tearing_control_v1 objects created by this factory, are not affected
+        by this request.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_tearing_control(surface: object) -> wp_tearing_control_v1:
+        """
+        extend surface interface for tearing control
+        
+        Instantiate an interface extension for the given wl_surface to request
+        asynchronous page flips for presentation.
+        
+        If the given wl_surface already has a wp_tearing_control_v1 object
+        associated, the tearing_control_exists protocol error is raised.
+        """
+        ...
+
+class wp_tearing_control_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def set_presentation_hint(hint: uint) -> None:
+        """
+        set presentation hint
+        
+        Set the presentation hint for the associated wl_surface. This state is
+        double-buffered, see wl_surface.commit.
+        
+        The compositor is free to dynamically respect or ignore this hint based
+        on various conditions like hardware capabilities, surface state and
+        user preferences.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy tearing control object
+        
+        Destroy this surface tearing object and revert the presentation hint to
+        vsync. The change will be applied on the next wl_surface.commit.
+        """
+        ...
+
+class xdg_activation_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_activation object
+        
+        Notify the compositor that the xdg_activation object will no longer be
+        used.
+        
+        The child objects created via this interface are unaffected and should
+        be destroyed separately.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_activation_token() -> xdg_activation_token_v1:
+        """
+        requests a token
+        
+        Creates an xdg_activation_token_v1 object that will provide
+        the initiating client with a unique token for this activation. This
+        token should be offered to the clients to be activated.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def activate(token: string, surface: object) -> None:
+        """
+        notify new interaction being available
+        
+        Requests surface activation. It's up to the compositor to display
+        this information as desired, for example by placing the surface above
+        the rest.
+        
+        The compositor may know who requested this by checking the activation
+        token and might decide not to follow through with the activation if it's
+        considered unwanted.
+        
+        Compositors can ignore unknown activation tokens when an invalid
+        token is passed.
+        """
+        ...
+
+class xdg_activation_token_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def set_serial(serial: uint, seat: object) -> None:
+        """
+        specifies the seat and serial of the activating event
+        
+        Provides information about the seat and serial event that requested the
+        token.
+        
+        The serial can come from an input or focus event. For instance, if a
+        click triggers the launch of a third-party client, the launcher client
+        should send a set_serial request with the serial and seat from the
+        wl_pointer.button event.
+        
+        Some compositors might refuse to activate toplevels when the token
+        doesn't have a valid and recent enough event serial.
+        
+        Must be sent before commit. This information is optional.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def set_app_id(app_id: string) -> None:
+        """
+        specifies the application being activated
+        
+        The requesting client can specify an app_id to associate the token
+        being created with it.
+        
+        Must be sent before commit. This information is optional.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def set_surface(surface: object) -> None:
+        """
+        specifies the surface requesting activation
+        
+        This request sets the surface requesting the activation. Note, this is
+        different from the surface that will be activated.
+        
+        Some compositors might refuse to activate toplevels when the token
+        doesn't have a requesting surface.
+        
+        Must be sent before commit. This information is optional.
+        """
+        ...
+
+    # opcode 3
+    @staticmethod
+    def commit() -> None:
+        """
+        issues the token request
+        
+        Requests an activation token based on the different parameters that
+        have been offered through set_serial, set_surface and set_app_id.
+        """
+        ...
+
+    # opcode 4
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_activation_token_v1 object
+        
+        Notify the compositor that the xdg_activation_token_v1 object will no
+        longer be used. The received token stays valid.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def done(token: string) -> None:
+            """
+            the exported activation token
+            
+            The 'done' event contains the unique token of this activation request
+            and notifies that the provider is done.
+            """
+            ...
+
+class xdg_wm_dialog_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the dialog manager object
+        
+        Destroys the xdg_wm_dialog_v1 object. This does not affect
+        the xdg_dialog_v1 objects generated through it.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_xdg_dialog(toplevel: object) -> xdg_dialog_v1:
+        """
+        create a dialog object
+        
+        Creates a xdg_dialog_v1 object for the given toplevel. See the interface
+        description for more details.
+        
+        Compositors must raise an already_used error if clients attempt to
+        create multiple xdg_dialog_v1 objects for the same xdg_toplevel.
+        """
+        ...
+
+class xdg_dialog_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the dialog object
+        
+        Destroys the xdg_dialog_v1 object. If this object is destroyed
+        before the related xdg_toplevel, the compositor should unapply its
+        effects.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def set_modal() -> None:
+        """
+        mark dialog as modal
+        
+        Hints that the dialog has "modal" behavior. Modal dialogs typically
+        require to be fully addressed by the user (i.e. closed) before resuming
+        interaction with the parent toplevel, and may require a distinct
+        presentation.
+        
+        Clients must implement the logic to filter events in the parent
+        toplevel on their own.
+        
+        Compositors may choose any policy in event delivery to the parent
+        toplevel, from delivering all events unfiltered to using them for
+        internal consumption.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def unset_modal() -> None:
+        """
+        mark dialog as not modal
+        
+        Drops the hint that this dialog has "modal" behavior. See
+        xdg_dialog_v1.set_modal for more details.
+        """
+        ...
+
+class xdg_toplevel_drag_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_toplevel_drag_manager_v1 object
+        
+        Destroy this xdg_toplevel_drag_manager_v1 object. Other objects,
+        including xdg_toplevel_drag_v1 objects created by this factory, are not
+        affected by this request.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_xdg_toplevel_drag(data_source: object) -> xdg_toplevel_drag_v1:
+        """
+        get an xdg_toplevel_drag for a wl_data_source
+        
+        Create an xdg_toplevel_drag for a drag and drop operation that is going
+        to be started with data_source.
+        
+        This request can only be made on sources used in drag-and-drop, so it
+        must be performed before wl_data_device.start_drag. Attempting to use
+        the source other than for drag-and-drop such as in
+        wl_data_device.set_selection will raise an invalid_source error.
+        
+        Destroying data_source while a toplevel is attached to the
+        xdg_toplevel_drag is undefined.
+        """
+        ...
+
+class xdg_toplevel_drag_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy an xdg_toplevel_drag_v1 object
+        
+        Destroy this xdg_toplevel_drag_v1 object. This request must only be
+        called after the underlying wl_data_source drag has ended, as indicated
+        by the dnd_drop_performed or cancelled events. In any other case an
+        ongoing_drag error is raised.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def attach(toplevel: object, x_offset: int, y_offset: int) -> None:
+        """
+        Move a toplevel with the drag operation
+        
+        Request that the window will be moved with the cursor during the drag
+        operation. The offset is a hint to the compositor how the toplevel
+        should be positioned relative to the cursor hotspot in surface local
+        coordinates. For example it might only be used when an unmapped window
+        is attached. The attached window does not participate in the selection
+        of the drag target.
+        
+        If the toplevel is unmapped while it is attached, it is automatically
+        detached from the drag. In this case this request has to be called again
+        if the window should be attached after it is remapped.
+        
+        This request can be called multiple times but issuing it while a
+        toplevel with an active role is attached raises a toplevel_attached
+        error.
+        """
+        ...
+
+class xdg_toplevel_icon_manager_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the toplevel icon manager
+        
+        Destroy the toplevel icon manager.
+        This does not destroy objects created with the manager.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def create_icon() -> xdg_toplevel_icon_v1:
+        """
+        create a new icon instance
+        
+        Creates a new icon object. This icon can then be attached to a
+        xdg_toplevel via the 'set_icon' request.
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def set_icon(toplevel: object, icon: object) -> None:
+        """
+        set an icon on a toplevel window
+        
+        This request assigns the icon 'icon' to 'toplevel', or clears the
+        toplevel icon if 'icon' was null.
+        This state is double-buffered and is applied on the next
+        wl_surface.commit of the toplevel.
+        
+        After making this call, the xdg_toplevel_icon_v1 provided as 'icon'
+        can be destroyed by the client without 'toplevel' losing its icon.
+        The xdg_toplevel_icon_v1 is immutable from this point, and any
+        future attempts to change it must raise the
+        'xdg_toplevel_icon_v1.immutable' protocol error.
+        
+        The compositor must set the toplevel icon from either the pixel data
+        the icon provides, or by loading a stock icon using the icon name.
+        See the description of 'xdg_toplevel_icon_v1' for details.
+        
+        If 'icon' is set to null, the icon of the respective toplevel is reset
+        to its default icon (usually the icon of the application, derived from
+        its desktop-entry file, or a placeholder icon).
+        If this request is passed an icon with no pixel buffers or icon name
+        assigned, the icon must be reset just like if 'icon' was null.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def icon_size(size: int) -> None:
+            """
+            describes a supported & preferred icon size
+            
+            This event indicates an icon size the compositor prefers to be
+            available if the client has scalable icons and can render to any size.
+            
+            When the 'xdg_toplevel_icon_manager_v1' object is created, the
+            compositor may send one or more 'icon_size' events to describe the list
+            of preferred icon sizes. If the compositor has no size preference, it
+            may not send any 'icon_size' event, and it is up to the client to
+            decide a suitable icon size.
+            
+            A sequence of 'icon_size' events must be finished with a 'done' event.
+            If the compositor has no size preferences, it must still send the
+            'done' event, without any preceding 'icon_size' events.
+            """
+            ...
+
+        # opcode 1
+        @staticmethod
+        def done() -> None:
+            """
+            all information has been sent
+            
+            This event is sent after all 'icon_size' events have been sent.
+            """
+            ...
+
+class xdg_toplevel_icon_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the icon object
+        
+        Destroys the 'xdg_toplevel_icon_v1' object.
+        The icon must still remain set on every toplevel it was assigned to,
+        until the toplevel icon is reset explicitly.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def set_name(icon_name: string) -> None:
+        """
+        set an icon name
+        
+        This request assigns an icon name to this icon.
+        Any previously set name is overridden.
+        
+        The compositor must resolve 'icon_name' according to the lookup rules
+        described in the XDG icon theme specification[1] using the
+        environment's current icon theme.
+        
+        If the compositor does not support icon names or cannot resolve
+        'icon_name' according to the XDG icon theme specification it must
+        fall back to using pixel buffer data instead.
+        
+        If this request is made after the icon has been assigned to a toplevel
+        via 'set_icon', a 'immutable' error must be raised.
+        
+        [1]: https://specifications.freedesktop.org/icon-theme-spec/icon-theme-spec-latest.html
+        """
+        ...
+
+    # opcode 2
+    @staticmethod
+    def add_buffer(buffer: object, scale: int) -> None:
+        """
+        add icon data from a pixel buffer
+        
+        This request adds pixel data supplied as wl_buffer to the icon.
+        
+        The client should add pixel data for all icon sizes and scales that
+        it can provide, or which are explicitly requested by the compositor
+        via 'icon_size' events on xdg_toplevel_icon_manager_v1.
+        
+        The wl_buffer supplying pixel data as 'buffer' must be backed by wl_shm
+        and must be a square (width and height being equal).
+        If any of these buffer requirements are not fulfilled, a 'invalid_buffer'
+        error must be raised.
+        
+        If this icon instance already has a buffer of the same size and scale
+        from a previous 'add_buffer' request, data from the last request
+        overrides the preexisting pixel data.
+        
+        The wl_buffer must be kept alive for as long as the xdg_toplevel_icon
+        it is associated with is not destroyed. The buffer contents must not be
+        modified after it was assigned to the icon.
+        
+        If this request is made after the icon has been assigned to a toplevel
+        via 'set_icon', a 'immutable' error must be raised.
+        """
+        ...
+
+class xwayland_shell_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the Xwayland shell object
+        
+        Destroy the xwayland_shell_v1 object.
+        
+        The child objects created via this interface are unaffected.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def get_xwayland_surface(surface: object) -> xwayland_surface_v1:
+        """
+        assign the xwayland_surface surface role
+        
+        Create an xwayland_surface_v1 interface for a given wl_surface
+        object and gives it the xwayland_surface role.
+        
+        It is illegal to create an xwayland_surface_v1 for a wl_surface
+        which already has an assigned role and this will result in the
+        `role` protocol error.
+        
+        See the documentation of xwayland_surface_v1 for more details
+        about what an xwayland_surface_v1 is and how it is used.
+        """
+        ...
+
+class xwayland_surface_v1:
+    object_id = 0
+
+    # opcode 0
+    @staticmethod
+    def set_serial(serial_lo: uint, serial_hi: uint) -> None:
+        """
+        associates a Xwayland window to a wl_surface
+        
+        Associates an Xwayland window to a wl_surface.
+        The association state is double-buffered, see wl_surface.commit.
+        
+        The `serial_lo` and `serial_hi` parameters specify a non-zero
+        monotonic serial number which is entirely unique and provided by the
+        Xwayland server equal to the serial value provided by a client message
+        with a message type of the `WL_SURFACE_SERIAL` atom on the X11 window
+        for this surface to be associated to.
+        
+        The serial value in the `WL_SURFACE_SERIAL` client message is specified
+        as having the lo-bits specified in `l[0]` and the hi-bits specified
+        in `l[1]`.
+        
+        If the serial value provided by `serial_lo` and `serial_hi` is not
+        valid, the `invalid_serial` protocol error will be raised.
+        
+        An X11 window may be associated with multiple surfaces throughout its
+        lifespan. (eg. unmapping and remapping a window).
+        
+        For each wl_surface, this state must not be committed more than once,
+        otherwise the `already_associated` protocol error will be raised.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the Xwayland surface object
+        
+        Destroy the xwayland_surface_v1 object.
+        
+        Any already existing associations are unaffected by this action.
+        """
+        ...
+
 class zwp_linux_dmabuf_v1:
     object_id = 0
 
@@ -5551,2457 +8004,4 @@ class xdg_popup:
             effect. See xdg_surface.ack_configure for details.
             """
             ...
-
-class wp_alpha_modifier_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the alpha modifier manager object
-        
-        Destroy the alpha modifier manager. This doesn't destroy objects
-        created with the manager.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_surface(surface: object) -> wp_alpha_modifier_surface_v1:
-        """
-        create a new toplevel decoration object
-        
-        Create a new alpha modifier surface object associated with the
-        given wl_surface. If there is already such an object associated with
-        the wl_surface, the already_constructed error will be raised.
-        """
-        ...
-
-class wp_alpha_modifier_surface_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the alpha modifier object
-        
-        This destroys the object, and is equivalent to set_multiplier with
-        a value of UINT32_MAX, with the same double-buffered semantics as
-        set_multiplier.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def set_multiplier(factor: uint) -> None:
-        """
-        specify the alpha multiplier
-        
-        Sets the alpha multiplier for the surface. The alpha multiplier is
-        double-buffered state, see wl_surface.commit for details.
-        
-        This factor is applied in the compositor's blending space, as an
-        additional step after the processing of per-pixel alpha values for the
-        wl_surface. The exact meaning of the factor is thus undefined, unless
-        the blending space is specified in a different extension.
-        
-        This multiplier is applied even if the buffer attached to the
-        wl_surface doesn't have an alpha channel; in that case an alpha value
-        of one is used instead.
-        
-        Zero means completely transparent, UINT32_MAX means completely opaque.
-        """
-        ...
-
-class wp_content_type_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the content type manager object
-        
-        Destroy the content type manager. This doesn't destroy objects created
-        with the manager.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_surface_content_type(surface: object) -> wp_content_type_v1:
-        """
-        create a new toplevel decoration object
-        
-        Create a new content type object associated with the given surface.
-        
-        Creating a wp_content_type_v1 from a wl_surface which already has one
-        attached is a client error: already_constructed.
-        """
-        ...
-
-class wp_content_type_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the content type object
-        
-        Switch back to not specifying the content type of this surface. This is
-        equivalent to setting the content type to none, including double
-        buffering semantics. See set_content_type for details.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def set_content_type(content_type: uint) -> None:
-        """
-        specify the content type
-        
-        Set the surface content type. This informs the compositor that the
-        client believes it is displaying buffers matching this content type.
-        
-        This is purely a hint for the compositor, which can be used to adjust
-        its behavior or hardware settings to fit the presented content best.
-        
-        The content type is double-buffered state, see wl_surface.commit for
-        details.
-        """
-        ...
-
-class wp_cursor_shape_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager
-        
-        Destroy the cursor shape manager.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_pointer(pointer: object) -> wp_cursor_shape_device_v1:
-        """
-        manage the cursor shape of a pointer device
-        
-        Obtain a wp_cursor_shape_device_v1 for a wl_pointer object.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def get_tablet_tool_v2(tablet_tool: object) -> wp_cursor_shape_device_v1:
-        """
-        manage the cursor shape of a tablet tool device
-        
-        Obtain a wp_cursor_shape_device_v1 for a zwp_tablet_tool_v2 object.
-        """
-        ...
-
-class wp_cursor_shape_device_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the cursor shape device
-        
-        Destroy the cursor shape device.
-        
-        The device cursor shape remains unchanged.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def set_shape(serial: uint, shape: uint) -> None:
-        """
-        set device cursor to the shape
-        
-        Sets the device cursor to the specified shape. The compositor will
-        change the cursor image based on the specified shape.
-        
-        The cursor actually changes only if the input device focus is one of
-        the requesting client's surfaces. If any, the previous cursor image
-        (surface or shape) is replaced.
-        
-        The "shape" argument must be a valid enum entry, otherwise the
-        invalid_shape protocol error is raised.
-        
-        This is similar to the wl_pointer.set_cursor and
-        zwp_tablet_tool_v2.set_cursor requests, but this request accepts a
-        shape instead of contents in the form of a surface. Clients can mix
-        set_cursor and set_shape requests.
-        
-        The serial parameter must match the latest wl_pointer.enter or
-        zwp_tablet_tool_v2.proximity_in serial number sent to the client.
-        Otherwise the request will be ignored.
-        """
-        ...
-
-class wp_drm_lease_device_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def create_lease_request() -> wp_drm_lease_request_v1:
-        """
-        create a lease request object
-        
-        Creates a lease request object.
-        
-        See the documentation for wp_drm_lease_request_v1 for details.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def release() -> None:
-        """
-        release this object
-        
-        Indicates the client no longer wishes to use this object. In response
-        the compositor will immediately send the released event and destroy
-        this object. It can however not guarantee that the client won't receive
-        connector events before the released event. The client must not send any
-        requests after this one, doing so will raise a wl_display error.
-        Existing connectors, lease request and leases will not be affected.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def drm_fd(fd: fd) -> None:
-            """
-            open a non-master fd for this DRM node
-            
-            The compositor will send this event when the wp_drm_lease_device_v1
-            global is bound, although there are no guarantees as to how long this
-            takes - the compositor might need to wait until regaining DRM master.
-            The included fd is a non-master DRM file descriptor opened for this
-            device and the compositor must not authenticate it.
-            The purpose of this event is to give the client the ability to
-            query DRM and discover information which may help them pick the
-            appropriate DRM device or select the appropriate connectors therein.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def connector(id: wp_drm_lease_connector_v1) -> None:
-            """
-            advertise connectors available for leases
-            
-            The compositor will use this event to advertise connectors available for
-            lease by clients. This object may be passed into a lease request to
-            indicate the client would like to lease that connector, see
-            wp_drm_lease_request_v1.request_connector for details. While the
-            compositor will make a best effort to not send disconnected connectors,
-            no guarantees can be made.
-            
-            The compositor must send the drm_fd event before sending connectors.
-            After the drm_fd event it will send all available connectors but may
-            send additional connectors at any time.
-            """
-            ...
-
-        # opcode 2
-        @staticmethod
-        def done() -> None:
-            """
-            signals grouping of connectors
-            
-            The compositor will send this event to indicate that it has sent all
-            currently available connectors after the client binds to the global or
-            when it updates the connector list, for example on hotplug, drm master
-            change or when a leased connector becomes available again. It will
-            similarly send this event to group wp_drm_lease_connector_v1.withdrawn
-            events of connectors of this device.
-            """
-            ...
-
-        # opcode 3
-        @staticmethod
-        def released() -> None:
-            """
-            the compositor has finished using the device
-            
-            This event is sent in response to the release request and indicates
-            that the compositor is done sending connector events.
-            The compositor will destroy this object immediately after sending the
-            event and it will become invalid. The client should release any
-            resources associated with this device after receiving this event.
-            """
-            ...
-
-class wp_drm_lease_connector_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy connector
-        
-        The client may send this request to indicate that it will not use this
-        connector. Clients are encouraged to send this after receiving the
-        "withdrawn" event so that the server can release the resources
-        associated with this connector offer. Neither existing lease requests
-        nor leases will be affected.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def name(name: string) -> None:
-            """
-            name
-            
-            The compositor sends this event once the connector is created to
-            indicate the name of this connector. This will not change for the
-            duration of the Wayland session, but is not guaranteed to be consistent
-            between sessions.
-            
-            If the compositor supports wl_output version 4 and this connector
-            corresponds to a wl_output, the compositor should use the same name as
-            for the wl_output.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def description(description: string) -> None:
-            """
-            description
-            
-            The compositor sends this event once the connector is created to provide
-            a human-readable description for this connector, which may be presented
-            to the user. The compositor may send this event multiple times over the
-            lifetime of this object to reflect changes in the description.
-            """
-            ...
-
-        # opcode 2
-        @staticmethod
-        def connector_id(connector_id: uint) -> None:
-            """
-            connector_id
-            
-            The compositor sends this event once the connector is created to
-            indicate the DRM object ID which represents the underlying connector
-            that is being offered. Note that the final lease may include additional
-            object IDs, such as CRTCs and planes.
-            """
-            ...
-
-        # opcode 3
-        @staticmethod
-        def done() -> None:
-            """
-            all properties have been sent
-            
-            This event is sent after all properties of a connector have been sent.
-            This allows changes to the properties to be seen as atomic even if they
-            happen via multiple events.
-            """
-            ...
-
-        # opcode 4
-        @staticmethod
-        def withdrawn() -> None:
-            """
-            lease offer withdrawn
-            
-            Sent to indicate that the compositor will no longer honor requests for
-            DRM leases which include this connector. The client may still issue a
-            lease request including this connector, but the compositor will send
-            wp_drm_lease_v1.finished without issuing a lease fd. Compositors are
-            encouraged to send this event when they lose access to connector, for
-            example when the connector is hot-unplugged, when the connector gets
-            leased to a client or when the compositor loses DRM master.
-            """
-            ...
-
-class wp_drm_lease_request_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def request_connector(connector: object) -> None:
-        """
-        request a connector for this lease
-        
-        Indicates that the client would like to lease the given connector.
-        This is only used as a suggestion, the compositor may choose to
-        include any resources in the lease it issues, or change the set of
-        leased resources at any time. Compositors are however encouraged to
-        include the requested connector and other resources necessary
-        to drive the connected output in the lease.
-        
-        Requesting a connector that was created from a different lease device
-        than this lease request raises the wrong_device error. Requesting a
-        connector twice will raise the duplicate_connector error.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def submit() -> wp_drm_lease_v1:
-        """
-        submit the lease request
-        
-        Submits the lease request and creates a new wp_drm_lease_v1 object.
-        After calling submit the compositor will immediately destroy this
-        object, issuing any more requests will cause a wl_display error.
-        The compositor doesn't make any guarantees about the events of the
-        lease object, clients cannot expect an immediate response.
-        Not requesting any connectors before submitting the lease request
-        will raise the empty_lease error.
-        """
-        ...
-
-class wp_drm_lease_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroys the lease object
-        
-        The client should send this to indicate that it no longer wishes to use
-        this lease. The compositor should use drmModeRevokeLease on the
-        appropriate file descriptor, if necessary.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def lease_fd(leased_fd: fd) -> None:
-            """
-            shares the DRM file descriptor
-            
-            This event returns a file descriptor suitable for use with DRM-related
-            ioctls. The client should use drmModeGetLease to enumerate the DRM
-            objects which have been leased to them. The compositor guarantees it
-            will not use the leased DRM objects itself until it sends the finished
-            event. If the compositor cannot or will not grant a lease for the
-            requested connectors, it will not send this event, instead sending the
-            finished event.
-            
-            The compositor will send this event at most once during this objects
-            lifetime.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def finished() -> None:
-            """
-            sent when the lease has been revoked
-            
-            The compositor uses this event to either reject a lease request, or if
-            it previously sent a lease_fd, to notify the client that the lease has
-            been revoked. If the client requires a new lease, they should destroy
-            this object and submit a new lease request. The compositor will send
-            no further events for this object after sending the finish event.
-            Compositors should revoke the lease when any of the leased resources
-            become unavailable, namely when a hot-unplug occurs or when the
-            compositor loses DRM master.
-            """
-            ...
-
-class ext_foreign_toplevel_list_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def stop() -> None:
-        """
-        stop sending events
-        
-        This request indicates that the client no longer wishes to receive
-        events for new toplevels.
-        
-        The Wayland protocol is asynchronous, meaning the compositor may send
-        further toplevel events until the stop request is processed.
-        The client should wait for a ext_foreign_toplevel_list_v1.finished
-        event before destroying this object.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the ext_foreign_toplevel_list_v1 object
-        
-        This request should be called either when the client will no longer
-        use the ext_foreign_toplevel_list_v1 or after the finished event
-        has been received to allow destruction of the object.
-        
-        If a client wishes to destroy this object it should send a
-        ext_foreign_toplevel_list_v1.stop request and wait for a ext_foreign_toplevel_list_v1.finished
-        event, then destroy the handles and then this object.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def toplevel(toplevel: ext_foreign_toplevel_handle_v1) -> None:
-            """
-            a toplevel has been created
-            
-            This event is emitted whenever a new toplevel window is created. It is
-            emitted for all toplevels, regardless of the app that has created them.
-            
-            All initial properties of the toplevel (identifier, title, app_id) will be sent
-            immediately after this event using the corresponding events for
-            ext_foreign_toplevel_handle_v1. The compositor will use the
-            ext_foreign_toplevel_handle_v1.done event to indicate when all data has
-            been sent.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def finished() -> None:
-            """
-            the compositor has finished with the toplevel manager
-            
-            This event indicates that the compositor is done sending events
-            to this object. The client should destroy the object.
-            See ext_foreign_toplevel_list_v1.destroy for more information.
-            
-            The compositor must not send any more toplevel events after this event.
-            """
-            ...
-
-class ext_foreign_toplevel_handle_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the ext_foreign_toplevel_handle_v1 object
-        
-        This request should be used when the client will no longer use the handle
-        or after the closed event has been received to allow destruction of the
-        object.
-        
-        When a handle is destroyed, a new handle may not be created by the server
-        until the toplevel is unmapped and then remapped. Destroying a toplevel handle
-        is not recommended unless the client is cleaning up child objects
-        before destroying the ext_foreign_toplevel_list_v1 object, the toplevel
-        was closed or the toplevel handle will not be used in the future.
-        
-        Other protocols which extend the ext_foreign_toplevel_handle_v1
-        interface should require destructors for extension interfaces be
-        called before allowing the toplevel handle to be destroyed.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def closed() -> None:
-            """
-            the toplevel has been closed
-            
-            The server will emit no further events on the ext_foreign_toplevel_handle_v1
-            after this event. Any requests received aside from the destroy request must
-            be ignored. Upon receiving this event, the client should destroy the handle.
-            
-            Other protocols which extend the ext_foreign_toplevel_handle_v1
-            interface must also ignore requests other than destructors.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def done() -> None:
-            """
-            all information about the toplevel has been sent
-            
-            This event is sent after all changes in the toplevel state have
-            been sent.
-            
-            This allows changes to the ext_foreign_toplevel_handle_v1 properties
-            to be atomically applied. Other protocols which extend the
-            ext_foreign_toplevel_handle_v1 interface may use this event to also
-            atomically apply any pending state.
-            
-            This event must not be sent after the ext_foreign_toplevel_handle_v1.closed
-            event.
-            """
-            ...
-
-        # opcode 2
-        @staticmethod
-        def title(title: string) -> None:
-            """
-            title change
-            
-            The title of the toplevel has changed.
-            
-            The configured state must not be applied immediately. See
-            ext_foreign_toplevel_handle_v1.done for details.
-            """
-            ...
-
-        # opcode 3
-        @staticmethod
-        def app_id(app_id: string) -> None:
-            """
-            app_id change
-            
-            The app id of the toplevel has changed.
-            
-            The configured state must not be applied immediately. See
-            ext_foreign_toplevel_handle_v1.done for details.
-            """
-            ...
-
-        # opcode 4
-        @staticmethod
-        def identifier(identifier: string) -> None:
-            """
-            a stable identifier for a toplevel
-            
-            This identifier is used to check if two or more toplevel handles belong
-            to the same toplevel.
-            
-            The identifier is useful for command line tools or privileged clients
-            which may need to reference an exact toplevel across processes or
-            instances of the ext_foreign_toplevel_list_v1 global.
-            
-            The compositor must only send this event when the handle is created.
-            
-            The identifier must be unique per toplevel and it's handles. Two different
-            toplevels must not have the same identifier. The identifier is only valid
-            as long as the toplevel is mapped. If the toplevel is unmapped the identifier
-            must not be reused. An identifier must not be reused by the compositor to
-            ensure there are no races when sharing identifiers between processes.
-            
-            An identifier is a string that contains up to 32 printable ASCII bytes.
-            An identifier must not be an empty string. It is recommended that a
-            compositor includes an opaque generation value in identifiers. How the
-            generation value is used when generating the identifier is implementation
-            dependent.
-            """
-            ...
-
-class ext_idle_notifier_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager
-        
-        Destroy the manager object. All objects created via this interface
-        remain valid.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_idle_notification(timeout: uint, seat: object) -> ext_idle_notification_v1:
-        """
-        create a notification object
-        
-        Create a new idle notification object.
-        
-        The notification object has a minimum timeout duration and is tied to a
-        seat. The client will be notified if the seat is inactive for at least
-        the provided timeout. See ext_idle_notification_v1 for more details.
-        
-        A zero timeout is valid and means the client wants to be notified as
-        soon as possible when the seat is inactive.
-        """
-        ...
-
-class ext_idle_notification_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the notification object
-        
-        Destroy the notification object.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def idled() -> None:
-            """
-            notification object is idle
-            
-            This event is sent when the notification object becomes idle.
-            
-            It's a compositor protocol error to send this event twice without a
-            resumed event in-between.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def resumed() -> None:
-            """
-            notification object is no longer idle
-            
-            This event is sent when the notification object stops being idle.
-            
-            It's a compositor protocol error to send this event twice without an
-            idled event in-between. It's a compositor protocol error to send this
-            event prior to any idled event.
-            """
-            ...
-
-class ext_image_capture_source_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        delete this object
-        
-        Destroys the image capture source. This request may be sent at any time
-        by the client.
-        """
-        ...
-
-class ext_output_image_capture_source_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def create_source(output: object) -> ext_image_capture_source_v1:
-        """
-        create source object for output
-        
-        Creates a source object for an output. Images captured from this source
-        will show the same content as the output. Some elements may be omitted,
-        such as cursors and overlays that have been marked as transparent to
-        capturing.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def destroy() -> None:
-        """
-        delete this object
-        
-        Destroys the manager. This request may be sent at any time by the client
-        and objects created by the manager will remain valid after its
-        destruction.
-        """
-        ...
-
-class ext_foreign_toplevel_image_capture_source_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def create_source(toplevel_handle: object) -> ext_image_capture_source_v1:
-        """
-        create source object for foreign toplevel
-        
-        Creates a source object for a foreign toplevel handle. Images captured
-        from this source will show the same content as the toplevel.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def destroy() -> None:
-        """
-        delete this object
-        
-        Destroys the manager. This request may be sent at any time by the client
-        and objects created by the manager will remain valid after its
-        destruction.
-        """
-        ...
-
-class ext_image_copy_capture_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def create_session(source: object, options: uint) -> ext_image_copy_capture_session_v1:
-        """
-        capture an image capture source
-        
-        Create a capturing session for an image capture source.
-        
-        If the paint_cursors option is set, cursors shall be composited onto
-        the captured frame. The cursor must not be composited onto the frame
-        if this flag is not set.
-        
-        If the options bitfield is invalid, the invalid_option protocol error
-        is sent.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def create_pointer_cursor_session(source: object, pointer: object) -> ext_image_copy_capture_cursor_session_v1:
-        """
-        capture the pointer cursor of an image capture source
-        
-        Create a cursor capturing session for the pointer of an image capture
-        source.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager
-        
-        Destroy the manager object.
-        
-        Other objects created via this interface are unaffected.
-        """
-        ...
-
-class ext_image_copy_capture_session_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def create_frame() -> ext_image_copy_capture_frame_v1:
-        """
-        create a frame
-        
-        Create a capture frame for this session.
-        
-        At most one frame object can exist for a given session at any time. If
-        a client sends a create_frame request before a previous frame object
-        has been destroyed, the duplicate_frame protocol error is raised.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def destroy() -> None:
-        """
-        delete this object
-        
-        Destroys the session. This request can be sent at any time by the
-        client.
-        
-        This request doesn't affect ext_image_copy_capture_frame_v1 objects created by
-        this object.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def buffer_size(width: uint, height: uint) -> None:
-            """
-            image capture source dimensions
-            
-            Provides the dimensions of the source image in buffer pixel coordinates.
-            
-            The client must attach buffers that match this size.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def shm_format(format: uint) -> None:
-            """
-            shm buffer format
-            
-            Provides the format that must be used for shared-memory buffers.
-            
-            This event may be emitted multiple times, in which case the client may
-            choose any given format.
-            """
-            ...
-
-        # opcode 2
-        @staticmethod
-        def dmabuf_device(device: array) -> None:
-            """
-            dma-buf device
-            
-            This event advertises the device buffers must be allocated on for
-            dma-buf buffers.
-            
-            In general the device is a DRM node. The DRM node type (primary vs.
-            render) is unspecified. Clients must not rely on the compositor sending
-            a particular node type. Clients cannot check two devices for equality
-            by comparing the dev_t value.
-            """
-            ...
-
-        # opcode 3
-        @staticmethod
-        def dmabuf_format(format: uint, modifiers: array) -> None:
-            """
-            dma-buf format
-            
-            Provides the format that must be used for dma-buf buffers.
-            
-            The client may choose any of the modifiers advertised in the array of
-            64-bit unsigned integers.
-            
-            This event may be emitted multiple times, in which case the client may
-            choose any given format.
-            """
-            ...
-
-        # opcode 4
-        @staticmethod
-        def done() -> None:
-            """
-            all constraints have been sent
-            
-            This event is sent once when all buffer constraint events have been
-            sent.
-            
-            The compositor must always end a batch of buffer constraint events with
-            this event, regardless of whether it sends the initial constraints or
-            an update.
-            """
-            ...
-
-        # opcode 5
-        @staticmethod
-        def stopped() -> None:
-            """
-            session is no longer available
-            
-            This event indicates that the capture session has stopped and is no
-            longer available. This can happen in a number of cases, e.g. when the
-            underlying source is destroyed, if the user decides to end the image
-            capture, or if an unrecoverable runtime error has occurred.
-            
-            The client should destroy the session after receiving this event.
-            """
-            ...
-
-class ext_image_copy_capture_frame_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy this object
-        
-        Destroys the session. This request can be sent at any time by the
-        client.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def attach_buffer(buffer: object) -> None:
-        """
-        attach buffer to session
-        
-        Attach a buffer to the session.
-        
-        The wl_buffer.release request is unused.
-        
-        The new buffer replaces any previously attached buffer.
-        
-        This request must not be sent after capture, or else the
-        already_captured protocol error is raised.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def damage_buffer(x: int, y: int, width: int, height: int) -> None:
-        """
-        damage buffer
-        
-        Apply damage to the buffer which is to be captured next. This request
-        may be sent multiple times to describe a region.
-        
-        The client indicates the accumulated damage since this wl_buffer was
-        last captured. During capture, the compositor will update the buffer
-        with at least the union of the region passed by the client and the
-        region advertised by ext_image_copy_capture_frame_v1.damage.
-        
-        When a wl_buffer is captured for the first time, or when the client
-        doesn't track damage, the client must damage the whole buffer.
-        
-        This is for optimisation purposes. The compositor may use this
-        information to reduce copying.
-        
-        These coordinates originate from the upper left corner of the buffer.
-        
-        If x or y are strictly negative, or if width or height are negative or
-        zero, the invalid_buffer_damage protocol error is raised.
-        
-        This request must not be sent after capture, or else the
-        already_captured protocol error is raised.
-        """
-        ...
-
-    # opcode 3
-    @staticmethod
-    def capture() -> None:
-        """
-        capture a frame
-        
-        Capture a frame.
-        
-        Unless this is the first successful captured frame performed in this
-        session, the compositor may wait an indefinite amount of time for the
-        source content to change before performing the copy.
-        
-        This request may only be sent once, or else the already_captured
-        protocol error is raised. A buffer must be attached before this request
-        is sent, or else the no_buffer protocol error is raised.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def transform(transform: uint) -> None:
-            """
-            buffer transform
-            
-            This event is sent before the ready event and holds the transform that
-            the compositor has applied to the buffer contents.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def damage(x: int, y: int, width: int, height: int) -> None:
-            """
-            buffer damaged region
-            
-            This event is sent before the ready event. It may be generated multiple
-            times to describe a region.
-            
-            The first captured frame in a session will always carry full damage.
-            Subsequent frames' damaged regions describe which parts of the buffer
-            have changed since the last ready event.
-            
-            These coordinates originate in the upper left corner of the buffer.
-            """
-            ...
-
-        # opcode 2
-        @staticmethod
-        def presentation_time(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
-            """
-            presentation time of the frame
-            
-            This event indicates the time at which the frame is presented to the
-            output in system monotonic time. This event is sent before the ready
-            event.
-            
-            The timestamp is expressed as tv_sec_hi, tv_sec_lo, tv_nsec triples,
-            each component being an unsigned 32-bit value. Whole seconds are in
-            tv_sec which is a 64-bit value combined from tv_sec_hi and tv_sec_lo,
-            and the additional fractional part in tv_nsec as nanoseconds. Hence,
-            for valid timestamps tv_nsec must be in [0, 999999999].
-            """
-            ...
-
-        # opcode 3
-        @staticmethod
-        def ready() -> None:
-            """
-            frame is available for reading
-            
-            Called as soon as the frame is copied, indicating it is available
-            for reading.
-            
-            The buffer may be re-used by the client after this event.
-            
-            After receiving this event, the client must destroy the object.
-            """
-            ...
-
-        # opcode 4
-        @staticmethod
-        def failed(reason: uint) -> None:
-            """
-            capture failed
-            
-            This event indicates that the attempted frame copy has failed.
-            
-            After receiving this event, the client must destroy the object.
-            """
-            ...
-
-class ext_image_copy_capture_cursor_session_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        delete this object
-        
-        Destroys the session. This request can be sent at any time by the
-        client.
-        
-        This request doesn't affect ext_image_copy_capture_frame_v1 objects created by
-        this object.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_capture_session() -> ext_image_copy_capture_session_v1:
-        """
-        get image copy captuerer session
-        
-        Gets the image copy capture session for this cursor session.
-        
-        The session will produce frames of the cursor image. The compositor may
-        pause the session when the cursor leaves the captured area.
-        
-        This request must not be sent more than once, or else the
-        duplicate_session protocol error is raised.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def enter() -> None:
-            """
-            cursor entered captured area
-            
-            Sent when a cursor enters the captured area. It shall be generated
-            before the "position" and "hotspot" events when and only when a cursor
-            enters the area.
-            
-            The cursor enters the captured area when the cursor image intersects
-            with the captured area. Note, this is different from e.g.
-            wl_pointer.enter.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def leave() -> None:
-            """
-            cursor left captured area
-            
-            Sent when a cursor leaves the captured area. No "position" or "hotspot"
-            event is generated for the cursor until the cursor enters the captured
-            area again.
-            """
-            ...
-
-        # opcode 2
-        @staticmethod
-        def position(x: int, y: int) -> None:
-            """
-            position changed
-            
-            Cursors outside the image capture source do not get captured and no
-            event will be generated for them.
-            
-            The given position is the position of the cursor's hotspot and it is
-            relative to the main buffer's top left corner in transformed buffer
-            pixel coordinates. The coordinates may be negative or greater than the
-            main buffer size.
-            """
-            ...
-
-        # opcode 3
-        @staticmethod
-        def hotspot(x: int, y: int) -> None:
-            """
-            hotspot changed
-            
-            The hotspot describes the offset between the cursor image and the
-            position of the input device.
-            
-            The given coordinates are the hotspot's offset from the origin in
-            buffer coordinates.
-            
-            Clients should not apply the hotspot immediately: the hotspot becomes
-            effective when the next ext_image_copy_capture_frame_v1.ready event is received.
-            
-            Compositors may delay this event until the client captures a new frame.
-            """
-            ...
-
-class ext_session_lock_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the session lock manager object
-        
-        This informs the compositor that the session lock manager object will
-        no longer be used. Existing objects created through this interface
-        remain valid.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def lock() -> ext_session_lock_v1:
-        """
-        attempt to lock the session
-        
-        This request creates a session lock and asks the compositor to lock the
-        session. The compositor will send either the ext_session_lock_v1.locked
-        or ext_session_lock_v1.finished event on the created object in
-        response to this request.
-        """
-        ...
-
-class ext_session_lock_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the session lock
-        
-        This informs the compositor that the lock object will no longer be
-        used. Existing objects created through this interface remain valid.
-        
-        After this request is made, lock surfaces created through this object
-        should be destroyed by the client as they will no longer be used by
-        the compositor.
-        
-        It is a protocol error to make this request if the locked event was
-        sent, the unlock_and_destroy request must be used instead.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_lock_surface(surface: object, output: object) -> ext_session_lock_surface_v1:
-        """
-        create a lock surface for a given output
-        
-        The client is expected to create lock surfaces for all outputs
-        currently present and any new outputs as they are advertised. These
-        won't be displayed by the compositor unless the lock is successful
-        and the locked event is sent.
-        
-        Providing a wl_surface which already has a role or already has a buffer
-        attached or committed is a protocol error, as is attaching/committing
-        a buffer before the first ext_session_lock_surface_v1.configure event.
-        
-        Attempting to create more than one lock surface for a given output
-        is a duplicate_output protocol error.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def unlock_and_destroy() -> None:
-        """
-        unlock the session, destroying the object
-        
-        This request indicates that the session should be unlocked, for
-        example because the user has entered their password and it has been
-        verified by the client.
-        
-        This request also informs the compositor that the lock object will
-        no longer be used and should be destroyed. Existing objects created
-        through this interface remain valid.
-        
-        After this request is made, lock surfaces created through this object
-        should be destroyed by the client as they will no longer be used by
-        the compositor.
-        
-        It is a protocol error to make this request if the locked event has
-        not been sent. In that case, the lock object must be destroyed using
-        the destroy request.
-        
-        Note that a correct client that wishes to exit directly after unlocking
-        the session must use the wl_display.sync request to ensure the server
-        receives and processes the unlock_and_destroy request. Otherwise
-        there is no guarantee that the server has unlocked the session due
-        to the asynchronous nature of the Wayland protocol. For example,
-        the server might terminate the client with a protocol error before
-        it processes the unlock_and_destroy request.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def locked() -> None:
-            """
-            session successfully locked
-            
-            This client is now responsible for displaying graphics while the
-            session is locked and deciding when to unlock the session.
-            
-            The locked event must not be sent until a new "locked" frame has been
-            presented on all outputs and no security sensitive normal/unlocked
-            content is possibly visible.
-            
-            If this event is sent, making the destroy request is a protocol error,
-            the lock object must be destroyed using the unlock_and_destroy request.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def finished() -> None:
-            """
-            the session lock object should be destroyed
-            
-            The compositor has decided that the session lock should be destroyed
-            as it will no longer be used by the compositor. Exactly when this
-            event is sent is compositor policy, but it must never be sent more
-            than once for a given session lock object.
-            
-            This might be sent because there is already another ext_session_lock_v1
-            object held by a client, or the compositor has decided to deny the
-            request to lock the session for some other reason. This might also
-            be sent because the compositor implements some alternative, secure
-            way to authenticate and unlock the session.
-            
-            The finished event should be sent immediately on creation of this
-            object if the compositor decides that the locked event will not
-            be sent.
-            
-            If the locked event is sent on creation of this object the finished
-            event may still be sent at some later time in this object's
-            lifetime. This is compositor policy.
-            
-            Upon receiving this event, the client should make either the destroy
-            request or the unlock_and_destroy request, depending on whether or
-            not the locked event was received on this object.
-            """
-            ...
-
-class ext_session_lock_surface_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the lock surface object
-        
-        This informs the compositor that the lock surface object will no
-        longer be used.
-        
-        It is recommended for a lock client to destroy lock surfaces if
-        their corresponding wl_output global is removed.
-        
-        If a lock surface on an active output is destroyed before the
-        ext_session_lock_v1.unlock_and_destroy event is sent, the compositor
-        must fall back to rendering a solid color.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def ack_configure(serial: uint) -> None:
-        """
-        ack a configure event
-        
-        When a configure event is received, if a client commits the surface
-        in response to the configure event, then the client must make an
-        ack_configure request sometime before the commit request, passing
-        along the serial of the configure event.
-        
-        If the client receives multiple configure events before it can
-        respond to one, it only has to ack the last configure event.
-        
-        A client is not required to commit immediately after sending an
-        ack_configure request - it may even ack_configure several times
-        before its next surface commit.
-        
-        A client may send multiple ack_configure requests before committing,
-        but only the last request sent before a commit indicates which
-        configure event the client really is responding to.
-        
-        Sending an ack_configure request consumes the configure event
-        referenced by the given serial, as well as all older configure events
-        sent on this object.
-        
-        It is a protocol error to issue multiple ack_configure requests
-        referencing the same configure event or to issue an ack_configure
-        request referencing a configure event older than the last configure
-        event acked for a given lock surface.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def configure(serial: uint, width: uint, height: uint) -> None:
-            """
-            the client should resize its surface
-            
-            This event is sent once on binding the interface and may be sent again
-            at the compositor's discretion, for example if output geometry changes.
-            
-            The width and height are in surface-local coordinates and are exact
-            requirements. Failing to match these surface dimensions in the next
-            commit after acking a configure is a protocol error.
-            """
-            ...
-
-class ext_transient_seat_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def create() -> ext_transient_seat_v1:
-        """
-        create a transient seat
-        
-        Create a new seat that is removed when the client side transient seat
-        object is destroyed.
-        
-        The actual seat may be removed sooner, in which case the transient seat
-        object shall become inert.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager
-        
-        Destroy the manager.
-        
-        All objects created by the manager will remain valid until they are
-        destroyed themselves.
-        """
-        ...
-
-class ext_transient_seat_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy transient seat
-        
-        When the transient seat object is destroyed by the client, the
-        associated seat created by the compositor is also destroyed.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def ready(global_name: uint) -> None:
-            """
-            transient seat is ready
-            
-            This event advertises the global name for the wl_seat to be used with
-            wl_registry_bind.
-            
-            It is sent exactly once, immediately after the transient seat is created
-            and the new "wl_seat" global is advertised, if and only if the creation
-            of the transient seat was allowed.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def denied() -> None:
-            """
-            transient seat creation denied
-            
-            The event informs the client that the compositor denied its request to
-            create a transient seat.
-            
-            It is sent exactly once, immediately after the transient seat object is
-            created, if and only if the creation of the transient seat was denied.
-            
-            After receiving this event, the client should destroy the object.
-            """
-            ...
-
-class wp_fractional_scale_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        unbind the fractional surface scale interface
-        
-        Informs the server that the client will not be using this protocol
-        object anymore. This does not affect any other objects,
-        wp_fractional_scale_v1 objects included.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_fractional_scale(surface: object) -> wp_fractional_scale_v1:
-        """
-        extend surface interface for scale information
-        
-        Create an add-on object for the the wl_surface to let the compositor
-        request fractional scales. If the given wl_surface already has a
-        wp_fractional_scale_v1 object associated, the fractional_scale_exists
-        protocol error is raised.
-        """
-        ...
-
-class wp_fractional_scale_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        remove surface scale information for surface
-        
-        Destroy the fractional scale object. When this object is destroyed,
-        preferred_scale events will no longer be sent.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def preferred_scale(scale: uint) -> None:
-            """
-            notify of new preferred scale
-            
-            Notification of a new preferred scale for this surface that the
-            compositor suggests that the client should use.
-            
-            The sent scale is the numerator of a fraction with a denominator of 120.
-            """
-            ...
-
-class wp_linux_drm_syncobj_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy explicit synchronization factory object
-        
-        Destroy this explicit synchronization factory object. Other objects
-        shall not be affected by this request.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_surface(surface: object) -> wp_linux_drm_syncobj_surface_v1:
-        """
-        extend surface interface for explicit synchronization
-        
-        Instantiate an interface extension for the given wl_surface to provide
-        explicit synchronization.
-        
-        If the given wl_surface already has an explicit synchronization object
-        associated, the surface_exists protocol error is raised.
-        
-        Graphics APIs, like EGL or Vulkan, that manage the buffer queue and
-        commits of a wl_surface themselves, are likely to be using this
-        extension internally. If a client is using such an API for a
-        wl_surface, it should not directly use this extension on that surface,
-        to avoid raising a surface_exists protocol error.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def import_timeline(fd: fd) -> wp_linux_drm_syncobj_timeline_v1:
-        """
-        import a DRM syncobj timeline
-        
-        Import a DRM synchronization object timeline.
-        
-        If the FD cannot be imported, the invalid_timeline error is raised.
-        """
-        ...
-
-class wp_linux_drm_syncobj_timeline_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the timeline
-        
-        Destroy the synchronization object timeline. Other objects are not
-        affected by this request, in particular timeline points set by
-        set_acquire_point and set_release_point are not unset.
-        """
-        ...
-
-class wp_linux_drm_syncobj_surface_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the surface synchronization object
-        
-        Destroy this surface synchronization object.
-        
-        Any timeline point set by this object with set_acquire_point or
-        set_release_point since the last commit may be discarded by the
-        compositor. Any timeline point set by this object before the last
-        commit will not be affected.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def set_acquire_point(timeline: object, point_hi: uint, point_lo: uint) -> None:
-        """
-        set the acquire timeline point
-        
-        Set the timeline point that must be signalled before the compositor may
-        sample from the buffer attached with wl_surface.attach.
-        
-        The 64-bit unsigned value combined from point_hi and point_lo is the
-        point value.
-        
-        The acquire point is double-buffered state, and will be applied on the
-        next wl_surface.commit request for the associated surface. Thus, it
-        applies only to the buffer that is attached to the surface at commit
-        time.
-        
-        If an acquire point has already been attached during the same commit
-        cycle, the new point replaces the old one.
-        
-        If the associated wl_surface was destroyed, a no_surface error is
-        raised.
-        
-        If at surface commit time there is a pending acquire timeline point set
-        but no pending buffer attached, a no_buffer error is raised. If at
-        surface commit time there is a pending buffer attached but no pending
-        acquire timeline point set, the no_acquire_point protocol error is
-        raised.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def set_release_point(timeline: object, point_hi: uint, point_lo: uint) -> None:
-        """
-        set the release timeline point
-        
-        Set the timeline point that must be signalled by the compositor when it
-        has finished its usage of the buffer attached with wl_surface.attach
-        for the relevant commit.
-        
-        Once the timeline point is signaled, and assuming the associated buffer
-        is not pending release from other wl_surface.commit requests, no
-        additional explicit or implicit synchronization with the compositor is
-        required to safely re-use the buffer.
-        
-        Note that clients cannot rely on the release point being always
-        signaled after the acquire point: compositors may release buffers
-        without ever reading from them. In addition, the compositor may use
-        different presentation paths for different commits, which may have
-        different release behavior. As a result, the compositor may signal the
-        release points in a different order than the client committed them.
-        
-        Because signaling a timeline point also signals every previous point,
-        it is generally not safe to use the same timeline object for the
-        release points of multiple buffers. The out-of-order signaling
-        described above may lead to a release point being signaled before the
-        compositor has finished reading. To avoid this, it is strongly
-        recommended that each buffer should use a separate timeline for its
-        release points.
-        
-        The 64-bit unsigned value combined from point_hi and point_lo is the
-        point value.
-        
-        The release point is double-buffered state, and will be applied on the
-        next wl_surface.commit request for the associated surface. Thus, it
-        applies only to the buffer that is attached to the surface at commit
-        time.
-        
-        If a release point has already been attached during the same commit
-        cycle, the new point replaces the old one.
-        
-        If the associated wl_surface was destroyed, a no_surface error is
-        raised.
-        
-        If at surface commit time there is a pending release timeline point set
-        but no pending buffer attached, a no_buffer error is raised. If at
-        surface commit time there is a pending buffer attached but no pending
-        release timeline point set, the no_release_point protocol error is
-        raised.
-        """
-        ...
-
-class wp_security_context_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager object
-        
-        Destroy the manager. This doesn't destroy objects created with the
-        manager.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def create_listener(listen_fd: fd, close_fd: fd) -> wp_security_context_v1:
-        """
-        create a new security context
-        
-        Creates a new security context with a socket listening FD.
-        
-        The compositor will accept new client connections on listen_fd.
-        listen_fd must be ready to accept new connections when this request is
-        sent by the client. In other words, the client must call bind(2) and
-        listen(2) before sending the FD.
-        
-        close_fd is a FD closed by the client when the compositor should stop
-        accepting new connections on listen_fd.
-        
-        The compositor must continue to accept connections on listen_fd when
-        the Wayland client which created the security context disconnects.
-        
-        After sending this request, closing listen_fd and close_fd remains the
-        only valid operation on them.
-        """
-        ...
-
-class wp_security_context_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the security context object
-        
-        Destroy the security context object.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def set_sandbox_engine(name: string) -> None:
-        """
-        set the sandbox engine
-        
-        Attach a unique sandbox engine name to the security context. The name
-        should follow the reverse-DNS style (e.g. "org.flatpak").
-        
-        A list of well-known engines is maintained at:
-        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
-        
-        It is a protocol error to call this request twice. The already_set
-        error is sent in this case.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def set_app_id(app_id: string) -> None:
-        """
-        set the application ID
-        
-        Attach an application ID to the security context.
-        
-        The application ID is an opaque, sandbox-specific identifier for an
-        application. See the well-known engines document for more details:
-        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
-        
-        The compositor may use the application ID to group clients belonging to
-        the same security context application.
-        
-        Whether this request is optional or not depends on the sandbox engine used.
-        
-        It is a protocol error to call this request twice. The already_set
-        error is sent in this case.
-        """
-        ...
-
-    # opcode 3
-    @staticmethod
-    def set_instance_id(instance_id: string) -> None:
-        """
-        set the instance ID
-        
-        Attach an instance ID to the security context.
-        
-        The instance ID is an opaque, sandbox-specific identifier for a running
-        instance of an application. See the well-known engines document for
-        more details:
-        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
-        
-        Whether this request is optional or not depends on the sandbox engine used.
-        
-        It is a protocol error to call this request twice. The already_set
-        error is sent in this case.
-        """
-        ...
-
-    # opcode 4
-    @staticmethod
-    def commit() -> None:
-        """
-        register the security context
-        
-        Atomically register the new client and attach the security context
-        metadata.
-        
-        If the provided metadata is inconsistent or does not match with out of
-        band metadata (see
-        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md),
-        the invalid_metadata error may be sent eventually.
-        
-        It's a protocol error to send any request other than "destroy" after
-        this request. In this case, the already_used error is sent.
-        """
-        ...
-
-class wp_single_pixel_buffer_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager
-        
-        Destroy the wp_single_pixel_buffer_manager_v1 object.
-        
-        The child objects created via this interface are unaffected.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def create_u32_rgba_buffer(r: uint, g: uint, b: uint, a: uint) -> wl_buffer:
-        """
-        create a 1×1 buffer from 32-bit RGBA values
-        
-        Create a single-pixel buffer from four 32-bit RGBA values.
-        
-        Unless specified in another protocol extension, the RGBA values use
-        pre-multiplied alpha.
-        
-        The width and height of the buffer are 1.
-        """
-        ...
-
-class wp_tearing_control_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy tearing control factory object
-        
-        Destroy this tearing control factory object. Other objects, including
-        wp_tearing_control_v1 objects created by this factory, are not affected
-        by this request.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_tearing_control(surface: object) -> wp_tearing_control_v1:
-        """
-        extend surface interface for tearing control
-        
-        Instantiate an interface extension for the given wl_surface to request
-        asynchronous page flips for presentation.
-        
-        If the given wl_surface already has a wp_tearing_control_v1 object
-        associated, the tearing_control_exists protocol error is raised.
-        """
-        ...
-
-class wp_tearing_control_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def set_presentation_hint(hint: uint) -> None:
-        """
-        set presentation hint
-        
-        Set the presentation hint for the associated wl_surface. This state is
-        double-buffered, see wl_surface.commit.
-        
-        The compositor is free to dynamically respect or ignore this hint based
-        on various conditions like hardware capabilities, surface state and
-        user preferences.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy tearing control object
-        
-        Destroy this surface tearing object and revert the presentation hint to
-        vsync. The change will be applied on the next wl_surface.commit.
-        """
-        ...
-
-class xdg_activation_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_activation object
-        
-        Notify the compositor that the xdg_activation object will no longer be
-        used.
-        
-        The child objects created via this interface are unaffected and should
-        be destroyed separately.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_activation_token() -> xdg_activation_token_v1:
-        """
-        requests a token
-        
-        Creates an xdg_activation_token_v1 object that will provide
-        the initiating client with a unique token for this activation. This
-        token should be offered to the clients to be activated.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def activate(token: string, surface: object) -> None:
-        """
-        notify new interaction being available
-        
-        Requests surface activation. It's up to the compositor to display
-        this information as desired, for example by placing the surface above
-        the rest.
-        
-        The compositor may know who requested this by checking the activation
-        token and might decide not to follow through with the activation if it's
-        considered unwanted.
-        
-        Compositors can ignore unknown activation tokens when an invalid
-        token is passed.
-        """
-        ...
-
-class xdg_activation_token_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def set_serial(serial: uint, seat: object) -> None:
-        """
-        specifies the seat and serial of the activating event
-        
-        Provides information about the seat and serial event that requested the
-        token.
-        
-        The serial can come from an input or focus event. For instance, if a
-        click triggers the launch of a third-party client, the launcher client
-        should send a set_serial request with the serial and seat from the
-        wl_pointer.button event.
-        
-        Some compositors might refuse to activate toplevels when the token
-        doesn't have a valid and recent enough event serial.
-        
-        Must be sent before commit. This information is optional.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def set_app_id(app_id: string) -> None:
-        """
-        specifies the application being activated
-        
-        The requesting client can specify an app_id to associate the token
-        being created with it.
-        
-        Must be sent before commit. This information is optional.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def set_surface(surface: object) -> None:
-        """
-        specifies the surface requesting activation
-        
-        This request sets the surface requesting the activation. Note, this is
-        different from the surface that will be activated.
-        
-        Some compositors might refuse to activate toplevels when the token
-        doesn't have a requesting surface.
-        
-        Must be sent before commit. This information is optional.
-        """
-        ...
-
-    # opcode 3
-    @staticmethod
-    def commit() -> None:
-        """
-        issues the token request
-        
-        Requests an activation token based on the different parameters that
-        have been offered through set_serial, set_surface and set_app_id.
-        """
-        ...
-
-    # opcode 4
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_activation_token_v1 object
-        
-        Notify the compositor that the xdg_activation_token_v1 object will no
-        longer be used. The received token stays valid.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def done(token: string) -> None:
-            """
-            the exported activation token
-            
-            The 'done' event contains the unique token of this activation request
-            and notifies that the provider is done.
-            """
-            ...
-
-class xdg_wm_dialog_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the dialog manager object
-        
-        Destroys the xdg_wm_dialog_v1 object. This does not affect
-        the xdg_dialog_v1 objects generated through it.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_xdg_dialog(toplevel: object) -> xdg_dialog_v1:
-        """
-        create a dialog object
-        
-        Creates a xdg_dialog_v1 object for the given toplevel. See the interface
-        description for more details.
-        
-        Compositors must raise an already_used error if clients attempt to
-        create multiple xdg_dialog_v1 objects for the same xdg_toplevel.
-        """
-        ...
-
-class xdg_dialog_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the dialog object
-        
-        Destroys the xdg_dialog_v1 object. If this object is destroyed
-        before the related xdg_toplevel, the compositor should unapply its
-        effects.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def set_modal() -> None:
-        """
-        mark dialog as modal
-        
-        Hints that the dialog has "modal" behavior. Modal dialogs typically
-        require to be fully addressed by the user (i.e. closed) before resuming
-        interaction with the parent toplevel, and may require a distinct
-        presentation.
-        
-        Clients must implement the logic to filter events in the parent
-        toplevel on their own.
-        
-        Compositors may choose any policy in event delivery to the parent
-        toplevel, from delivering all events unfiltered to using them for
-        internal consumption.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def unset_modal() -> None:
-        """
-        mark dialog as not modal
-        
-        Drops the hint that this dialog has "modal" behavior. See
-        xdg_dialog_v1.set_modal for more details.
-        """
-        ...
-
-class xdg_toplevel_drag_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_toplevel_drag_manager_v1 object
-        
-        Destroy this xdg_toplevel_drag_manager_v1 object. Other objects,
-        including xdg_toplevel_drag_v1 objects created by this factory, are not
-        affected by this request.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_xdg_toplevel_drag(data_source: object) -> xdg_toplevel_drag_v1:
-        """
-        get an xdg_toplevel_drag for a wl_data_source
-        
-        Create an xdg_toplevel_drag for a drag and drop operation that is going
-        to be started with data_source.
-        
-        This request can only be made on sources used in drag-and-drop, so it
-        must be performed before wl_data_device.start_drag. Attempting to use
-        the source other than for drag-and-drop such as in
-        wl_data_device.set_selection will raise an invalid_source error.
-        
-        Destroying data_source while a toplevel is attached to the
-        xdg_toplevel_drag is undefined.
-        """
-        ...
-
-class xdg_toplevel_drag_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy an xdg_toplevel_drag_v1 object
-        
-        Destroy this xdg_toplevel_drag_v1 object. This request must only be
-        called after the underlying wl_data_source drag has ended, as indicated
-        by the dnd_drop_performed or cancelled events. In any other case an
-        ongoing_drag error is raised.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def attach(toplevel: object, x_offset: int, y_offset: int) -> None:
-        """
-        Move a toplevel with the drag operation
-        
-        Request that the window will be moved with the cursor during the drag
-        operation. The offset is a hint to the compositor how the toplevel
-        should be positioned relative to the cursor hotspot in surface local
-        coordinates. For example it might only be used when an unmapped window
-        is attached. The attached window does not participate in the selection
-        of the drag target.
-        
-        If the toplevel is unmapped while it is attached, it is automatically
-        detached from the drag. In this case this request has to be called again
-        if the window should be attached after it is remapped.
-        
-        This request can be called multiple times but issuing it while a
-        toplevel with an active role is attached raises a toplevel_attached
-        error.
-        """
-        ...
-
-class xdg_toplevel_icon_manager_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the toplevel icon manager
-        
-        Destroy the toplevel icon manager.
-        This does not destroy objects created with the manager.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def create_icon() -> xdg_toplevel_icon_v1:
-        """
-        create a new icon instance
-        
-        Creates a new icon object. This icon can then be attached to a
-        xdg_toplevel via the 'set_icon' request.
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def set_icon(toplevel: object, icon: object) -> None:
-        """
-        set an icon on a toplevel window
-        
-        This request assigns the icon 'icon' to 'toplevel', or clears the
-        toplevel icon if 'icon' was null.
-        This state is double-buffered and is applied on the next
-        wl_surface.commit of the toplevel.
-        
-        After making this call, the xdg_toplevel_icon_v1 provided as 'icon'
-        can be destroyed by the client without 'toplevel' losing its icon.
-        The xdg_toplevel_icon_v1 is immutable from this point, and any
-        future attempts to change it must raise the
-        'xdg_toplevel_icon_v1.immutable' protocol error.
-        
-        The compositor must set the toplevel icon from either the pixel data
-        the icon provides, or by loading a stock icon using the icon name.
-        See the description of 'xdg_toplevel_icon_v1' for details.
-        
-        If 'icon' is set to null, the icon of the respective toplevel is reset
-        to its default icon (usually the icon of the application, derived from
-        its desktop-entry file, or a placeholder icon).
-        If this request is passed an icon with no pixel buffers or icon name
-        assigned, the icon must be reset just like if 'icon' was null.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def icon_size(size: int) -> None:
-            """
-            describes a supported & preferred icon size
-            
-            This event indicates an icon size the compositor prefers to be
-            available if the client has scalable icons and can render to any size.
-            
-            When the 'xdg_toplevel_icon_manager_v1' object is created, the
-            compositor may send one or more 'icon_size' events to describe the list
-            of preferred icon sizes. If the compositor has no size preference, it
-            may not send any 'icon_size' event, and it is up to the client to
-            decide a suitable icon size.
-            
-            A sequence of 'icon_size' events must be finished with a 'done' event.
-            If the compositor has no size preferences, it must still send the
-            'done' event, without any preceding 'icon_size' events.
-            """
-            ...
-
-        # opcode 1
-        @staticmethod
-        def done() -> None:
-            """
-            all information has been sent
-            
-            This event is sent after all 'icon_size' events have been sent.
-            """
-            ...
-
-class xdg_toplevel_icon_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the icon object
-        
-        Destroys the 'xdg_toplevel_icon_v1' object.
-        The icon must still remain set on every toplevel it was assigned to,
-        until the toplevel icon is reset explicitly.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def set_name(icon_name: string) -> None:
-        """
-        set an icon name
-        
-        This request assigns an icon name to this icon.
-        Any previously set name is overridden.
-        
-        The compositor must resolve 'icon_name' according to the lookup rules
-        described in the XDG icon theme specification[1] using the
-        environment's current icon theme.
-        
-        If the compositor does not support icon names or cannot resolve
-        'icon_name' according to the XDG icon theme specification it must
-        fall back to using pixel buffer data instead.
-        
-        If this request is made after the icon has been assigned to a toplevel
-        via 'set_icon', a 'immutable' error must be raised.
-        
-        [1]: https://specifications.freedesktop.org/icon-theme-spec/icon-theme-spec-latest.html
-        """
-        ...
-
-    # opcode 2
-    @staticmethod
-    def add_buffer(buffer: object, scale: int) -> None:
-        """
-        add icon data from a pixel buffer
-        
-        This request adds pixel data supplied as wl_buffer to the icon.
-        
-        The client should add pixel data for all icon sizes and scales that
-        it can provide, or which are explicitly requested by the compositor
-        via 'icon_size' events on xdg_toplevel_icon_manager_v1.
-        
-        The wl_buffer supplying pixel data as 'buffer' must be backed by wl_shm
-        and must be a square (width and height being equal).
-        If any of these buffer requirements are not fulfilled, a 'invalid_buffer'
-        error must be raised.
-        
-        If this icon instance already has a buffer of the same size and scale
-        from a previous 'add_buffer' request, data from the last request
-        overrides the preexisting pixel data.
-        
-        The wl_buffer must be kept alive for as long as the xdg_toplevel_icon
-        it is associated with is not destroyed. The buffer contents must not be
-        modified after it was assigned to the icon.
-        
-        If this request is made after the icon has been assigned to a toplevel
-        via 'set_icon', a 'immutable' error must be raised.
-        """
-        ...
-
-class xwayland_shell_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the Xwayland shell object
-        
-        Destroy the xwayland_shell_v1 object.
-        
-        The child objects created via this interface are unaffected.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def get_xwayland_surface(surface: object) -> xwayland_surface_v1:
-        """
-        assign the xwayland_surface surface role
-        
-        Create an xwayland_surface_v1 interface for a given wl_surface
-        object and gives it the xwayland_surface role.
-        
-        It is illegal to create an xwayland_surface_v1 for a wl_surface
-        which already has an assigned role and this will result in the
-        `role` protocol error.
-        
-        See the documentation of xwayland_surface_v1 for more details
-        about what an xwayland_surface_v1 is and how it is used.
-        """
-        ...
-
-class xwayland_surface_v1:
-    object_id = 0
-
-    # opcode 0
-    @staticmethod
-    def set_serial(serial_lo: uint, serial_hi: uint) -> None:
-        """
-        associates a Xwayland window to a wl_surface
-        
-        Associates an Xwayland window to a wl_surface.
-        The association state is double-buffered, see wl_surface.commit.
-        
-        The `serial_lo` and `serial_hi` parameters specify a non-zero
-        monotonic serial number which is entirely unique and provided by the
-        Xwayland server equal to the serial value provided by a client message
-        with a message type of the `WL_SURFACE_SERIAL` atom on the X11 window
-        for this surface to be associated to.
-        
-        The serial value in the `WL_SURFACE_SERIAL` client message is specified
-        as having the lo-bits specified in `l[0]` and the hi-bits specified
-        in `l[1]`.
-        
-        If the serial value provided by `serial_lo` and `serial_hi` is not
-        valid, the `invalid_serial` protocol error will be raised.
-        
-        An X11 window may be associated with multiple surfaces throughout its
-        lifespan. (eg. unmapping and remapping a window).
-        
-        For each wl_surface, this state must not be committed more than once,
-        otherwise the `already_associated` protocol error will be raised.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the Xwayland surface object
-        
-        Destroy the xwayland_surface_v1 object.
-        
-        Any already existing associations are unaffected by this action.
-        """
-        ...
 

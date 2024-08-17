@@ -6,11 +6,11 @@ This seeks to be a Python implementation of libwayland-client. The server/compos
 
 ## Objectives
 
-* No external dependencies, needs no Wayland libraries, and only Python standard libraries. This is a replacement for libwayland-client, not a wrapper for it.
+* No external dependencies, needs no Wayland libraries, and only Python standard libraries at runtime. This is a replacement for libwayland-client, not a wrapper for it.
 * Intellisense code completion support for methods and events.
-* All common Wayland protocols built in.
+* All stable and staging Wayland protocols built in.
 * A design that makes using https://wayland.app as a reference straightforward.
-* Option to refresh protocols automatically by downloading the latest XML definitions.
+* Can optionally refresh protocols from local or official online sources.
 
 ## Notes
 
@@ -36,7 +36,7 @@ Events are collected together under the `events` attribute of an interface. Defi
         sys.exit(1)
 ```
 
-Register an nevent handler by add adding it to the relevant event:
+Register an event handler by add adding it to the relevant event:
 
 ```python
     wayland.wl_display.events.error += self.on_error
@@ -50,6 +50,25 @@ To process all pending wayland events and call any registered event handlers:
 
 ```python
 wayland.process_messages()
+```
+
+## Refreshing Protocols
+
+The package is installed with the Wayland stable and staging protocols already built-in. Refreshing the protocol definitions is optional. It requires some additional Python dependencies:
+
+* `pip install lxml`
+* `pip install requests`
+
+To rebuild the Wayland protocols from the locally installed protocol definitions:
+
+```bash
+python -m wayland
+```
+
+To rebuild the protocols directly from the online sources:
+
+```bash
+python -m wayland --download
 ```
 
 ## Thanks

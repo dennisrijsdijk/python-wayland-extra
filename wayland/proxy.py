@@ -277,7 +277,7 @@ class Proxy:
         self.state = state
         self.scope = scope
         try:
-            with open(f"{path}/cache/protocols.json", encoding="utf-8") as infile:
+            with open(f"{path}/protocols.json", encoding="utf-8") as infile:
                 structure = json.load(infile)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             msg = f"Error loading structure: {e}"

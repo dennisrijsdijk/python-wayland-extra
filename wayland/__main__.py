@@ -12,20 +12,36 @@ if __name__ == "__main__":
         action="store_false",
         help="Disable the minimisation of protocol files.",
     )
+    parser.add_argument(
+        "--download",
+        default=False,
+        action="store_true",
+        help=(
+            "Do not use the locally installed protocol definitions, instead"
+            "download the latest available protocol definitions."
+        ),
+    )
     args = parser.parse_args()
 
-    with open(f"{get_package_root()}/cache/sources.txt", encoding="utf-8") as outfile:
-        sources = [x.strip() for x in outfile]
+    parser = WaylandParser()
 
-    parser = WaylandParser(use_cache=True)
-    for source in sources:
-        parser.load_file(source)
+    # Try to parse local protocol files
+    if not args.download:
+        uris = parser.get_local_files()
+
+    # Download protocol definitions if no local one or explicitly requested
+    if args.download or not uris:
+        uris = parser.get_remote_uris()
+
+    for i, protocol in enumerate(uris):
+        log.info(f"Parsing protocol definition {i+1} of {len(uris)}")
+        parser.parse(protocol)
 
     parser.create_type_hinting(parser.interfaces, get_package_root())
-    log.warning("Created type hinting file.")
+    log.info("Created type hinting file.")
 
     protocols = parser.to_json(minimise=args.no_minimise)
-    filepath = f"{get_package_root()}/cache/protocols.json"
+    filepath = f"{get_package_root()}/protocols.json"
     with open(filepath, "w", encoding="utf-8") as outfile:
         outfile.write(protocols)
-    log.warning("Created protocol database: " + filepath)
+    log.info("Created protocol database: " + filepath)
