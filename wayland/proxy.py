@@ -111,6 +111,12 @@ class Proxy:
                 length = len(value) + 1
                 value = self._pad(value)
                 packet += struct.pack(f"I{len(value)}s", length, value)
+            elif arg_type == "fixed":
+                integer_part = int(value) << 8
+                fractional_part = int((value - int(value)) * 256)
+                value = integer_part | (fractional_part & 0xFF)
+                packet += struct.pack("I", value)
+
             return packet, value
 
         def _handle_fd_argument(self, arg_type, value, ancillary):
@@ -205,6 +211,12 @@ class Proxy:
                 (value,) = struct.unpack_from(f"{padded_length}s", packet)
                 value = value[: length - 1]
                 read = padded_length
+            elif arg_type == "fixed":
+                (value,) = struct.unpack_from("I", packet)
+                read = 4
+                integer_part = value >> 8
+                fractional_part = value & 0xFF
+                value = integer_part + fractional_part / 256.0
             else:
                 raise ValueError("Unknown type " + arg_type)
 
