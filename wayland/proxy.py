@@ -101,7 +101,7 @@ class Proxy:
             return return_value
 
         def _pack_argument(self, packet, arg_type, value):
-            if arg_type in ("new_id", "uint"):
+            if arg_type in ("new_id", "uint", "enum"):
                 packet += struct.pack("I", value)
             elif arg_type == "object":
                 packet += struct.pack("I", getattr(value, "object_id", 0))
@@ -191,7 +191,7 @@ class Proxy:
 
         def _unpack_argument(self, packet, arg_type):
             read = 0
-            if arg_type in ("new_id", "uint") or arg_type == "object":
+            if arg_type in ("new_id", "uint", "object", "enum"):
                 (value,) = struct.unpack_from("I", packet)
                 read = 4
             elif arg_type == "int":
