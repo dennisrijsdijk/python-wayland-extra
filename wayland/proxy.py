@@ -200,8 +200,6 @@ class Proxy:
             elif arg_type == "fd":
                 # we packed the file descriptor on the end of the data
                 (value,) = struct.unpack_from("I", packet[-4:])
-                # convert to a file object
-                value = os.fdopen(value, "rb")
             elif arg_type == "string":
                 (length,) = struct.unpack_from("I", packet)
                 packet = packet[4:]
