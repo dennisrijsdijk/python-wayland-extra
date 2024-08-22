@@ -1,5 +1,7 @@
 # libwayland
 
+__This is in early prototype stage__
+
 A Python implementation of the Wayland protocol, from scratch, with no external dependencies, including no dependencies on any Wayland libraries.
 
 This seeks to be a Python implementation of libwayland-client. The server/compositor perspective hasn't been considered.
