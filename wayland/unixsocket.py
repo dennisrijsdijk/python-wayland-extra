@@ -21,6 +21,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import array
 import errno
 import socket
 import struct
@@ -34,14 +35,19 @@ class RingBuffer:
     def __init__(self, size):
         self.size = size
         self.buffer = deque(maxlen=size)
+        self.ancillary_buffer = deque(maxlen=size // 16)
 
-    def append(self, data):
+    def append(self, data, ancillary=None):
         if len(data) > self.size:
             data = data[-self.size :]  # Truncate data if larger than buffer
         self.buffer.extend(data)
+        if ancillary:
+            self.ancillary_buffer.append(ancillary)
 
     def get(self):
-        return bytes(self.buffer)
+        data = bytes(self.buffer)
+        control = self.ancillary_buffer.popleft() if self.ancillary_buffer else None
+        return data, control
 
     def consume(self, num_bytes):
         for _ in range(num_bytes):
@@ -49,7 +55,7 @@ class RingBuffer:
 
 
 class UnixSocketConnection(threading.Thread):
-    def __init__(self, socket_path, buffer_size=65536):
+    def __init__(self, socket_path, buffer_size=2**18):
         super().__init__()
 
         self.socket_path = socket_path
@@ -65,12 +71,29 @@ class UnixSocketConnection(threading.Thread):
         self.start()
 
     def run(self):
+        ancillary_data_buffer = array.array("i")
         while not self.stop_event.is_set():
             try:
-                data = self._socket.recv(4096)
-                if data:
+                # read incoming socket data
+                msg, ancdata, _, _ = self._socket.recvmsg(
+                    4096, socket.CMSG_SPACE(array.array("i").itemsize)
+                )
+                if msg:
+                    # process any ancillary data
+                    ancillary = None
+                    for cmsg_level, cmsg_type, cmsg_data in ancdata:
+                        if (
+                            cmsg_level == socket.SOL_SOCKET
+                            and cmsg_type == socket.SCM_RIGHTS
+                        ):
+                            ancillary_data_buffer.frombytes(
+                                cmsg_data[: ancillary_data_buffer.itemsize]
+                            )
+                            ancillary = ancillary_data_buffer[0]
+                            break
+
                     with self.buffer_lock:
-                        self.ring_buffer.append(data)
+                        self.ring_buffer.append(msg, ancillary)
                 else:
                     break
             except OSError as e:
@@ -91,7 +114,7 @@ class UnixSocketConnection(threading.Thread):
 
     def get_next_message(self):
         with self.buffer_lock:
-            buffer_content = self.ring_buffer.get()
+            buffer_content, ancillary = self.ring_buffer.get()
             if len(buffer_content) < PROTOCOL_HEADER_SIZE:
                 return None  # Not enough data for the smallest message header
 
@@ -106,6 +129,10 @@ class UnixSocketConnection(threading.Thread):
 
             # Consume the processed bytes from the buffer
             self.ring_buffer.consume(message_size)
+
+            # If we have ancillary data, pack it on the end
+            if ancillary:
+                full_message += struct.pack("I", ancillary)
 
             return full_message
 

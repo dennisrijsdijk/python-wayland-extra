@@ -23,6 +23,7 @@
 
 import json
 import keyword
+import os
 import socket
 import struct
 
@@ -197,6 +198,11 @@ class Proxy:
             elif arg_type == "int":
                 (value,) = struct.unpack_from("i", packet)
                 read = 4
+            elif arg_type == "fd":
+                # we packed the file descriptor on the end of the data
+                (value,) = struct.unpack_from("I", packet[-4:])
+                # convert to a file object
+                value = os.fdopen(value, "rb")
             elif arg_type == "string":
                 (length,) = struct.unpack_from("I", packet)
                 packet = packet[4:]
