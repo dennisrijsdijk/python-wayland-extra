@@ -74,7 +74,6 @@ class Proxy:
                         interface = arg.get("interface")
 
                     # Create a new object to return as
-                    log.protocol(f"Want to create an object of type {scope[interface]}")
                     new_object_id, new_object = state.new_object(scope[interface])
                     return_value = new_object_id
                     value = new_object_id

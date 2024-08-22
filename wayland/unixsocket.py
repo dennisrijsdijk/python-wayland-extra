@@ -23,119 +23,101 @@
 
 import array
 import errno
+import fcntl
 import socket
 import struct
 import threading
+import time
 from collections import deque
 
 from wayland.constants import PROTOCOL_HEADER_SIZE
 
 
-class RingBuffer:
-    def __init__(self, size):
-        self.size = size
-        self.buffer = deque(maxlen=size)
-        self.ancillary_buffer = deque(maxlen=size // 16)
-
-    def append(self, data, ancillary=None):
-        if len(data) > self.size:
-            data = data[-self.size :]  # Truncate data if larger than buffer
-        self.buffer.extend(data)
-        if ancillary:
-            self.ancillary_buffer.append(ancillary)
-
-    def get(self):
-        data = bytes(self.buffer)
-        control = self.ancillary_buffer.popleft() if self.ancillary_buffer else None
-        return data, control
-
-    def consume(self, num_bytes):
-        for _ in range(num_bytes):
-            self.buffer.popleft()
-
-
 class UnixSocketConnection(threading.Thread):
+    READ_BUFFER_SIZE = 4096
+
     def __init__(self, socket_path, buffer_size=2**18):
         super().__init__()
+        self.buffer = deque(maxlen=buffer_size)
 
         self.socket_path = socket_path
         self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._socket.connect(self.socket_path)
 
-        self.buffer_size = buffer_size
-        self.ring_buffer = RingBuffer(buffer_size)
         self.stop_event = threading.Event()
+
+        self.read_lock = threading.Lock()
+        self.write_lock = threading.Lock()
         self.buffer_lock = threading.Lock()
-        self.socket_lock = threading.Lock()
+
         self.daemon = True
         self.start()
 
+    def _read(self):
+        while True:
+            peek = self._socket.recv(PROTOCOL_HEADER_SIZE, socket.MSG_PEEK)
+            if len(peek) < PROTOCOL_HEADER_SIZE:
+                time.sleep(0.01)
+                continue
+
+            _, _, message_size = struct.unpack_from("IHH", peek)
+            data_size = struct.unpack(
+                "I", fcntl.ioctl(self._socket, 0x541B, struct.pack("I", 0))
+            )[0]
+            if data_size < message_size:
+                time.sleep(0.01)
+                continue
+            break
+
+        fdsize = array.array("i").itemsize
+
+        data, ancdata, _, _ = self._socket.recvmsg(
+            message_size, socket.CMSG_LEN(fdsize)
+        )
+
+        fd = None
+        for cmsg_level, cmsg_type, cmsg_data in ancdata:
+            if cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS:
+                fd = struct.unpack("i", cmsg_data)[0]
+                break
+
+        return data, fd
+
+    def read(self):
+        with self.read_lock:
+            data, fd = self._read()
+            with self.buffer_lock:
+                self.buffer.append((data, fd))
+
     def run(self):
-        ancillary_data_buffer = array.array("i")
         while not self.stop_event.is_set():
             try:
-                # read incoming socket data
-                msg, ancdata, _, _ = self._socket.recvmsg(
-                    4096, socket.CMSG_SPACE(array.array("i").itemsize)
-                )
-                if msg:
-                    # process any ancillary data
-                    ancillary = None
-                    for cmsg_level, cmsg_type, cmsg_data in ancdata:
-                        if (
-                            cmsg_level == socket.SOL_SOCKET
-                            and cmsg_type == socket.SCM_RIGHTS
-                        ):
-                            ancillary_data_buffer.frombytes(
-                                cmsg_data[: ancillary_data_buffer.itemsize]
-                            )
-                            ancillary = ancillary_data_buffer[0]
-                            break
-
-                    with self.buffer_lock:
-                        self.ring_buffer.append(msg, ancillary)
-                else:
-                    break
+                self.read()
             except OSError as e:
                 if e.errno not in {errno.EWOULDBLOCK, errno.EAGAIN}:
-                    # Handle other socket errors
                     break
+            except Exception:
+                break
 
     def stop(self):
         self.stop_event.set()
+        self.join()
 
     def sendmsg(self, buffers, ancillary):
-        with self.socket_lock:
+        with self.write_lock:
             self._socket.sendmsg(buffers, ancillary)
 
     def sendall(self, data):
-        with self.socket_lock:
+        with self.write_lock:
             self._socket.sendall(data)
 
     def get_next_message(self):
         with self.buffer_lock:
-            buffer_content, ancillary = self.ring_buffer.get()
-            if len(buffer_content) < PROTOCOL_HEADER_SIZE:
-                return None  # Not enough data for the smallest message header
+            if not self.buffer:
+                return None
+            data, fd = self.buffer.popleft()
 
-            # Get message_size
-            _, _, message_size = struct.unpack_from("IHH", buffer_content)
+        if fd is not None:
+            data += struct.pack("I", fd)
 
-            if len(buffer_content) < message_size:
-                return None  # Not enough data for the complete message
-
-            # Extract the full message
-            full_message = buffer_content[:message_size]
-
-            # Consume the processed bytes from the buffer
-            self.ring_buffer.consume(message_size)
-
-            # If we have ancillary data, pack it on the end
-            if ancillary:
-                full_message += struct.pack("I", ancillary)
-
-            return full_message
-
-    def get_buffer_content(self):
-        with self.buffer_lock:
-            return self.ring_buffer.get()
+        return data
