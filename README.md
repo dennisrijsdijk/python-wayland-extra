@@ -1,5 +1,7 @@
 # libwayland
 
+[![PyPI - Version](https://img.shields.io/pypi/v/libwayland.svg)](https://pypi.org/project/libwayland) [![Tests](https://github.com/grking/libwayland/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/grking/libwayland/tree/main) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/libwayland.svg)](https://pypi.org/project/libwayland)
+
 __This is in early prototype stage__
 
 A Python implementation of the Wayland protocol, from scratch, with no external dependencies, including no dependencies on any Wayland libraries.

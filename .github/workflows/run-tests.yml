@@ -1,5 +1,5 @@
 
-name: Run develop tests
+name: Tests
 
 on:
   push:
