@@ -115,6 +115,7 @@ class WaylandLogger(logging.Logger):
 
         log.addHandler(console_handler)
 
+
 # Register the custom logger class
 logging.setLoggerClass(WaylandLogger)
 

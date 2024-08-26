@@ -25,9 +25,7 @@ if __name__ == "__main__":
         "--verbose",
         default=False,
         action="store_true",
-        help=(
-            "Verbose output when processing Wayland protocol files."
-        ),
+        help=("Verbose output when processing Wayland protocol files."),
     )
     args = parser.parse_args()
 

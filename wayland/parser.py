@@ -36,6 +36,7 @@ class WaylandParser:
     def __init__(self):
         self.interfaces = {}
         self.headers = []
+        self.protocol_name = ""
 
     def get_remote_uris(self):
         # Download the latest protocols
@@ -119,7 +120,7 @@ class WaylandParser:
         # Check for python keyword collision
         if keyword.iskeyword(method["name"]):
             method["name"] = method["name"] + "_"
-            log.info(f"Renamed request to {method['name']}")
+            log.info(f"Renamed {self.protocol_name}.{interface}.{method['name']}")
         if interface not in self.interfaces:
             self.interfaces[interface] = {"events": [], "methods": []}
         methods = self.interfaces.get(interface, {}).get("methods", [])
@@ -130,7 +131,7 @@ class WaylandParser:
         # Check for python keyword collision
         if keyword.iskeyword(event["name"]):
             event["name"] = event["name"] + "_"
-            log.info(f"Renamed event to {event['name']}")
+            log.info(f"Renamed {self.protocol_name}.{interface}.{event['name']}")
         if interface not in self.interfaces:
             self.interfaces[interface] = {"events": [], "methods": []}
         events = self.interfaces.get(interface, {}).get("events", [])
@@ -153,6 +154,11 @@ class WaylandParser:
                 response.raise_for_status()
         else:
             tree = etree.parse(path)
+
+        try:
+            self.protocol_name = tree.getroot().attrib['name']
+        except AttributeError:
+            self.protocol_name = tree.attrib['name']
 
         self.parse_xml(tree, "/protocol/interface/request", self.add_method)
         self.parse_xml(tree, "/protocol/interface/event", self.add_event)
@@ -194,6 +200,11 @@ class WaylandParser:
     def manipulate_args(self, original_args, item_type):
         new_args = []
         for arg in original_args:
+            # Rename python keyword collisions with wayland arguments
+            if keyword.iskeyword(arg["name"]):
+                arg["name"] = arg["name"] + "_"
+                log.info(f"Renamed request/event argument to {arg['name']} in protocol {self.protocol_name}")
+
             if arg["type"] == "new_id":
                 interface = arg.get("interface", None)
 

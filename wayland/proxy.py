@@ -23,7 +23,6 @@
 
 import json
 import keyword
-import os
 import socket
 import struct
 
