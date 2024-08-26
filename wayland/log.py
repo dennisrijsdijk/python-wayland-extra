@@ -103,6 +103,17 @@ class WaylandLogger(logging.Logger):
     def enable_event(self):
         self._event_enabled = True
 
+    def enable(self, level=logging.INFO):
+        log.setLevel(level)
+
+        console_handler = logging.StreamHandler()
+
+        console_handler.setLevel(level)
+
+        formatter = logging.Formatter("%(levelname)s - %(message)s")
+        console_handler.setFormatter(formatter)
+
+        log.addHandler(console_handler)
 
 # Register the custom logger class
 logging.setLoggerClass(WaylandLogger)
@@ -112,13 +123,4 @@ log = logging.getLogger("wayland")
 # log.disable_protocol()
 
 if not log.hasHandlers() and os.getenv("WAYLAND_DEBUG", "0") == "1":
-    log.setLevel(PROTOCOL_LEVEL)
-
-    console_handler = logging.StreamHandler()
-
-    console_handler.setLevel(PROTOCOL_LEVEL)
-
-    formatter = logging.Formatter("%(levelname)s - %(message)s")
-    console_handler.setFormatter(formatter)
-
-    log.addHandler(console_handler)
+    log.enable(PROTOCOL_LEVEL)

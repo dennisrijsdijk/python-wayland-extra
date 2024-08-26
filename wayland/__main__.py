@@ -21,7 +21,19 @@ if __name__ == "__main__":
             "download the latest available protocol definitions."
         ),
     )
+    parser.add_argument(
+        "--verbose",
+        default=False,
+        action="store_true",
+        help=(
+            "Verbose output when processing Wayland protocol files."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.verbose:
+        log.enable()
+        log.info("Starting Wayland protocol update.")
 
     parser = WaylandParser()
 
