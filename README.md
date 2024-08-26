@@ -4,29 +4,41 @@ __This is in early prototype stage__
 
 A Python implementation of the Wayland protocol, from scratch, with no external dependencies, including no dependencies on any Wayland libraries.
 
-This seeks to be a Python implementation of libwayland-client. The server/compositor perspective hasn't been considered.
+This seeks to be a Python implementation of libwayland-client. 
 
-## Objectives
+## Features
 
 * No external dependencies, needs no Wayland libraries, and only Python standard libraries at runtime. This is a replacement for libwayland-client, not a wrapper for it.
+* All common Wayland protocols built in.
+* Maintains the original Wayland naming conventions to ensure references such as https://wayland.app are easy to use.
+* Has the latest protocol files built in by default.
+* Supports updating protocol definitions from either the local system or latest official Wayland repositories.
 * Intellisense code completion support for methods and events.
-* All stable and staging Wayland protocols built in.
-* A design that makes using https://wayland.app as a reference straightforward.
-* Can optionally refresh protocols from local or official online sources.
 
 ## Notes
 
-Wayland identifiers that collide with Python builtin keywords are renamed to end with an underscore. The list of changes is:
+Wayland identifiers that collide with Python builtin keywords are renamed to end with an underscore. There are very few of these. The list of known protocols that have changes are:
 
-* `wl_registry.events.global` becomes `wl_registry.events.global_`
+* `wayland.wl_registry.global` renamed to `global_`
+* `xdg_foreign_unstable_v1.zxdg_importer_v1.import` renamed to `import_`
 
 ## Making Wayland Requests
 
-As documented in the wayland protocol, with the exception that `new_id` arguments should be omitted. Wayland methods instead return a Python object reference to be slightly more Pythonic.
+Requests are made in the standard manner, with the exception that `new_id` arguments should be omitted. There is no need to pass an integer ID for the object you want to create, that is handled automatically for you. An instance of the object created is simply returned by the request. 
+
+So the request signature is _not_ this:
 
 ```python
-registry = wayland.wl_display.get_registry()
+wayland.wl_display.get_registry( some_integer: new_id ) -> None
 ```
+
+It has become simply this:
+
+```python
+wayland.wl_display.get_registry() -> wl_registry
+```
+
+Where `wl_registry` is an instance of the interface created.
 
 ## Event Handlers
 
@@ -38,7 +50,7 @@ Events are collected together under the `events` attribute of an interface. Defi
         sys.exit(1)
 ```
 
-Register an event handler by add adding it to the relevant event:
+Register an event handler by adding it to the relevant event:
 
 ```python
     wayland.wl_display.events.error += self.on_error
@@ -56,7 +68,7 @@ wayland.process_messages()
 
 ## Refreshing Protocols
 
-The package is installed with the Wayland stable and staging protocols already built-in. Refreshing the protocol definitions is optional. It requires some additional Python dependencies:
+The package is installed with the latest Wayland stable and staging protocols already built-in. Refreshing the protocol definitions is optional. It requires some additional Python dependencies:
 
 * `pip install lxml`
 * `pip install requests`
@@ -72,6 +84,8 @@ To rebuild the protocols directly from the online sources:
 ```bash
 python -m wayland --download
 ```
+
+Add the `--verbose` command line switch if you want to see progress of the protocol parsing.
 
 ## Thanks
 
