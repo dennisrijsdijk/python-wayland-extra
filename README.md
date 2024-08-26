@@ -87,6 +87,32 @@ python -m wayland --download
 
 Add the `--verbose` command line switch if you want to see progress of the protocol parsing.
 
+## Checking Wayland Protocols
+
+To produce a report which compares the locally installed Wayland protocol files with the latest online versions:
+
+```bash
+python -m wayland --compare
+```
+
+Example output:
+
+    Protocol definitions which have been updated:
+
+    None
+
+    Available remote protocol definitions, but not installed locally:
+
+    ext_image_capture_source_v1: version 1
+    ext_output_image_capture_source_manager_v1: version 1
+    ext_foreign_toplevel_image_capture_source_manager_v1: version 1
+
+    Protocol definitions installed locally but not in official stable or staging repositories:
+
+    zwp_fullscreen_shell_v1: version 1
+    zwp_fullscreen_shell_mode_feedback_v1: version 1
+    zwp_idle_inhibit_manager_v1: version 1
+
 ## Thanks
 
 Thanks to Philippe Gaultier, whose article [Wayland From Scratch](https://gaultier.github.io/blog/wayland_from_scratch.html) inspired this project.
