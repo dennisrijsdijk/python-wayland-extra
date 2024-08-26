@@ -13,7 +13,14 @@ array: TypeAlias = list
 fixed: TypeAlias = float
 
 class wl_display:
+    """
+    core global object
+    
+    The core global object.  This is a special singleton object.  It
+    is used for internal Wayland protocol features.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -85,7 +92,32 @@ class wl_display:
             ...
 
 class wl_registry:
+    """
+    global registry object
+    
+    The singleton global registry object.  The server has a number of
+    global objects that are available to all clients.  These objects
+    typically represent an actual object in the server (for example,
+    an input device) or they are singleton objects that provide
+    extension functionality.
+    
+    When a client creates a registry object, the registry object
+    will emit a global event for each global currently in the
+    registry.  Globals come and go as a result of device or
+    monitor hotplugs, reconfiguration or other events, and the
+    registry will send out global and global_remove events to
+    keep the client up to date with the changes.  To mark the end
+    of the initial burst of events, the client can use the
+    wl_display.sync request immediately after calling
+    wl_display.get_registry.
+    
+    A client can bind to a global object by using the bind
+    request.  This creates a client-side handle that lets the object
+    emit events to the client and lets the client invoke requests on
+    the object.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -133,7 +165,15 @@ class wl_registry:
             ...
 
 class wl_compositor:
+    """
+    the compositor singleton
+    
+    A compositor.  This object is a singleton global.  The
+    compositor is in charge of combining the contents of multiple
+    surfaces into one displayable output.
+    """
     object_id = 0
+    version = 6
 
     # opcode 0
     @staticmethod
@@ -156,7 +196,19 @@ class wl_compositor:
         ...
 
 class wl_shm_pool:
+    """
+    a shared memory pool
+    
+    The wl_shm_pool object encapsulates a piece of memory shared
+    between the compositor and client.  Through the wl_shm_pool
+    object, the client can allocate shared memory wl_buffer objects.
+    All objects created through the same pool share the same
+    underlying mapped memory. Reusing the mapped memory avoids the
+    setup/teardown overhead and is useful when interactively resizing
+    a surface or for many small buffers.
+    """
     object_id = 0
+    version = 2
 
     # opcode 0
     @staticmethod
@@ -212,7 +264,21 @@ class wl_shm_pool:
         ...
 
 class wl_shm:
+    """
+    shared memory support
+    
+    A singleton global object that provides support for shared
+    memory.
+    
+    Clients can create wl_shm_pool objects using the create_pool
+    request.
+    
+    On binding the wl_shm object one or more format events
+    are emitted to inform clients about the valid pixel formats
+    that can be used for buffers.
+    """
     object_id = 0
+    version = 2
 
     # opcode 0
     @staticmethod
@@ -255,7 +321,27 @@ class wl_shm:
             ...
 
 class wl_buffer:
+    """
+    content for a wl_surface
+    
+    A buffer provides the content for a wl_surface. Buffers are
+    created through factory interfaces such as wl_shm, wp_linux_buffer_params
+    (from the linux-dmabuf protocol extension) or similar. It has a width and
+    a height and can be attached to a wl_surface, but the mechanism by which a
+    client provides and updates the contents is defined by the buffer factory
+    interface.
+    
+    Color channels are assumed to be electrical rather than optical (in other
+    words, encoded with a transfer function) unless otherwise specified. If
+    the buffer uses a format that has an alpha channel, the alpha channel is
+    assumed to be premultiplied into the electrical color channel values
+    (after transfer function encoding) unless otherwise specified.
+    
+    Note, because wl_buffer objects are created from multiple independent
+    factory interfaces, the wl_buffer interface is frozen at version 1.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -293,7 +379,18 @@ class wl_buffer:
             ...
 
 class wl_data_offer:
+    """
+    offer to transfer data
+    
+    A wl_data_offer represents a piece of data offered for transfer
+    by another client (the source client).  It is used by the
+    copy-and-paste and drag-and-drop mechanisms.  The offer
+    describes the different mime types that the data can be
+    converted to and provides the mechanism for transferring the
+    data directly from the source client.
+    """
     object_id = 0
+    version = 3
 
     # opcode 0
     @staticmethod
@@ -485,7 +582,16 @@ class wl_data_offer:
             ...
 
 class wl_data_source:
+    """
+    offer to transfer data
+    
+    The wl_data_source object is the source side of a wl_data_offer.
+    It is created by the source client in a data transfer and
+    provides a way to describe the offered data and a way to respond
+    to requests to transfer the data.
+    """
     object_id = 0
+    version = 3
 
     # opcode 0
     @staticmethod
@@ -654,7 +760,17 @@ class wl_data_source:
             ...
 
 class wl_data_device:
+    """
+    data transfer device
+    
+    There is one wl_data_device per seat which can be obtained
+    from the global wl_data_device_manager singleton.
+    
+    A wl_data_device provides access to inter-client data transfer
+    mechanisms such as copy-and-paste and drag-and-drop.
+    """
     object_id = 0
+    version = 3
 
     # opcode 0
     @staticmethod
@@ -820,7 +936,22 @@ class wl_data_device:
             ...
 
 class wl_data_device_manager:
+    """
+    data transfer interface
+    
+    The wl_data_device_manager is a singleton global object that
+    provides access to inter-client data transfer mechanisms such as
+    copy-and-paste and drag-and-drop.  These mechanisms are tied to
+    a wl_seat and this interface lets a client get a wl_data_device
+    corresponding to a wl_seat.
+    
+    Depending on the version bound, the objects created from the bound
+    wl_data_device_manager object will have different requirements for
+    functioning properly. See wl_data_source.set_actions,
+    wl_data_offer.accept and wl_data_offer.finish for details.
+    """
     object_id = 0
+    version = 3
 
     # opcode 0
     @staticmethod
@@ -843,7 +974,21 @@ class wl_data_device_manager:
         ...
 
 class wl_shell:
+    """
+    create desktop-style surfaces
+    
+    This interface is implemented by servers that provide
+    desktop-style user interfaces.
+    
+    It allows clients to associate a wl_shell_surface with
+    a basic surface.
+    
+    Note! This protocol is deprecated and not intended for production use.
+    For desktop-style user interfaces, use xdg_shell. Compositors and clients
+    should not implement this interface.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -860,7 +1005,23 @@ class wl_shell:
         ...
 
 class wl_shell_surface:
+    """
+    desktop-style metadata interface
+    
+    An interface that may be implemented by a wl_surface, for
+    implementations that provide a desktop-style user interface.
+    
+    It provides requests to treat surfaces like toplevel, fullscreen
+    or popup windows, move, resize or maximize them, associate
+    metadata like title and class, etc.
+    
+    On the server side the object is automatically destroyed when
+    the related wl_surface is destroyed. On the client side,
+    wl_shell_surface_destroy() must be called before destroying
+    the wl_surface object.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -1108,7 +1269,54 @@ class wl_shell_surface:
             ...
 
 class wl_surface:
+    """
+    an onscreen surface
+    
+    A surface is a rectangular area that may be displayed on zero
+    or more outputs, and shown any number of times at the compositor's
+    discretion. They can present wl_buffers, receive user input, and
+    define a local coordinate system.
+    
+    The size of a surface (and relative positions on it) is described
+    in surface-local coordinates, which may differ from the buffer
+    coordinates of the pixel content, in case a buffer_transform
+    or a buffer_scale is used.
+    
+    A surface without a "role" is fairly useless: a compositor does
+    not know where, when or how to present it. The role is the
+    purpose of a wl_surface. Examples of roles are a cursor for a
+    pointer (as set by wl_pointer.set_cursor), a drag icon
+    (wl_data_device.start_drag), a sub-surface
+    (wl_subcompositor.get_subsurface), and a window as defined by a
+    shell protocol (e.g. wl_shell.get_shell_surface).
+    
+    A surface can have only one role at a time. Initially a
+    wl_surface does not have a role. Once a wl_surface is given a
+    role, it is set permanently for the whole lifetime of the
+    wl_surface object. Giving the current role again is allowed,
+    unless explicitly forbidden by the relevant interface
+    specification.
+    
+    Surface roles are given by requests in other interfaces such as
+    wl_pointer.set_cursor. The request should explicitly mention
+    that this request gives a role to a wl_surface. Often, this
+    request also creates a new protocol object that represents the
+    role and adds additional functionality to wl_surface. When a
+    client wants to destroy a wl_surface, they must destroy this role
+    object before the wl_surface, otherwise a defunct_role_object error is
+    sent.
+    
+    Destroying the role object does not remove the role from the
+    wl_surface, but it may stop the wl_surface from "playing the role".
+    For instance, if a wl_subsurface object is destroyed, the wl_surface
+    it was created for will be unmapped and forget its position and
+    z-order. It is allowed to create a wl_subsurface for the same
+    wl_surface again, but it is not allowed to use the wl_surface as
+    a cursor (cursor is a different role than sub-surface, and role
+    switching is not allowed).
+    """
     object_id = 0
+    version = 6
 
     # opcode 0
     @staticmethod
@@ -1563,7 +1771,16 @@ class wl_surface:
             ...
 
 class wl_seat:
+    """
+    group of input devices
+    
+    A seat is a group of keyboards, pointer and touch devices. This
+    object is published as a global during start up, or when such a
+    device is hot plugged.  A seat typically has a pointer and
+    maintains a keyboard focus and a pointer focus.
+    """
     object_id = 0
+    version = 9
 
     # opcode 0
     @staticmethod
@@ -1687,7 +1904,20 @@ class wl_seat:
             ...
 
 class wl_pointer:
+    """
+    pointer input device
+    
+    The wl_pointer interface represents one or more input devices,
+    such as mice, which control the pointer location and pointer_focus
+    of a seat.
+    
+    The wl_pointer interface generates motion, enter and leave
+    events for the surfaces that the pointer is located over,
+    and button and axis events for button presses, button releases
+    and scrolling.
+    """
     object_id = 0
+    version = 9
 
     # opcode 0
     @staticmethod
@@ -2049,7 +2279,24 @@ class wl_pointer:
             ...
 
 class wl_keyboard:
+    """
+    keyboard input device
+    
+    The wl_keyboard interface represents one or more keyboards
+    associated with a seat.
+    
+    Each wl_keyboard has the following logical state:
+    
+    - an active surface (possibly null),
+    - the keys currently logically down,
+    - the active modifiers,
+    - the active group.
+    
+    By default, the active surface is null, the keys currently logically down
+    are empty, the active modifiers and the active group are 0.
+    """
     object_id = 0
+    version = 9
 
     # opcode 0
     @staticmethod
@@ -2184,7 +2431,20 @@ class wl_keyboard:
             ...
 
 class wl_touch:
+    """
+    touchscreen input device
+    
+    The wl_touch interface represents a touchscreen
+    associated with a seat.
+    
+    Touch interactions can consist of one or more contacts.
+    For each contact, a series of events is generated, starting
+    with a down event, followed by zero or more motion events,
+    and ending with an up event. Events relating to the same
+    contact point can be identified by the ID of the sequence.
+    """
     object_id = 0
+    version = 9
 
     # opcode 0
     @staticmethod
@@ -2331,7 +2591,18 @@ class wl_touch:
             ...
 
 class wl_output:
+    """
+    compositor output region
+    
+    An output describes part of the compositor geometry.  The
+    compositor works in the 'compositor coordinate system' and an
+    output corresponds to a rectangular area in that space that is
+    actually visible.  This typically corresponds to a monitor that
+    displays part of the compositor space.  This object is published
+    as global during start up, or when a monitor is hotplugged.
+    """
     object_id = 0
+    version = 4
 
     # opcode 0
     @staticmethod
@@ -2518,7 +2789,16 @@ class wl_output:
             ...
 
 class wl_region:
+    """
+    region interface
+    
+    A region object describes an area.
+    
+    Region objects are used to describe the opaque and input
+    regions of a surface.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -2551,7 +2831,31 @@ class wl_region:
         ...
 
 class wl_subcompositor:
+    """
+    sub-surface compositing
+    
+    The global interface exposing sub-surface compositing capabilities.
+    A wl_surface, that has sub-surfaces associated, is called the
+    parent surface. Sub-surfaces can be arbitrarily nested and create
+    a tree of sub-surfaces.
+    
+    The root surface in a tree of sub-surfaces is the main
+    surface. The main surface cannot be a sub-surface, because
+    sub-surfaces must always have a parent.
+    
+    A main surface with its sub-surfaces forms a (compound) window.
+    For window management purposes, this set of wl_surface objects is
+    to be considered as a single window, and it should also behave as
+    such.
+    
+    The aim of sub-surfaces is to offload some of the compositing work
+    within a window from clients to the compositor. A prime example is
+    a video player with decorations and video in separate wl_surface
+    objects. This should allow the compositor to pass YUV video buffer
+    processing to dedicated overlay hardware when possible.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -2594,7 +2898,64 @@ class wl_subcompositor:
         ...
 
 class wl_subsurface:
+    """
+    sub-surface interface to a wl_surface
+    
+    An additional interface to a wl_surface object, which has been
+    made a sub-surface. A sub-surface has one parent surface. A
+    sub-surface's size and position are not limited to that of the parent.
+    Particularly, a sub-surface is not automatically clipped to its
+    parent's area.
+    
+    A sub-surface becomes mapped, when a non-NULL wl_buffer is applied
+    and the parent surface is mapped. The order of which one happens
+    first is irrelevant. A sub-surface is hidden if the parent becomes
+    hidden, or if a NULL wl_buffer is applied. These rules apply
+    recursively through the tree of surfaces.
+    
+    The behaviour of a wl_surface.commit request on a sub-surface
+    depends on the sub-surface's mode. The possible modes are
+    synchronized and desynchronized, see methods
+    wl_subsurface.set_sync and wl_subsurface.set_desync. Synchronized
+    mode caches the wl_surface state to be applied when the parent's
+    state gets applied, and desynchronized mode applies the pending
+    wl_surface state directly. A sub-surface is initially in the
+    synchronized mode.
+    
+    Sub-surfaces also have another kind of state, which is managed by
+    wl_subsurface requests, as opposed to wl_surface requests. This
+    state includes the sub-surface position relative to the parent
+    surface (wl_subsurface.set_position), and the stacking order of
+    the parent and its sub-surfaces (wl_subsurface.place_above and
+    .place_below). This state is applied when the parent surface's
+    wl_surface state is applied, regardless of the sub-surface's mode.
+    As the exception, set_sync and set_desync are effective immediately.
+    
+    The main surface can be thought to be always in desynchronized mode,
+    since it does not have a parent in the sub-surfaces sense.
+    
+    Even if a sub-surface is in desynchronized mode, it will behave as
+    in synchronized mode, if its parent surface behaves as in
+    synchronized mode. This rule is applied recursively throughout the
+    tree of surfaces. This means, that one can set a sub-surface into
+    synchronized mode, and then assume that all its child and grand-child
+    sub-surfaces are synchronized, too, without explicitly setting them.
+    
+    Destroying a sub-surface takes effect immediately. If you need to
+    synchronize the removal of a sub-surface to the parent surface update,
+    unmap the sub-surface first by attaching a NULL wl_buffer, update parent,
+    and then destroy the sub-surface.
+    
+    If the parent wl_surface object is destroyed, the sub-surface is
+    unmapped.
+    
+    A sub-surface never has the keyboard focus of any seat.
+    
+    The wl_surface.offset request is ignored: clients must use set_position
+    instead to move the sub-surface.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -2716,7 +3077,17 @@ class wl_subsurface:
         ...
 
 class wl_callback:
+    """
+    callback object
+    
+    Clients can handle the 'done' event to get notified when
+    the related request is done.
+    
+    Note, because wl_callback objects are created from multiple independent
+    factory interfaces, the wl_callback interface is frozen at version 1.
+    """
     object_id = 0
+    version = 1
 
     class events:
         # opcode 0
@@ -2730,7 +3101,20 @@ class wl_callback:
             ...
 
 class wp_alpha_modifier_v1:
+    """
+    surface alpha modifier manager
+    
+    This interface allows a client to set a factor for the alpha values on a
+    surface, which can be used to offload such operations to the compositor,
+    which can in turn for example offload them to KMS.
+    
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -2756,7 +3140,19 @@ class wp_alpha_modifier_v1:
         ...
 
 class wp_alpha_modifier_surface_v1:
+    """
+    alpha modifier object for a surface
+    
+    This interface allows the client to set a factor for the alpha values on
+    a surface, which can be used to offload such operations to the compositor.
+    The default factor is UINT32_MAX.
+    
+    This object has to be destroyed before the associated wl_surface. Once the
+    wl_surface is destroyed, all request on this object will raise the
+    no_surface error.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -2793,7 +3189,19 @@ class wp_alpha_modifier_surface_v1:
         ...
 
 class wp_content_type_manager_v1:
+    """
+    surface content type manager
+    
+    This interface allows a client to describe the kind of content a surface
+    will display, to allow the compositor to optimize its behavior for it.
+    
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -2820,7 +3228,19 @@ class wp_content_type_manager_v1:
         ...
 
 class wp_content_type_v1:
+    """
+    content type object for a surface
+    
+    The content type object allows the compositor to optimize for the kind
+    of content shown on the surface. A compositor may for example use it to
+    set relevant drm properties like "content type".
+    
+    The client may request to switch to another content type at any time.
+    When the associated surface gets destroyed, this object becomes inert and
+    the client should destroy it.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -2852,7 +3272,20 @@ class wp_content_type_v1:
         ...
 
 class wp_cursor_shape_manager_v1:
+    """
+    cursor shape manager
+    
+    This global offers an alternative, optional way to set cursor images. This
+    new way uses enumerated cursors instead of a wl_surface like
+    wl_pointer.set_cursor does.
+    
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -2885,7 +3318,13 @@ class wp_cursor_shape_manager_v1:
         ...
 
 class wp_cursor_shape_device_v1:
+    """
+    cursor shape for a device
+    
+    This interface allows clients to set the cursor shape.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -2927,7 +3366,42 @@ class wp_cursor_shape_device_v1:
         ...
 
 class wp_drm_lease_device_v1:
+    """
+    lease device
+    
+    This protocol is used by Wayland compositors which act as Direct
+    Rendering Manager (DRM) masters to lease DRM resources to Wayland
+    clients.
+    
+    The compositor will advertise one wp_drm_lease_device_v1 global for each
+    DRM node. Some time after a client binds to the wp_drm_lease_device_v1
+    global, the compositor will send a drm_fd event followed by zero, one or
+    more connector events. After all currently available connectors have been
+    sent, the compositor will send a wp_drm_lease_device_v1.done event.
+    
+    When the list of connectors available for lease changes the compositor
+    will send wp_drm_lease_device_v1.connector events for added connectors and
+    wp_drm_lease_connector_v1.withdrawn events for removed connectors,
+    followed by a wp_drm_lease_device_v1.done event.
+    
+    The compositor will indicate when a device is gone by removing the global
+    via a wl_registry.global_remove event. Upon receiving this event, the
+    client should destroy any matching wp_drm_lease_device_v1 object.
+    
+    To destroy a wp_drm_lease_device_v1 object, the client must first issue
+    a release request. Upon receiving this request, the compositor will
+    immediately send a released event and destroy the object. The client must
+    continue to process and discard drm_fd and connector events until it
+    receives the released event. Upon receiving the released event, the
+    client can safely cleanup any client-side resources.
+    
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3023,7 +3497,19 @@ class wp_drm_lease_device_v1:
             ...
 
 class wp_drm_lease_connector_v1:
+    """
+    a leasable DRM connector
+    
+    Represents a DRM connector which is available for lease. These objects are
+    created via wp_drm_lease_device_v1.connector events, and should be passed
+    to lease requests via wp_drm_lease_request_v1.request_connector.
+    Immediately after the wp_drm_lease_connector_v1 object is created the
+    compositor will send a name, a description, a connector_id and a done
+    event. When the description is updated the compositor will send a
+    description event followed by a done event.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3112,7 +3598,16 @@ class wp_drm_lease_connector_v1:
             ...
 
 class wp_drm_lease_request_v1:
+    """
+    DRM lease request
+    
+    A client that wishes to lease DRM resources will attach the list of
+    connectors advertised with wp_drm_lease_device_v1.connector that they
+    wish to lease, then use wp_drm_lease_request_v1.submit to submit the
+    request.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3150,7 +3645,20 @@ class wp_drm_lease_request_v1:
         ...
 
 class wp_drm_lease_v1:
+    """
+    a DRM lease
+    
+    A DRM lease object is used to transfer the DRM file descriptor to the
+    client and manage the lifetime of the lease.
+    
+    Some time after the wp_drm_lease_v1 object is created, the compositor
+    will reply with the lease request's result. If the lease request is
+    granted, the compositor will send a lease_fd event. If the lease request
+    is denied, the compositor will send a finished event without a lease_fd
+    event.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3202,7 +3710,28 @@ class wp_drm_lease_v1:
             ...
 
 class ext_foreign_toplevel_list_v1:
+    """
+    list toplevels
+    
+    A toplevel is defined as a surface with a role similar to xdg_toplevel.
+    XWayland surfaces may be treated like toplevels in this protocol.
+    
+    After a client binds the ext_foreign_toplevel_list_v1, each mapped
+    toplevel window will be sent using the ext_foreign_toplevel_list_v1.toplevel
+    event.
+    
+    Clients which only care about the current state can perform a roundtrip after
+    binding this global.
+    
+    For each instance of ext_foreign_toplevel_list_v1, the compositor must
+    create a new ext_foreign_toplevel_handle_v1 object for each mapped toplevel.
+    
+    If a compositor implementation sends the ext_foreign_toplevel_list_v1.finished
+    event after the global is bound, the compositor must not send any
+    ext_foreign_toplevel_list_v1.toplevel events.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3269,7 +3798,14 @@ class ext_foreign_toplevel_list_v1:
             ...
 
 class ext_foreign_toplevel_handle_v1:
+    """
+    a mapped toplevel
+    
+    A ext_foreign_toplevel_handle_v1 object represents a mapped toplevel
+    window. A single app may have multiple mapped toplevels.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3384,7 +3920,16 @@ class ext_foreign_toplevel_handle_v1:
             ...
 
 class ext_idle_notifier_v1:
+    """
+    idle notification manager
+    
+    This interface allows clients to monitor user idle status.
+    
+    After binding to this global, clients can create ext_idle_notification_v1
+    objects to get notified when the user is idle for a given amount of time.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3415,7 +3960,26 @@ class ext_idle_notifier_v1:
         ...
 
 class ext_idle_notification_v1:
+    """
+    idle notification
+    
+    This interface is used by the compositor to send idle notification events
+    to clients.
+    
+    Initially the notification object is not idle. The notification object
+    becomes idle when no user activity has happened for at least the timeout
+    duration, starting from the creation of the notification object. User
+    activity may include input events or a presence sensor, but is
+    compositor-specific. If an idle inhibitor is active (e.g. another client
+    has created a zwp_idle_inhibitor_v1 on a visible surface), the compositor
+    must not make the notification object idle.
+    
+    When the notification object becomes idle, an idled event is sent. When
+    user activity starts again, the notification object stops being idle,
+    a resumed event is sent and the timeout is restarted.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3456,7 +4020,19 @@ class ext_idle_notification_v1:
             ...
 
 class ext_image_capture_source_v1:
+    """
+    opaque image capture source object
+    
+    The image capture source object is an opaque descriptor for a capturable
+    resource.  This resource may be any sort of entity from which an image
+    may be derived.
+    
+    Note, because ext_image_capture_source_v1 objects are created from multiple
+    independent factory interfaces, the ext_image_capture_source_v1 interface is
+    frozen at version 1.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3470,7 +4046,13 @@ class ext_image_capture_source_v1:
         ...
 
 class ext_output_image_capture_source_manager_v1:
+    """
+    image capture source manager for outputs
+    
+    A manager for creating image capture source objects for wl_output objects.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3498,7 +4080,14 @@ class ext_output_image_capture_source_manager_v1:
         ...
 
 class ext_foreign_toplevel_image_capture_source_manager_v1:
+    """
+    image capture source manager for foreign toplevels
+    
+    A manager for creating image capture source objects for
+    ext_foreign_toplevel_handle_v1 objects.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3524,7 +4113,14 @@ class ext_foreign_toplevel_image_capture_source_manager_v1:
         ...
 
 class ext_image_copy_capture_manager_v1:
+    """
+    manager to inform clients and begin capturing
+    
+    This object is a manager which offers requests to start capturing from a
+    source.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3567,7 +4163,28 @@ class ext_image_copy_capture_manager_v1:
         ...
 
 class ext_image_copy_capture_session_v1:
+    """
+    image copy capture session
+    
+    This object represents an active image copy capture session.
+    
+    After a capture session is created, buffer constraint events will be
+    emitted from the compositor to tell the client which buffer types and
+    formats are supported for reading from the session. The compositor may
+    re-send buffer constraint events whenever they change.
+    
+    The advertise buffer constraints, the compositor must send in no
+    particular order: zero or more shm_format and dmabuf_format events, zero
+    or one dmabuf_device event, and exactly one buffer_size event. Then the
+    compositor must send a done event.
+    
+    When the client has received all the buffer constraints, it can create a
+    buffer accordingly, attach it to the capture session using the
+    attach_buffer request, set the buffer damage using the damage_buffer
+    request and then send the capture request.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3686,7 +4303,22 @@ class ext_image_copy_capture_session_v1:
             ...
 
 class ext_image_copy_capture_frame_v1:
+    """
+    image capture frame
+    
+    This object represents an image capture frame.
+    
+    The client should attach a buffer, damage the buffer, and then send a
+    capture request.
+    
+    If the capture is successful, the compositor must send the frame metadata
+    (transform, damage, presentation_time in any order) followed by the ready
+    event.
+    
+    If the capture fails, the compositor must send the failed event.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3839,7 +4471,14 @@ class ext_image_copy_capture_frame_v1:
             ...
 
 class ext_image_copy_capture_cursor_session_v1:
+    """
+    cursor capture session
+    
+    This object represents a cursor capture session. It extends the base
+    capture session with cursor-specific metadata.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3936,7 +4575,13 @@ class ext_image_copy_capture_cursor_session_v1:
             ...
 
 class ext_session_lock_manager_v1:
+    """
+    used to lock the session
+    
+    This interface is used to request that the session be locked.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -3964,7 +4609,60 @@ class ext_session_lock_manager_v1:
         ...
 
 class ext_session_lock_v1:
+    """
+    manage lock state and create lock surfaces
+    
+    In response to the creation of this object the compositor must send
+    either the locked or finished event.
+    
+    The locked event indicates that the session is locked. This means
+    that the compositor must stop rendering and providing input to normal
+    clients. Instead the compositor must blank all outputs with an opaque
+    color such that their normal content is fully hidden.
+    
+    The only surfaces that should be rendered while the session is locked
+    are the lock surfaces created through this interface and optionally,
+    at the compositor's discretion, special privileged surfaces such as
+    input methods or portions of desktop shell UIs.
+    
+    The locked event must not be sent until a new "locked" frame (either
+    from a session lock surface or the compositor blanking the output) has
+    been presented on all outputs and no security sensitive normal/unlocked
+    content is possibly visible.
+    
+    The finished event should be sent immediately on creation of this
+    object if the compositor decides that the locked event will not be sent.
+    
+    The compositor may wait for the client to create and render session lock
+    surfaces before sending the locked event to avoid displaying intermediate
+    blank frames. However, it must impose a reasonable time limit if
+    waiting and send the locked event as soon as the hard requirements
+    described above can be met if the time limit expires. Clients should
+    immediately create lock surfaces for all outputs on creation of this
+    object to make this possible.
+    
+    This behavior of the locked event is required in order to prevent
+    possible race conditions with clients that wish to suspend the system
+    or similar after locking the session. Without these semantics, clients
+    triggering a suspend after receiving the locked event would race with
+    the first "locked" frame being presented and normal/unlocked frames
+    might be briefly visible as the system is resumed if the suspend
+    operation wins the race.
+    
+    If the client dies while the session is locked, the compositor must not
+    unlock the session in response. It is acceptable for the session to be
+    permanently locked if this happens. The compositor may choose to continue
+    to display the lock surfaces the client had mapped before it died or
+    alternatively fall back to a solid color, this is compositor policy.
+    
+    Compositors may also allow a secure way to recover the session, the
+    details of this are compositor policy. Compositors may allow a new
+    client to create a ext_session_lock_v1 object and take responsibility
+    for unlocking the session, they may even start a new lock client
+    instance automatically.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4087,7 +4785,27 @@ class ext_session_lock_v1:
             ...
 
 class ext_session_lock_surface_v1:
+    """
+    a surface displayed while the session is locked
+    
+    The client may use lock surfaces to display a screensaver, render a
+    dialog to enter a password and unlock the session, or however else it
+    sees fit.
+    
+    On binding this interface the compositor will immediately send the
+    first configure event. After making the ack_configure request in
+    response to this event the client should attach and commit the first
+    buffer. Committing the surface before acking the first configure is a
+    protocol error. Committing the surface with a null buffer at any time
+    is a protocol error.
+    
+    The compositor is free to handle keyboard/pointer focus for lock
+    surfaces however it chooses. A reasonable way to do this would be to
+    give the first lock surface created keyboard focus and change keyboard
+    focus if the user clicks on other surfaces.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4157,7 +4875,13 @@ class ext_session_lock_surface_v1:
             ...
 
 class ext_transient_seat_manager_v1:
+    """
+    transient seat manager
+    
+    The transient seat manager creates short-lived seats.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4187,7 +4911,14 @@ class ext_transient_seat_manager_v1:
         ...
 
 class ext_transient_seat_v1:
+    """
+    transient seat handle
+    
+    When the transient seat handle is destroyed, the seat itself will also be
+    destroyed.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4233,7 +4964,13 @@ class ext_transient_seat_v1:
             ...
 
 class wp_fractional_scale_manager_v1:
+    """
+    fractional surface scale information
+    
+    A global interface for requesting surfaces to use fractional scales.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4261,7 +4998,14 @@ class wp_fractional_scale_manager_v1:
         ...
 
 class wp_fractional_scale_v1:
+    """
+    fractional scale interface to a wl_surface
+    
+    An additional interface to a wl_surface object which allows the compositor
+    to inform the client of the preferred scale.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4289,7 +5033,16 @@ class wp_fractional_scale_v1:
             ...
 
 class wp_linux_drm_syncobj_manager_v1:
+    """
+    global for providing explicit synchronization
+    
+    This global is a factory interface, allowing clients to request
+    explicit synchronization for buffers on a per-surface basis.
+    
+    See wp_linux_drm_syncobj_surface_v1 for more information.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4335,7 +5088,14 @@ class wp_linux_drm_syncobj_manager_v1:
         ...
 
 class wp_linux_drm_syncobj_timeline_v1:
+    """
+    synchronization object timeline
+    
+    This object represents an explicit synchronization object timeline
+    imported by the client to the compositor.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4350,7 +5110,37 @@ class wp_linux_drm_syncobj_timeline_v1:
         ...
 
 class wp_linux_drm_syncobj_surface_v1:
+    """
+    per-surface explicit synchronization
+    
+    This object is an add-on interface for wl_surface to enable explicit
+    synchronization.
+    
+    Each surface can be associated with only one object of this interface at
+    any time.
+    
+    Explicit synchronization is guaranteed to be supported for buffers
+    created with any version of the linux-dmabuf protocol. Compositors are
+    free to support explicit synchronization for additional buffer types.
+    If at surface commit time the attached buffer does not support explicit
+    synchronization, an unsupported_buffer error is raised.
+    
+    As long as the wp_linux_drm_syncobj_surface_v1 object is alive, the
+    compositor may ignore implicit synchronization for buffers attached and
+    committed to the wl_surface. The delivery of wl_buffer.release events
+    for buffers attached to the surface becomes undefined.
+    
+    Clients must set both acquire and release points if and only if a
+    non-null buffer is attached in the same surface commit. See the
+    no_buffer, no_acquire_point and no_release_point protocol errors.
+    
+    If at surface commit time the acquire and release DRM syncobj timelines
+    are identical, the acquire point value must be strictly less than the
+    release point value, or else the conflicting_points protocol error is
+    raised.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4451,7 +5241,30 @@ class wp_linux_drm_syncobj_surface_v1:
         ...
 
 class wp_security_context_manager_v1:
+    """
+    client security context manager
+    
+    This interface allows a client to register a new Wayland connection to
+    the compositor and attach a security context to it.
+    
+    This is intended to be used by sandboxes. Sandbox engines attach a
+    security context to all connections coming from inside the sandbox. The
+    compositor can then restrict the features that the sandboxed connections
+    can use.
+    
+    Compositors should forbid nesting multiple security contexts by not
+    exposing wp_security_context_manager_v1 global to clients with a security
+    context attached, or by sending the nested protocol error. Nested
+    security contexts are dangerous because they can potentially allow
+    privilege escalation of a sandboxed client.
+    
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4489,7 +5302,22 @@ class wp_security_context_manager_v1:
         ...
 
 class wp_security_context_v1:
+    """
+    client security context
+    
+    The security context allows a client to register a new client and attach
+    security context metadata to the connections.
+    
+    When both are set, the combination of the application ID and the sandbox
+    engine must uniquely identify an application. The same application ID
+    will be used across instances (e.g. if the application is restarted, or
+    if the application is started multiple times).
+    
+    When both are set, the combination of the instance ID and the sandbox
+    engine must uniquely identify a running instance of an application.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4580,7 +5408,14 @@ class wp_security_context_v1:
         ...
 
 class wp_single_pixel_buffer_manager_v1:
+    """
+    global factory for single-pixel buffers
+    
+    The wp_single_pixel_buffer_manager_v1 interface is a factory for
+    single-pixel buffers.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4610,7 +5445,27 @@ class wp_single_pixel_buffer_manager_v1:
         ...
 
 class wp_tearing_control_manager_v1:
+    """
+    protocol for tearing control
+    
+    For some use cases like games or drawing tablets it can make sense to
+    reduce latency by accepting tearing with the use of asynchronous page
+    flips. This global is a factory interface, allowing clients to inform
+    which type of presentation the content of their surfaces is suitable for.
+    
+    Graphics APIs like EGL or Vulkan, that manage the buffer queue and commits
+    of a wl_surface themselves, are likely to be using this extension
+    internally. If a client is using such an API for a wl_surface, it should
+    not directly use this extension on that surface, to avoid raising a
+    tearing_control_exists protocol error.
+    
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4639,7 +5494,20 @@ class wp_tearing_control_manager_v1:
         ...
 
 class wp_tearing_control_v1:
+    """
+    per-surface tearing control interface
+    
+    An additional interface to a wl_surface object, which allows the client
+    to hint to the compositor if the content on the surface is suitable for
+    presentation with tearing.
+    The default presentation hint is vsync. See presentation_hint for more
+    details.
+    
+    If the associated wl_surface is destroyed, this object becomes inert and
+    should be destroyed.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4668,7 +5536,15 @@ class wp_tearing_control_v1:
         ...
 
 class xdg_activation_v1:
+    """
+    interface for activating surfaces
+    
+    A global interface used for informing the compositor about applications
+    being activated or started, or for applications to request to be
+    activated.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4716,7 +5592,20 @@ class xdg_activation_v1:
         ...
 
 class xdg_activation_token_v1:
+    """
+    an exported activation handle
+    
+    An object for setting up a token and receiving a token handle that can
+    be passed as an activation token to another client.
+    
+    The object is created using the xdg_activation_v1.get_activation_token
+    request. This object should then be populated with the app_id, surface
+    and serial information and committed. The compositor shall then issue a
+    done event with the token. In case the request's parameters are invalid,
+    the compositor will provide an invalid token.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4803,7 +5692,23 @@ class xdg_activation_token_v1:
             ...
 
 class xdg_wm_dialog_v1:
+    """
+    create dialogs related to other toplevels
+    
+    The xdg_wm_dialog_v1 interface is exposed as a global object allowing
+    to register surfaces with a xdg_toplevel role as "dialogs" relative to
+    another toplevel.
+    
+    The compositor may let this relation influence how the surface is
+    placed, displayed or interacted with.
+    
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4831,7 +5736,21 @@ class xdg_wm_dialog_v1:
         ...
 
 class xdg_dialog_v1:
+    """
+    dialog object
+    
+    A xdg_dialog_v1 object is an ancillary object tied to a xdg_toplevel. Its
+    purpose is hinting the compositor that the toplevel is a "dialog" (e.g. a
+    temporary window) relative to another toplevel (see
+    xdg_toplevel.set_parent). If the xdg_toplevel is destroyed, the xdg_dialog_v1
+    becomes inert.
+    
+    Through this object, the client may provide additional hints about
+    the purpose of the secondary toplevel. This interface has no effect
+    on toplevels that are not attached to a parent toplevel.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4877,7 +5796,45 @@ class xdg_dialog_v1:
         ...
 
 class xdg_toplevel_drag_manager_v1:
+    """
+    Move a window during a drag
+    
+    This protocol enhances normal drag and drop with the ability to move a
+    window at the same time. This allows having detachable parts of a window
+    that when dragged out of it become a new window and can be dragged over
+    an existing window to be reattached.
+    
+    A typical workflow would be when the user starts dragging on top of a
+    detachable part of a window, the client would create a wl_data_source and
+    a xdg_toplevel_drag_v1 object and start the drag as normal via
+    wl_data_device.start_drag. Once the client determines that the detachable
+    window contents should be detached from the originating window, it creates
+    a new xdg_toplevel with these contents and issues a
+    xdg_toplevel_drag_v1.attach request before mapping it. From now on the new
+    window is moved by the compositor during the drag as if the client called
+    xdg_toplevel.move.
+    
+    Dragging an existing window is similar. The client creates a
+    xdg_toplevel_drag_v1 object and attaches the existing toplevel before
+    starting the drag.
+    
+    Clients use the existing drag and drop mechanism to detect when a window
+    can be docked or undocked. If the client wants to snap a window into a
+    parent window it should delete or unmap the dragged top-level. If the
+    contents should be detached again it attaches a new toplevel as described
+    above. If a drag operation is cancelled without being dropped, clients
+    should revert to the previous state, deleting any newly created windows
+    as appropriate. When a drag operation ends as indicated by
+    wl_data_source.dnd_drop_performed the dragged toplevel window's final
+    position is determined as if a xdg_toplevel_move operation ended.
+    
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4911,7 +5868,12 @@ class xdg_toplevel_drag_manager_v1:
         ...
 
 class xdg_toplevel_drag_v1:
+    """
+    Object representing a toplevel move during a drag
+    
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -4950,7 +5912,14 @@ class xdg_toplevel_drag_v1:
         ...
 
 class xdg_toplevel_icon_manager_v1:
+    """
+    interface to manage toplevel icons
+    
+    This interface allows clients to create toplevel window icons and set
+    them on toplevel windows to be displayed to the user.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -5036,7 +6005,20 @@ class xdg_toplevel_icon_manager_v1:
             ...
 
 class xdg_toplevel_icon_v1:
+    """
+    a toplevel window icon
+    
+    This interface defines a toplevel icon.
+    An icon can have a name, and multiple buffers.
+    In order to be applied, the icon must have either a name, or at least
+    one buffer assigned. Applying an empty icon (with no buffer or name) to
+    a toplevel should reset its icon to the default icon.
+    
+    It is up to compositor policy whether to prefer using a buffer or loading
+    an icon via its name. See 'set_name' and 'add_buffer' for details.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -5105,7 +6087,27 @@ class xdg_toplevel_icon_v1:
         ...
 
 class xwayland_shell_v1:
+    """
+    context object for Xwayland shell
+    
+    xwayland_shell_v1 is a singleton global object that
+    provides the ability to create a xwayland_surface_v1 object
+    for a given wl_surface.
+    
+    This interface is intended to be bound by the Xwayland server.
+    
+    A compositor must not allow clients other than Xwayland to
+    bind to this interface. A compositor should hide this global
+    from other clients' wl_registry.
+    A client the compositor does not consider to be an Xwayland
+    server attempting to bind this interface will result in
+    an implementation-defined error.
+    
+    An Xwayland server that has bound this interface must not
+    set the `WL_SURFACE_ID` atom on a window.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -5138,7 +6140,20 @@ class xwayland_shell_v1:
         ...
 
 class xwayland_surface_v1:
+    """
+    interface for associating Xwayland windows to wl_surfaces
+    
+    An Xwayland surface is a surface managed by an Xwayland server.
+    It is used for associating surfaces to Xwayland windows.
+    
+    The Xwayland server associated with actions in this interface is
+    determined by the Wayland client making the request.
+    
+    The client must call wl_surface.commit on the corresponding wl_surface
+    for the xwayland_surface_v1 state to take effect.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -5183,7 +6198,76 @@ class xwayland_surface_v1:
         ...
 
 class zwp_linux_dmabuf_v1:
+    """
+    factory for creating dmabuf-based wl_buffers
+    
+    Following the interfaces from:
+    https://www.khronos.org/registry/egl/extensions/EXT/EGL_EXT_image_dma_buf_import.txt
+    https://www.khronos.org/registry/EGL/extensions/EXT/EGL_EXT_image_dma_buf_import_modifiers.txt
+    and the Linux DRM sub-system's AddFb2 ioctl.
+    
+    This interface offers ways to create generic dmabuf-based wl_buffers.
+    
+    Clients can use the get_surface_feedback request to get dmabuf feedback
+    for a particular surface. If the client wants to retrieve feedback not
+    tied to a surface, they can use the get_default_feedback request.
+    
+    The following are required from clients:
+    
+    - Clients must ensure that either all data in the dma-buf is
+    coherent for all subsequent read access or that coherency is
+    correctly handled by the underlying kernel-side dma-buf
+    implementation.
+    
+    - Don't make any more attachments after sending the buffer to the
+    compositor. Making more attachments later increases the risk of
+    the compositor not being able to use (re-import) an existing
+    dmabuf-based wl_buffer.
+    
+    The underlying graphics stack must ensure the following:
+    
+    - The dmabuf file descriptors relayed to the server will stay valid
+    for the whole lifetime of the wl_buffer. This means the server may
+    at any time use those fds to import the dmabuf into any kernel
+    sub-system that might accept it.
+    
+    However, when the underlying graphics stack fails to deliver the
+    promise, because of e.g. a device hot-unplug which raises internal
+    errors, after the wl_buffer has been successfully created the
+    compositor must not raise protocol errors to the client when dmabuf
+    import later fails.
+    
+    To create a wl_buffer from one or more dmabufs, a client creates a
+    zwp_linux_dmabuf_params_v1 object with a zwp_linux_dmabuf_v1.create_params
+    request. All planes required by the intended format are added with
+    the 'add' request. Finally, a 'create' or 'create_immed' request is
+    issued, which has the following outcome depending on the import success.
+    
+    The 'create' request,
+    - on success, triggers a 'created' event which provides the final
+    wl_buffer to the client.
+    - on failure, triggers a 'failed' event to convey that the server
+    cannot use the dmabufs received from the client.
+    
+    For the 'create_immed' request,
+    - on success, the server immediately imports the added dmabufs to
+    create a wl_buffer. No event is sent from the server in this case.
+    - on failure, the server can choose to either:
+    - terminate the client by raising a fatal error.
+    - mark the wl_buffer as failed, and send a 'failed' event to the
+    client. If the client uses a failed wl_buffer as an argument to any
+    request, the behaviour is compositor implementation-defined.
+    
+    For all DRM formats and unless specified in another protocol extension,
+    pre-multiplied alpha is used for pixel values.
+    
+    Unless specified otherwise in another protocol extension, implicit
+    synchronization is used. In other words, compositors and clients must
+    wait and signal fences implicitly passed via the DMA-BUF's reservation
+    mechanism.
+    """
     object_id = 0
+    version = 5
 
     # opcode 0
     @staticmethod
@@ -5291,7 +6375,26 @@ class zwp_linux_dmabuf_v1:
             ...
 
 class zwp_linux_buffer_params_v1:
+    """
+    parameters for creating a dmabuf-based wl_buffer
+    
+    This temporary object is a collection of dmabufs and other
+    parameters that together form a single logical buffer. The temporary
+    object may eventually create one wl_buffer unless cancelled by
+    destroying it before requesting 'create'.
+    
+    Single-planar formats only require one dmabuf, however
+    multi-planar formats may require more than one dmabuf. For all
+    formats, an 'add' request must be called once per plane (even if the
+    underlying dmabuf fd is identical).
+    
+    You must use consecutive plane indices ('plane_idx' argument for 'add')
+    from zero to the number of planes used by the drm_fourcc format code.
+    All planes required by the format must be given exactly once, but can
+    be given in any order. Each plane index can be set only once.
+    """
     object_id = 0
+    version = 5
 
     # opcode 0
     @staticmethod
@@ -5463,7 +6566,37 @@ class zwp_linux_buffer_params_v1:
             ...
 
 class zwp_linux_dmabuf_feedback_v1:
+    """
+    dmabuf feedback
+    
+    This object advertises dmabuf parameters feedback. This includes the
+    preferred devices and the supported formats/modifiers.
+    
+    The parameters are sent once when this object is created and whenever they
+    change. The done event is always sent once after all parameters have been
+    sent. When a single parameter changes, all parameters are re-sent by the
+    compositor.
+    
+    Compositors can re-send the parameters when the current client buffer
+    allocations are sub-optimal. Compositors should not re-send the
+    parameters if re-allocating the buffers would not result in a more optimal
+    configuration. In particular, compositors should avoid sending the exact
+    same parameters multiple times in a row.
+    
+    The tranche_target_device and tranche_formats events are grouped by
+    tranches of preference. For each tranche, a tranche_target_device, one
+    tranche_flags and one or more tranche_formats events are sent, followed
+    by a tranche_done event finishing the list. The tranches are sent in
+    descending order of preference. All formats and modifiers in the same
+    tranche have the same preference.
+    
+    To send parameters, the compositor sends one main_device event, tranches
+    (each consisting of one tranche_target_device event, one tranche_flags
+    event, tranche_formats events and then a tranche_done event), then one
+    done event.
+    """
     object_id = 0
+    version = 5
 
     # opcode 0
     @staticmethod
@@ -5645,7 +6778,13 @@ class zwp_linux_dmabuf_feedback_v1:
             ...
 
 class wp_presentation:
+    """
+    timed presentation related wl_surface requests
+    
+    
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -5715,7 +6854,23 @@ class wp_presentation:
             ...
 
 class wp_presentation_feedback:
+    """
+    presentation time feedback event
+    
+    A presentation_feedback object returns an indication that a
+    wl_surface content update has become visible to the user.
+    One object corresponds to one content update submission
+    (wl_surface.commit). There are two possible outcomes: the
+    content update is presented to the user, and a presentation
+    timestamp delivered; or, the user did not see the content
+    update because it was superseded or its surface destroyed,
+    and the content update is discarded.
+    
+    Once a presentation_feedback object has delivered a 'presented'
+    or 'discarded' event it is automatically destroyed.
+    """
     object_id = 0
+    version = 1
 
     class events:
         # opcode 0
@@ -5796,7 +6951,15 @@ class wp_presentation_feedback:
             ...
 
 class zwp_tablet_manager_v2:
+    """
+    controller object for graphic tablet devices
+    
+    An object that provides access to the graphics tablets available on this
+    system. All tablets are associated with a seat, to get access to the
+    actual tablets, use wp_tablet_manager.get_tablet_seat.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -5821,7 +6984,15 @@ class zwp_tablet_manager_v2:
         ...
 
 class zwp_tablet_seat_v2:
+    """
+    controller object for graphic tablet devices of a seat
+    
+    An object that provides access to the graphics tablets available on this
+    seat. After binding to this interface, the compositor sends a set of
+    wp_tablet_seat.tablet_added and wp_tablet_seat.tool_added events.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -5881,7 +7052,32 @@ class zwp_tablet_seat_v2:
             ...
 
 class zwp_tablet_tool_v2:
+    """
+    a physical tablet tool
+    
+    An object that represents a physical tool that has been, or is
+    currently in use with a tablet in this seat. Each wp_tablet_tool
+    object stays valid until the client destroys it; the compositor
+    reuses the wp_tablet_tool object to indicate that the object's
+    respective physical tool has come into proximity of a tablet again.
+    
+    A wp_tablet_tool object's relation to a physical tool depends on the
+    tablet's ability to report serial numbers. If the tablet supports
+    this capability, then the object represents a specific physical tool
+    and can be identified even when used on multiple tablets.
+    
+    A tablet tool has a number of static characteristics, e.g. tool type,
+    hardware_serial and capabilities. These capabilities are sent in an
+    event sequence after the wp_tablet_seat.tool_added event before any
+    actual events from this tool. This initial event sequence is
+    terminated by a wp_tablet_tool.done event.
+    
+    Tablet tool events are grouped by wp_tablet_tool.frame events.
+    Any events received before a wp_tablet_tool.frame event should be
+    considered part of the same hardware state change.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -6253,7 +7449,20 @@ class zwp_tablet_tool_v2:
             ...
 
 class zwp_tablet_v2:
+    """
+    graphics tablet device
+    
+    The wp_tablet interface represents one graphics tablet device. The
+    tablet interface itself does not generate events; all events are
+    generated by wp_tablet_tool objects when in proximity above a tablet.
+    
+    A tablet has a number of static characteristics, e.g. device name and
+    pid/vid. These capabilities are sent in an event sequence after the
+    wp_tablet_seat.tablet_added event. This initial event sequence is
+    terminated by a wp_tablet.done event.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -6348,7 +7557,17 @@ class zwp_tablet_v2:
             ...
 
 class zwp_tablet_pad_ring_v2:
+    """
+    pad ring
+    
+    A circular interaction area, such as the touch ring on the Wacom Intuos
+    Pro series tablets.
+    
+    Events on a ring are logically grouped by the wl_tablet_pad_ring.frame
+    event.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -6465,7 +7684,17 @@ class zwp_tablet_pad_ring_v2:
             ...
 
 class zwp_tablet_pad_strip_v2:
+    """
+    pad strip
+    
+    A linear interaction area, such as the strips found in Wacom Cintiq
+    models.
+    
+    Events on a strip are logically grouped by the wl_tablet_pad_strip.frame
+    event.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -6584,7 +7813,33 @@ class zwp_tablet_pad_strip_v2:
             ...
 
 class zwp_tablet_pad_group_v2:
+    """
+    a set of buttons, rings and strips
+    
+    A pad group describes a distinct (sub)set of buttons, rings and strips
+    present in the tablet. The criteria of this grouping is usually positional,
+    eg. if a tablet has buttons on the left and right side, 2 groups will be
+    presented. The physical arrangement of groups is undisclosed and may
+    change on the fly.
+    
+    Pad groups will announce their features during pad initialization. Between
+    the corresponding wp_tablet_pad.group event and wp_tablet_pad_group.done, the
+    pad group will announce the buttons, rings and strips contained in it,
+    plus the number of supported modes.
+    
+    Modes are a mechanism to allow multiple groups of actions for every element
+    in the pad group. The number of groups and available modes in each is
+    persistent across device plugs. The current mode is user-switchable, it
+    will be announced through the wp_tablet_pad_group.mode_switch event both
+    whenever it is switched, and after wp_tablet_pad.enter.
+    
+    The current mode logically applies to all elements in the pad group,
+    although it is at clients' discretion whether to actually perform different
+    actions, and/or issue the respective .set_feedback requests to notify the
+    compositor. See the wp_tablet_pad_group.mode_switch event for more details.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -6718,7 +7973,34 @@ class zwp_tablet_pad_group_v2:
             ...
 
 class zwp_tablet_pad_v2:
+    """
+    a set of buttons, rings and strips
+    
+    A pad device is a set of buttons, rings and strips
+    usually physically present on the tablet device itself. Some
+    exceptions exist where the pad device is physically detached, e.g. the
+    Wacom ExpressKey Remote.
+    
+    Pad devices have no axes that control the cursor and are generally
+    auxiliary devices to the tool devices used on the tablet surface.
+    
+    A pad device has a number of static characteristics, e.g. the number
+    of rings. These capabilities are sent in an event sequence after the
+    wp_tablet_seat.pad_added event before any actual events from this pad.
+    This initial event sequence is terminated by a wp_tablet_pad.done
+    event.
+    
+    All pad features (buttons, rings and strips) are logically divided into
+    groups and all pads have at least one group. The available groups are
+    notified through the wp_tablet_pad.group event; the compositor will
+    emit one event per group before emitting wp_tablet_pad.done.
+    
+    Groups may have multiple modes. Modes allow clients to map multiple
+    actions to a single pad feature. Only one mode can be active per group,
+    although different groups may have different active modes.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -6872,7 +8154,18 @@ class zwp_tablet_pad_v2:
             ...
 
 class wp_viewporter:
+    """
+    surface cropping and scaling
+    
+    The global interface exposing surface cropping and scaling
+    capabilities is used to instantiate an interface extension for a
+    wl_surface object. This extended interface will then allow
+    cropping and scaling the surface contents, effectively
+    disconnecting the direct relationship between the buffer and the
+    surface size.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -6900,7 +8193,66 @@ class wp_viewporter:
         ...
 
 class wp_viewport:
+    """
+    crop and scale interface to a wl_surface
+    
+    An additional interface to a wl_surface object, which allows the
+    client to specify the cropping and scaling of the surface
+    contents.
+    
+    This interface works with two concepts: the source rectangle (src_x,
+    src_y, src_width, src_height), and the destination size (dst_width,
+    dst_height). The contents of the source rectangle are scaled to the
+    destination size, and content outside the source rectangle is ignored.
+    This state is double-buffered, see wl_surface.commit.
+    
+    The two parts of crop and scale state are independent: the source
+    rectangle, and the destination size. Initially both are unset, that
+    is, no scaling is applied. The whole of the current wl_buffer is
+    used as the source, and the surface size is as defined in
+    wl_surface.attach.
+    
+    If the destination size is set, it causes the surface size to become
+    dst_width, dst_height. The source (rectangle) is scaled to exactly
+    this size. This overrides whatever the attached wl_buffer size is,
+    unless the wl_buffer is NULL. If the wl_buffer is NULL, the surface
+    has no content and therefore no size. Otherwise, the size is always
+    at least 1x1 in surface local coordinates.
+    
+    If the source rectangle is set, it defines what area of the wl_buffer is
+    taken as the source. If the source rectangle is set and the destination
+    size is not set, then src_width and src_height must be integers, and the
+    surface size becomes the source rectangle size. This results in cropping
+    without scaling. If src_width or src_height are not integers and
+    destination size is not set, the bad_size protocol error is raised when
+    the surface state is applied.
+    
+    The coordinate transformations from buffer pixel coordinates up to
+    the surface-local coordinates happen in the following order:
+    1. buffer_transform (wl_surface.set_buffer_transform)
+    2. buffer_scale (wl_surface.set_buffer_scale)
+    3. crop and scale (wp_viewport.set*)
+    This means, that the source rectangle coordinates of crop and scale
+    are given in the coordinates after the buffer transform and scale,
+    i.e. in the coordinates that would be the surface-local coordinates
+    if the crop and scale was not applied.
+    
+    If src_x or src_y are negative, the bad_value protocol error is raised.
+    Otherwise, if the source rectangle is partially or completely outside of
+    the non-NULL wl_buffer, then the out_of_buffer protocol error is raised
+    when the surface state is applied. A NULL wl_buffer does not raise the
+    out_of_buffer error.
+    
+    If the wl_surface associated with the wp_viewport is destroyed,
+    all wp_viewport requests except 'destroy' raise the protocol error
+    no_surface.
+    
+    If the wp_viewport object is destroyed, the crop and scale
+    state is removed from the wl_surface. The change will be applied
+    on the next wl_surface.commit.
+    """
     object_id = 0
+    version = 1
 
     # opcode 0
     @staticmethod
@@ -6952,7 +8304,17 @@ class wp_viewport:
         ...
 
 class xdg_wm_base:
+    """
+    create desktop-style surfaces
+    
+    The xdg_wm_base interface is exposed as a global object enabling clients
+    to turn their wl_surfaces into windows in a desktop environment. It
+    defines the basic functionality needed for clients and the compositor to
+    create windows that can be dragged, resized, maximized, etc, as well as
+    creating transient windows such as popup menus.
+    """
     object_id = 0
+    version = 6
 
     # opcode 0
     @staticmethod
@@ -7038,7 +8400,31 @@ class xdg_wm_base:
             ...
 
 class xdg_positioner:
+    """
+    child surface positioner
+    
+    The xdg_positioner provides a collection of rules for the placement of a
+    child surface relative to a parent surface. Rules can be defined to ensure
+    the child surface remains within the visible area's borders, and to
+    specify how the child surface changes its position, such as sliding along
+    an axis, or flipping around a rectangle. These positioner-created rules are
+    constrained by the requirement that a child surface must intersect with or
+    be at least partially adjacent to its parent surface.
+    
+    See the various requests for details about possible rules.
+    
+    At the time of the request, the compositor makes a copy of the rules
+    specified by the xdg_positioner. Thus, after the request is complete the
+    xdg_positioner object can be destroyed or reused; further changes to the
+    object will have no effect on previous usages.
+    
+    For an xdg_positioner object to be considered complete, it must have a
+    non-zero size set by set_size, and a non-zero anchor rectangle set by
+    set_anchor_rect. Passing an incomplete xdg_positioner object when
+    positioning a surface raises an invalid_positioner error.
+    """
     object_id = 0
+    version = 6
 
     # opcode 0
     @staticmethod
@@ -7201,7 +8587,59 @@ class xdg_positioner:
         ...
 
 class xdg_surface:
+    """
+    desktop user interface surface base interface
+    
+    An interface that may be implemented by a wl_surface, for
+    implementations that provide a desktop-style user interface.
+    
+    It provides a base set of functionality required to construct user
+    interface elements requiring management by the compositor, such as
+    toplevel windows, menus, etc. The types of functionality are split into
+    xdg_surface roles.
+    
+    Creating an xdg_surface does not set the role for a wl_surface. In order
+    to map an xdg_surface, the client must create a role-specific object
+    using, e.g., get_toplevel, get_popup. The wl_surface for any given
+    xdg_surface can have at most one role, and may not be assigned any role
+    not based on xdg_surface.
+    
+    A role must be assigned before any other requests are made to the
+    xdg_surface object.
+    
+    The client must call wl_surface.commit on the corresponding wl_surface
+    for the xdg_surface state to take effect.
+    
+    Creating an xdg_surface from a wl_surface which has a buffer attached or
+    committed is a client error, and any attempts by a client to attach or
+    manipulate a buffer prior to the first xdg_surface.configure call must
+    also be treated as errors.
+    
+    After creating a role-specific object and setting it up, the client must
+    perform an initial commit without any buffer attached. The compositor
+    will reply with initial wl_surface state such as
+    wl_surface.preferred_buffer_scale followed by an xdg_surface.configure
+    event. The client must acknowledge it and is then allowed to attach a
+    buffer to map the surface.
+    
+    Mapping an xdg_surface-based role surface is defined as making it
+    possible for the surface to be shown by the compositor. Note that
+    a mapped surface is not guaranteed to be visible once it is mapped.
+    
+    For an xdg_surface to be mapped by the compositor, the following
+    conditions must be met:
+    (1) the client has assigned an xdg_surface-based role to the surface
+    (2) the client has set and committed the xdg_surface state and the
+    role-dependent state to the surface
+    (3) the client has committed a buffer to the surface
+    
+    A newly-unmapped surface is considered to have met condition (1) out
+    of the 3 required conditions for mapping a surface if its role surface
+    has not been destroyed, i.e. the client must perform the initial commit
+    again before attaching a buffer.
+    """
     object_id = 0
+    version = 6
 
     # opcode 0
     @staticmethod
@@ -7360,7 +8798,33 @@ class xdg_surface:
             ...
 
 class xdg_toplevel:
+    """
+    toplevel surface
+    
+    This interface defines an xdg_surface role which allows a surface to,
+    among other things, set window-like properties such as maximize,
+    fullscreen, and minimize, set application-specific metadata like title and
+    id, and well as trigger user interactive operations such as interactive
+    resize and move.
+    
+    A xdg_toplevel by default is responsible for providing the full intended
+    visual representation of the toplevel, which depending on the window
+    state, may mean things like a title bar, window controls and drop shadow.
+    
+    Unmapping an xdg_toplevel means that the surface cannot be shown
+    by the compositor until it is explicitly mapped again.
+    All active operations (e.g., move, resize) are canceled and all
+    attributes (e.g. title, state, stacking, ...) are discarded for
+    an xdg_toplevel surface when it is unmapped. The xdg_toplevel returns to
+    the state it had right after xdg_surface.get_toplevel. The client
+    can re-map the toplevel by performing a commit without any buffer
+    attached, waiting for a configure event and handling it as usual (see
+    xdg_surface description).
+    
+    Attaching a null buffer to a toplevel unmaps the surface.
+    """
     object_id = 0
+    version = 6
 
     # opcode 0
     @staticmethod
@@ -7853,7 +9317,36 @@ class xdg_toplevel:
             ...
 
 class xdg_popup:
+    """
+    short-lived, popup surfaces for menus
+    
+    A popup surface is a short-lived, temporary surface. It can be used to
+    implement for example menus, popovers, tooltips and other similar user
+    interface concepts.
+    
+    A popup can be made to take an explicit grab. See xdg_popup.grab for
+    details.
+    
+    When the popup is dismissed, a popup_done event will be sent out, and at
+    the same time the surface will be unmapped. See the xdg_popup.popup_done
+    event for details.
+    
+    Explicitly destroying the xdg_popup object will also dismiss the popup and
+    unmap the surface. Clients that want to dismiss the popup when another
+    surface of their own is clicked should dismiss the popup using the destroy
+    request.
+    
+    A newly created xdg_popup will be stacked on top of all previously created
+    xdg_popup surfaces associated with the same xdg_toplevel.
+    
+    The parent of an xdg_popup must be mapped (see the xdg_surface
+    description) before the xdg_popup itself.
+    
+    The client must call wl_surface.commit on the corresponding wl_surface
+    for the xdg_popup state to take effect.
+    """
     object_id = 0
+    version = 6
 
     # opcode 0
     @staticmethod

@@ -197,6 +197,22 @@ class WaylandParser:
             method["signature"] = signature
             add_item_func(interface["name"], method)
 
+            # Add the interface details
+            if not self.interfaces.get(interface["name"],{}).get("version"):
+                # Interface version
+                self.interfaces[interface["name"]]["version"] = interface.get("version", "1")
+                # Interface description
+                idescnode = node.getparent().find("description")
+                interface_description = ""
+                if idescnode is not None:
+                    summary = dict(idescnode.items()).get("summary", "").strip()
+                    if idescnode.text:
+                        text = [x.strip() for x in idescnode.text.split("\n")]
+                        interface_description = f"{summary}\n{'\n'.join(text)}"
+                    else:
+                        interface_description = summary
+                self.interfaces[interface["name"]]["description"] = interface_description
+
     def manipulate_args(self, original_args, item_type):
         new_args = []
         for arg in original_args:
@@ -256,7 +272,10 @@ class WaylandParser:
         # Iterate the entire wayland protocol structure
         for class_name, details in structure.items():
             # Describe each class
-            class_declaration = f"class {class_name}:\n    object_id = 0\n\n"
+            class_declaration = f"class {class_name}:\n"
+            iface_desc = details["description"]
+            class_declaration += self.indent(iface_desc, 4, comment=True)
+            class_declaration += f"    object_id = 0\n    version = {details['version']}\n\n"
 
             # Add requests and events
             class_body = ""
