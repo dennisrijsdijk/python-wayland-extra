@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 from wayland import get_package_root
 from wayland.log import log
@@ -113,7 +114,7 @@ if __name__ == "__main__":
         for interface, version in only_local.items():
             print(f"{interface}: version {version}")
 
-        exit(0)
+        sys.exit(0)
 
     parser = WaylandParser()
 

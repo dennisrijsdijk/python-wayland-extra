@@ -89,6 +89,7 @@ extend-select = ["C901"]
 "parser.py" = ["S320"]  # lxml
 "proxy.py" = ["SLF001"]  # private members
 "unixsocket.py" = ["BLE001"]  # blind exception
+"__main__.py" = ["T201"]  # print
 
 [tool.pytest.ini_options]
 addopts = [

@@ -156,9 +156,9 @@ class WaylandParser:
             tree = etree.parse(path)
 
         try:
-            self.protocol_name = tree.getroot().attrib['name']
+            self.protocol_name = tree.getroot().attrib["name"]
         except AttributeError:
-            self.protocol_name = tree.attrib['name']
+            self.protocol_name = tree.attrib["name"]
 
         self.parse_xml(tree, "/protocol/interface/request", self.add_method)
         self.parse_xml(tree, "/protocol/interface/event", self.add_event)
@@ -198,9 +198,11 @@ class WaylandParser:
             add_item_func(interface["name"], method)
 
             # Add the interface details
-            if not self.interfaces.get(interface["name"],{}).get("version"):
+            if not self.interfaces.get(interface["name"], {}).get("version"):
                 # Interface version
-                self.interfaces[interface["name"]]["version"] = interface.get("version", "1")
+                self.interfaces[interface["name"]]["version"] = interface.get(
+                    "version", "1"
+                )
                 # Interface description
                 idescnode = node.getparent().find("description")
                 interface_description = ""
@@ -211,7 +213,9 @@ class WaylandParser:
                         interface_description = f"{summary}\n{'\n'.join(text)}"
                     else:
                         interface_description = summary
-                self.interfaces[interface["name"]]["description"] = interface_description
+                self.interfaces[interface["name"]]["description"] = (
+                    interface_description
+                )
 
     def manipulate_args(self, original_args, item_type):
         new_args = []
@@ -219,7 +223,9 @@ class WaylandParser:
             # Rename python keyword collisions with wayland arguments
             if keyword.iskeyword(arg["name"]):
                 arg["name"] = arg["name"] + "_"
-                log.info(f"Renamed request/event argument to {arg['name']} in protocol {self.protocol_name}")
+                log.info(
+                    f"Renamed request/event argument to {arg['name']} in protocol {self.protocol_name}"
+                )
 
             if arg["type"] == "new_id":
                 interface = arg.get("interface", None)
@@ -275,7 +281,9 @@ class WaylandParser:
             class_declaration = f"class {class_name}:\n"
             iface_desc = details["description"]
             class_declaration += self.indent(iface_desc, 4, comment=True)
-            class_declaration += f"    object_id = 0\n    version = {details['version']}\n\n"
+            class_declaration += (
+                f"    object_id = 0\n    version = {details['version']}\n\n"
+            )
 
             # Add requests and events
             class_body = ""
