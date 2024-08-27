@@ -57,7 +57,7 @@ exclude = [
 packages = ["wayland"]
 
 [tool.coverage.run]
-source_pkgs = ["python-wayland", "tests"]
+source_pkgs = ["wayland", "tests"]
 branch = true
 parallel = true
 omit = [
@@ -65,7 +65,7 @@ omit = [
 ]
 
 [tool.coverage.paths]
-python-wayland = ["wayland"]
+wayland = ["wayland"]
 tests = ["tests", "*/wayland/tests"]
 
 [tool.coverage.report]
