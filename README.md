@@ -1,6 +1,6 @@
-# libwayland
+# python-wayland
 
-[![PyPI - Version](https://img.shields.io/pypi/v/libwayland.svg)](https://pypi.org/project/libwayland) [![Tests](https://github.com/grking/libwayland/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/grking/libwayland/tree/main) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/libwayland.svg)](https://pypi.org/project/libwayland)
+[![PyPI - Version](https://img.shields.io/pypi/v/python-wayland.svg)](https://pypi.org/project/python-wayland) [![Tests](https://github.com/grking/python-wayland/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/grking/python-wayland/tree/main) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/python-wayland.svg)](https://pypi.org/project/python-wayland)
 
 __This is in early prototype stage__
 

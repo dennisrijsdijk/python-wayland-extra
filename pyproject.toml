@@ -3,9 +3,9 @@ requires = ["hatchling", "black", "lxml", "requests", "pytest", "ruff"]
 build-backend = "hatchling.build"
 
 [project]
-name = "libwayland"
+name = "python-wayland"
 dynamic = ["version"]
-description = 'An implementation of the Wayland protocol with no external dependencies.'
+description = 'An implementation of the Wayland protocol with no external dependencies. A Python replacement for libwayland, not a wrapper for it.'
 readme = "README.md"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
@@ -31,11 +31,11 @@ dependencies = []
 build = ["lxml", "requests"]
 
 [project.urls]
-Homepage = "https://github.com/grking/libwayland"
-Documentation = "https://github.com/grking/libwayland#readme"
-Issues = "https://github.com/grking/libwayland/issues"
-Source = "https://github.com/grking/libwayland"
-Changelog = "https://github.com/grking/libwayland/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/grking/python-wayland"
+Documentation = "https://github.com/grking/python-wayland#readme"
+Issues = "https://github.com/grking/python-wayland/issues"
+Source = "https://github.com/grking/python-wayland"
+Changelog = "https://github.com/grking/python-wayland/blob/main/CHANGELOG.md"
 
 [tool.hatch.version]
 path = "wayland/__about__.py"
@@ -57,7 +57,7 @@ exclude = [
 packages = ["wayland"]
 
 [tool.coverage.run]
-source_pkgs = ["libwayland", "tests"]
+source_pkgs = ["python-wayland", "tests"]
 branch = true
 parallel = true
 omit = [
@@ -65,7 +65,7 @@ omit = [
 ]
 
 [tool.coverage.paths]
-libwayland = ["wayland"]
+python-wayland = ["wayland"]
 tests = ["tests", "*/wayland/tests"]
 
 [tool.coverage.report]
