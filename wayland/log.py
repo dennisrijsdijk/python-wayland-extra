@@ -26,8 +26,8 @@ import os
 
 # Define custom log levels
 PROTOCOL_LEVEL = 7
-EVENT_LEVEL = 14
-METHOD_LEVEL = 15
+EVENT_LEVEL = 8
+METHOD_LEVEL = 9
 
 # PROTOCOL: 7
 # DEBUG: 10
