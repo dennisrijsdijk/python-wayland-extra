@@ -1,5 +1,8 @@
 ### Changelog
 
+### v0.4.0 (27th August 2024)
+- Renamed to python-wayland
+
 ### v0.3.0 (26th August 2024)
 - File descriptors received in events are now not implicitly converted to Python file objects.
 - Add --verbose command line switch for more output when updating protocol files.
