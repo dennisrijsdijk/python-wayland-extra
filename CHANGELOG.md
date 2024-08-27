@@ -1,5 +1,8 @@
 ### Changelog
 
+### v0.4.1 (28th August 2024)
+- Fix pypi package build.
+
 ### v0.4.0 (27th August 2024)
 - Renamed to python-wayland
 
