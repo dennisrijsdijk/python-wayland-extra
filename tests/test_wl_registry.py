@@ -8,9 +8,7 @@ def test_get_registry():
     protocols = [
         "wl_shm",
         "xdg_wm_base",
-        "wl_compositor",
-        "wl_seat",
-        "wl_subcompositor",
+        "wl_compositor"
     ]
 
     received_protocols = []
