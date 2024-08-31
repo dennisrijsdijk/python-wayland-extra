@@ -30,16 +30,7 @@ from wayland.log import log
 from wayland.unixsocket import UnixSocketConnection
 
 
-class SingletonMeta(type):
-    _instance = None
-
-    def __call__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__call__(*args, **kwargs)
-        return cls._instance
-
-
-class WaylandState(metaclass=SingletonMeta):
+class WaylandState:
     """
     WaylandState tracks Wayland object instances and sends and receives
     Wayland messages.
@@ -192,6 +183,3 @@ class WaylandState(metaclass=SingletonMeta):
         """Process all pending wayland messages"""
         while self.get_next_message():
             pass
-
-
-state = WaylandState()

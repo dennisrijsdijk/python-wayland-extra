@@ -24,12 +24,6 @@
 import os
 
 from wayland.proxy import Proxy
-from wayland.state import state
-
-
-# Alias for wayland.state.process_messages
-def process_messages():
-    state.process_messages()
 
 
 def get_package_root():
@@ -39,6 +33,13 @@ def get_package_root():
     return os.path.abspath(package_module.__path__[0])
 
 
-# At runtime, inject all the wayland methods into our package scope
-__proxy = Proxy()
-__proxy.initialise(globals(), get_package_root(), state)
+def initialise(scope=None):
+    if scope is None:
+        scope = globals()
+    __proxy = Proxy()
+    __proxy.initialise(scope, get_package_root())
+
+
+# Auto initialise unless we are instructed not to
+if os.getenv("WAYLAND_INITIALISE", True):
+    initialise()

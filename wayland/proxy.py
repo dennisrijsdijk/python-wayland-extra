@@ -27,17 +27,19 @@ import socket
 import struct
 
 from wayland.log import log
+from wayland.state import WaylandState
 
 
 class Proxy:
     class Method:
-        def __init__(self, parent, name, args, opcode):
+        def __init__(self, parent, name, args, opcode, state):
             self.name = name
             self.method_args = args
             self.opcode = opcode
             self.method = True
             self.event = False
             self.parent = parent
+            self.state = state
 
         @classmethod
         def _pad(cls, data):
@@ -55,7 +57,6 @@ class Proxy:
             parent_interface = self.parent._name
             object_id = self.parent.object_id
             scope = self.parent._scope
-            state = self.parent._state
 
             packet = b""
             values = []
@@ -73,7 +74,7 @@ class Proxy:
                         interface = arg.get("interface")
 
                     # Create a new object to return as
-                    new_object_id, new_object = state.new_object(scope[interface])
+                    new_object_id, new_object = self.state.new_object(scope[interface])
                     return_value = new_object_id
                     value = new_object_id
 
@@ -93,10 +94,10 @@ class Proxy:
             )
 
             # Send the wayland request
-            state.send_wayland_message(object_id, self.opcode, packet, ancillary)
+            self.state.send_wayland_message(object_id, self.opcode, packet, ancillary)
 
             if return_value:
-                return_value = state.object_id_to_object_reference(return_value)
+                return_value = self.state.object_id_to_object_reference(return_value)
             return return_value
 
         def _pack_argument(self, packet, arg_type, value):
@@ -134,7 +135,7 @@ class Proxy:
         pass
 
     class Event:
-        def __init__(self, parent, name, args, opcode):
+        def __init__(self, parent, name, args, opcode, state):
             self.name = name
             self.parent = parent
             self.method_args = args
@@ -234,10 +235,10 @@ class Proxy:
             self._object_id = value
             log.protocol(f"{self._name} assigned object_id {self._object_id}")
 
-        def __init__(self, name, scope, methods, events):
+        def __init__(self, name, scope, methods, events, state):
             self._name = name
             self._scope = scope
-            self._state = scope.get("state")
+            self._state = state
             self._methods = methods
             self._events = events
             self._object_id = 0
@@ -250,7 +251,7 @@ class Proxy:
             self._bind_events(events)
 
         def copy(self):
-            return self.__class__(self._name, self._scope, self._methods, self._events)
+            return self.__class__(self._name, self._scope, self._methods, self._events, self._state)
 
         def _bind_methods(self, methods):
             for method in methods:
@@ -261,7 +262,7 @@ class Proxy:
 
                 # Create a new method
                 method_obj = Proxy.Method(
-                    self, attr_name, method["args"], method["opcode"]
+                    self, attr_name, method["args"], method["opcode"], self._state
                 )
                 # Set the method with the correct binding
                 setattr(self, attr_name, method_obj)
@@ -275,7 +276,7 @@ class Proxy:
 
                 # Create a new event
                 method_obj = Proxy.Event(
-                    self, attr_name, event["args"], event["opcode"]
+                    self, attr_name, event["args"], event["opcode"], self._state
                 )
                 # Set the method with the correct binding
                 setattr(self.events, attr_name, method_obj)
@@ -284,11 +285,10 @@ class Proxy:
             return self.object_id > 0
 
     def __init__(self):
-        self.state = None
+        self.state = WaylandState()
         self.scope = None
 
-    def initialise(self, scope, path, state):
-        self.state = state
+    def initialise(self, scope, path):
         self.scope = scope
         try:
             with open(f"{path}/protocols.json", encoding="utf-8") as infile:
@@ -302,6 +302,8 @@ class Proxy:
             methods = details.get("methods", [])
             events = details.get("events", [])
             dynamic_class = type(class_name, (Proxy.DynamicObject,), {})
-            instance = dynamic_class(class_name, self.scope, methods, events)
+            instance = dynamic_class(class_name, self.scope, methods, events, self.state)
             # Inject instance into scope
             scope[class_name] = instance
+        # Inject event processing function into scope
+        scope["process_messages"] = self.state.process_messages
