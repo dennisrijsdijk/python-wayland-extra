@@ -6078,8 +6078,9 @@ class xdg_toplevel_icon_v1:
         overrides the preexisting pixel data.
         
         The wl_buffer must be kept alive for as long as the xdg_toplevel_icon
-        it is associated with is not destroyed. The buffer contents must not be
-        modified after it was assigned to the icon.
+        it is associated with is not destroyed, otherwise a 'no_buffer' error
+        is raised. The buffer contents must not be modified after it was
+        assigned to the icon.
         
         If this request is made after the icon has been assigned to a toplevel
         via 'set_icon', a 'immutable' error must be raised.
