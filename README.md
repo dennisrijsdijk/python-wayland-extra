@@ -2,8 +2,6 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/python-wayland.svg)](https://pypi.org/project/python-wayland) [![Tests](https://github.com/grking/python-wayland/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/grking/python-wayland/tree/main) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/python-wayland.svg)](https://pypi.org/project/python-wayland)
 
-__This is in early prototype stage__
-
 A Python implementation of the Wayland protocol, from scratch, with no external dependencies, including no dependencies on any Wayland libraries.
 
 This seeks to be a Python implementation of libwayland-client. 
@@ -114,6 +112,10 @@ Example output:
     zwp_fullscreen_shell_v1: version 1
     zwp_fullscreen_shell_mode_feedback_v1: version 1
     zwp_idle_inhibit_manager_v1: version 1
+
+## Protocol Level Debugging
+
+Set the environment variable `WAYLAND_DELAY=1`
 
 ## Thanks
 

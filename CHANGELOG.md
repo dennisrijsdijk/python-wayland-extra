@@ -1,5 +1,11 @@
 ### Changelog
 
+### v0.5.0 (31st August 2024)
+- Support multiple wayland context not just a single global context.
+- Support debug output without full protocol level debugging output.
+- Fix for rapid events passing file descriptors
+- Slightly extended unit tests.
+
 ### v0.4.1 (28th August 2024)
 - Fix pypi package build.
 
