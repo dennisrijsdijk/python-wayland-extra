@@ -3,6 +3,7 @@ from tests.utils import process_messages
 
 wayland = wl.initialise()
 
+
 def test_get_registry():
     protocols = [
         "wl_shm",

@@ -90,7 +90,7 @@ extend-select = ["C901"]
 "proxy.py" = ["SLF001"]  # private members
 "unixsocket.py" = ["BLE001"]  # blind exception
 "__main__.py" = ["T201"]  # print
-"*" = ["ARG001", "TRY003"]  # unused argument
+"*" = ["ARG001", "TRY003", "A002"]  # unused argument, builtin
 
 [tool.pytest.ini_options]
 addopts = [
