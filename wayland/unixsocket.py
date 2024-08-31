@@ -63,7 +63,9 @@ class UnixSocketConnection(threading.Thread):
         fdsize = array.array("i").itemsize
 
         # Read the full message along with any ancillary data
-        data, ancdata, _, _ = self._socket.recvmsg(message_size, socket.CMSG_LEN(fdsize))
+        data, ancdata, _, _ = self._socket.recvmsg(
+            message_size, socket.CMSG_LEN(fdsize)
+        )
 
         fd = None
         for cmsg_level, cmsg_type, cmsg_data in ancdata:

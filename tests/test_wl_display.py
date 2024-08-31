@@ -1,6 +1,6 @@
-import wayland
+import wayland as wl
 
-WAYLAND_DELAY = 0.5
+wayland = wl.initialise()
 
 
 def test_display_singleton():

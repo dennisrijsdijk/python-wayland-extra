@@ -1,9 +1,9 @@
 import mmap
 import time
 
-import wayland
+import wayland as wl
 
-WAYLAND_DELAY = 0.5
+wayland = wl.initialise()
 
 
 def test_keyboard():
@@ -30,7 +30,7 @@ def test_keyboard():
     wayland.wl_display.get_registry()
 
     start = time.time()
-    while not keymap and time.time() < start + 5:
+    while not keymap and time.time() < start + 3:
         time.sleep(0.1)
         wayland.process_messages()
     # Check we got some interfaces we should have

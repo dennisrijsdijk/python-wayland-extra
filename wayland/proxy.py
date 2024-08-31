@@ -135,7 +135,7 @@ class Proxy:
         pass
 
     class Event:
-        def __init__(self, parent, name, args, opcode, state):
+        def __init__(self, parent, name, args, opcode):
             self.name = name
             self.parent = parent
             self.method_args = args
@@ -251,7 +251,9 @@ class Proxy:
             self._bind_events(events)
 
         def copy(self):
-            return self.__class__(self._name, self._scope, self._methods, self._events, self._state)
+            return self.__class__(
+                self._name, self._scope, self._methods, self._events, self._state
+            )
 
         def _bind_methods(self, methods):
             for method in methods:
@@ -276,7 +278,7 @@ class Proxy:
 
                 # Create a new event
                 method_obj = Proxy.Event(
-                    self, attr_name, event["args"], event["opcode"], self._state
+                    self, attr_name, event["args"], event["opcode"]
                 )
                 # Set the method with the correct binding
                 setattr(self.events, attr_name, method_obj)
@@ -287,6 +289,16 @@ class Proxy:
     def __init__(self):
         self.state = WaylandState()
         self.scope = None
+
+    def __getitem__(self, key):
+        if hasattr(self, key):
+            attr = getattr(self, key)
+            if callable(attr):
+                return attr()
+            return attr
+
+        msg = f"'{key}' not found"
+        raise KeyError(msg)
 
     def initialise(self, scope, path):
         self.scope = scope
@@ -302,8 +314,17 @@ class Proxy:
             methods = details.get("methods", [])
             events = details.get("events", [])
             dynamic_class = type(class_name, (Proxy.DynamicObject,), {})
-            instance = dynamic_class(class_name, self.scope, methods, events, self.state)
+            instance = dynamic_class(
+                class_name, self.scope, methods, events, self.state
+            )
             # Inject instance into scope
-            scope[class_name] = instance
+            if isinstance(scope, dict):
+                scope[class_name] = instance
+            else:
+                setattr(scope, class_name, instance)
+
         # Inject event processing function into scope
-        scope["process_messages"] = self.state.process_messages
+        if isinstance(scope, dict):
+            scope["process_messages"] = self.state.process_messages
+        else:
+            scope.process_messages = self.state.process_messages

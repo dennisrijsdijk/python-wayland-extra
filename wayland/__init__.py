@@ -33,13 +33,17 @@ def get_package_root():
     return os.path.abspath(package_module.__path__[0])
 
 
-def initialise(scope=None):
-    if scope is None:
-        scope = globals()
-    __proxy = Proxy()
-    __proxy.initialise(scope, get_package_root())
+def initialise(auto=None):
+    if auto:
+        proxy = Proxy()
+        proxy.initialise(globals(), get_package_root())
+        return
+
+    proxy = Proxy()
+    proxy.initialise(proxy, get_package_root())
+    return proxy
 
 
 # Auto initialise unless we are instructed not to
-if os.getenv("WAYLAND_INITIALISE", True):
-    initialise()
+if os.getenv("WAYLAND_INITIALISE", "TRUE") == "TRUE":
+    initialise(True)
