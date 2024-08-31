@@ -94,6 +94,7 @@ extend-select = ["C901"]
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
+    "--capture=no",
     "-q"
 ]
 

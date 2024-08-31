@@ -155,7 +155,7 @@ class Proxy:
                 self._handlers.remove(handler)
             return self
 
-        def __call__(self, packet):
+        def __call__(self, packet, get_fd):
             # Read some properties from the class to which this method is bound
             parent_interface = self.parent._name
             object_id = self.parent.object_id
@@ -164,7 +164,7 @@ class Proxy:
             for arg in self.method_args:
                 arg_type = arg["type"]
                 # Get the value
-                packet, value = self._unpack_argument(packet, arg_type)
+                packet, value = self._unpack_argument(packet, arg_type, get_fd)
                 # Save the argument
                 kwargs[arg["name"]] = value
 
@@ -188,7 +188,7 @@ class Proxy:
             for handler in self._handlers:
                 handler(**kwargs)
 
-        def _unpack_argument(self, packet, arg_type):
+        def _unpack_argument(self, packet, arg_type, get_fd):
             read = 0
             if arg_type in ("new_id", "uint", "object", "enum"):
                 (value,) = struct.unpack_from("I", packet)
@@ -197,8 +197,8 @@ class Proxy:
                 (value,) = struct.unpack_from("i", packet)
                 read = 4
             elif arg_type == "fd":
-                # we packed the file descriptor on the end of the data
-                (value,) = struct.unpack_from("I", packet[-4:])
+                # we fetch the fd from the incoming fd queue
+                value = get_fd()
             elif arg_type == "string":
                 (length,) = struct.unpack_from("I", packet)
                 packet = packet[4:]

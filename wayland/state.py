@@ -181,7 +181,8 @@ class WaylandState(metaclass=SingletonMeta):
 
         event = self.object_id_to_event(wayland_object, opcode)
         if event:
-            event(packet)
+            # Call the event handler, pass pointer to method to get fd if required
+            event(packet, self._socket.get_next_fd)
             return True
 
         log.event(f"Unhandled event {wayland_object}#{opcode}")
