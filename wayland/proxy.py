@@ -277,9 +277,7 @@ class Proxy:
                     attr_name += "_"
 
                 # Create a new event
-                event_obj = Proxy.Event(
-                    self, attr_name, event["args"], event["opcode"]
-                )
+                event_obj = Proxy.Event(self, attr_name, event["args"], event["opcode"])
                 # Set the event with the correct binding
                 setattr(self.events, attr_name, event_obj)
 

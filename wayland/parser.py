@@ -378,9 +378,7 @@ class WaylandParser:
             signature = f"# opcode {member['opcode']}\n"
             signature += f"{pad}@staticmethod\n"
             signature += f"{pad}def {member['name']}("
-            signature += ", ".join(
-                f"{arg['name']}: {arg['type']}" for arg in new_args
-            )
+            signature += ", ".join(f"{arg['name']}: {arg['type']}" for arg in new_args)
             if return_type:
                 signature += f") -> {return_type}:\n"
             else:
