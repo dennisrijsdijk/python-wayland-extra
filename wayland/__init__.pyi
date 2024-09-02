@@ -4,7 +4,7 @@
 # for editors, it is not used at runtime.
 
 from typing import TypeAlias, Annotated
-from enum import Enum
+from enum import Enum, IntFlag
 new_id: TypeAlias = int
 object: TypeAlias = int
 uint: TypeAlias = int
@@ -1419,7 +1419,7 @@ class wl_shell_surface:
             """
             ...
 
-    class resize(Enum):
+    class resize(IntFlag):
         none: int
         top: int
         bottom: int
@@ -1430,7 +1430,7 @@ class wl_shell_surface:
         top_right: int
         bottom_right: int
 
-    class transient(Enum):
+    class transient(IntFlag):
         inactive: int
 
     class fullscreen_method(Enum):
@@ -2081,7 +2081,7 @@ class wl_seat:
             """
             ...
 
-    class capability(Enum):
+    class capability(IntFlag):
         pointer: int
         keyboard: int
         touch: int
@@ -3021,7 +3021,7 @@ class wl_output:
         flipped_180: int
         flipped_270: int
 
-    class mode(Enum):
+    class mode(IntFlag):
         current: int
         preferred: int
 
@@ -6845,7 +6845,7 @@ class zwp_linux_buffer_params_v1:
         out_of_bounds: int
         invalid_wl_buffer: int
 
-    class flags(Enum):
+    class flags(IntFlag):
         y_invert: int
         interlaced: int
         bottom_first: int
@@ -7062,7 +7062,7 @@ class zwp_linux_dmabuf_feedback_v1:
             """
             ...
 
-    class tranche_flags(Enum):
+    class tranche_flags(IntFlag):
         scanout: int
 
 class wp_presentation:
@@ -7242,7 +7242,7 @@ class wp_presentation_feedback:
             """
             ...
 
-    class kind(Enum):
+    class kind(IntFlag):
         vsync: int
         hw_clock: int
         hw_completion: int

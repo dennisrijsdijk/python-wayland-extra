@@ -299,7 +299,7 @@ class WaylandParser:
             "# for editors, it is not used at runtime.",
             "",
             "from typing import TypeAlias, Annotated",
-            "from enum import Enum",
+            "from enum import Enum, IntFlag",
             "new_id: TypeAlias = int",
             "object: TypeAlias = int",
             "uint: TypeAlias = int",
@@ -404,9 +404,10 @@ class WaylandParser:
 
         for member in members:
             enum_name = member.get("name")
+            enum_type = "IntFlag" if member.get("bitfield") else "Enum"
             enum_args = member.get("args")
 
-            signature = f"{pad}class {enum_name}(Enum):\n"
+            signature = f"{pad}class {enum_name}({enum_type}):\n"
             for arg in enum_args:
                 signature += f"{pad_body}{arg['name']}: int\n"
 

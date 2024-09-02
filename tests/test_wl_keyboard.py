@@ -15,7 +15,7 @@ def test_keyboard():
             wayland.wl_registry.bind(name, interface, version)
 
     def on_seat_capabilities(capabilities):
-        if capabilities & 2:
+        if capabilities & capabilities.keyboard:
             wayland.wl_seat.get_keyboard()
 
     def on_keyboard_keymap(format, fd, size):

@@ -25,6 +25,7 @@ import json
 import keyword
 import socket
 import struct
+from enum import Enum, IntFlag
 
 from wayland.log import log
 from wayland.state import WaylandState
@@ -101,12 +102,17 @@ class Proxy:
             return return_value
 
         def _pack_argument(self, packet, arg_type, value):
-            if arg_type in ("new_id", "uint", "enum"):
-                packet += struct.pack("I", value)
+            if arg_type in ("new_id", "uint"):
+                if isinstance(value, Enum):
+                    packet += struct.pack("I", value.value)
+                else:
+                    packet += struct.pack("I", value)
             elif arg_type == "object":
                 packet += struct.pack("I", getattr(value, "object_id", 0))
             elif arg_type == "int":
                 packet += struct.pack("i", value)
+            elif arg_type == "enum":
+                packet += struct.pack("i", value.value)
             elif arg_type == "string":
                 length = len(value) + 1
                 value = self._pad(value)
@@ -164,8 +170,11 @@ class Proxy:
             kwargs = {}
             for arg in self.event_args:
                 arg_type = arg["type"]
+                enum_type = arg.get("enum")
                 # Get the value
-                packet, value = self._unpack_argument(packet, arg_type, get_fd)
+                packet, value = self._unpack_argument(
+                    packet, arg_type, get_fd, enum_type
+                )
                 # Save the argument
                 kwargs[arg["name"]] = value
 
@@ -189,9 +198,23 @@ class Proxy:
             for handler in self._handlers:
                 handler(**kwargs)
 
-        def _unpack_argument(self, packet, arg_type, get_fd):
+        def _int_to_enum(self, enum_name, value):
+            for attr_name, attr_type in self.parent.__dict__.items():
+                if (
+                    isinstance(attr_type, type)
+                    and issubclass(attr_type, Enum)
+                    and attr_name == enum_name
+                ):
+                    return attr_type(value)
+            return value
+
+        def _unpack_argument(self, packet, arg_type, get_fd, enum_type):
             read = 0
-            if arg_type in ("new_id", "uint", "object", "enum"):
+            if enum_type is not None:
+                (value,) = struct.unpack_from("I", packet)
+                value = self._int_to_enum(enum_type, value)
+                read = 4
+            elif arg_type in ("new_id", "uint", "object"):
                 (value,) = struct.unpack_from("I", packet)
                 read = 4
             elif arg_type == "int":
@@ -235,12 +258,13 @@ class Proxy:
             self._object_id = value
             log.protocol(f"{self._name} assigned object_id {self._object_id}")
 
-        def __init__(self, name, scope, requests, events, state):
+        def __init__(self, name, scope, requests, events, enums, state):
             self._name = name
             self._scope = scope
             self._state = state
             self._requests = requests
             self._events = events
+            self._enums = enums
             self._object_id = 0
             # Special wayland case
             if name == "wl_display":
@@ -249,10 +273,16 @@ class Proxy:
             self.events = Proxy.Events()
             self._bind_requests(requests)
             self._bind_events(events)
+            self._bind_enums(enums)
 
         def copy(self):
             return self.__class__(
-                self._name, self._scope, self._requests, self._events, self._state
+                self._name,
+                self._scope,
+                self._requests,
+                self._events,
+                self._enums,
+                self._state,
             )
 
         def _bind_requests(self, requests):
@@ -280,6 +310,24 @@ class Proxy:
                 event_obj = Proxy.Event(self, attr_name, event["args"], event["opcode"])
                 # Set the event with the correct binding
                 setattr(self.events, attr_name, event_obj)
+
+        def _bind_enums(self, enums):
+            for enum in enums:
+                # Avoid python keyword naming collisions
+                attr_name = enum["name"]
+                if keyword.iskeyword(attr_name):
+                    attr_name += "_"
+
+                # Create a new enum
+                enum_params = {
+                    item["name"]: int(item["value"], 0) for item in enum["args"]
+                }
+                if enum.get("bitfield"):
+                    enum_obj = IntFlag(attr_name, enum_params)
+                else:
+                    enum_obj = Enum(attr_name, enum_params)
+                # Set the enum with the correct binding
+                setattr(self, attr_name, enum_obj)
 
         def __bool__(self):
             return self.object_id > 0
@@ -311,9 +359,10 @@ class Proxy:
             # Process requests
             requests = details.get("requests", [])
             events = details.get("events", [])
+            enums = details.get("enums", [])
             dynamic_class = type(class_name, (Proxy.DynamicObject,), {})
             instance = dynamic_class(
-                class_name, self.scope, requests, events, self.state
+                class_name, self.scope, requests, events, enums, self.state
             )
             # Inject instance into scope
             if isinstance(scope, dict):
