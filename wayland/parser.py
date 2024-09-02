@@ -5,7 +5,7 @@
 # "Software"), to deal in the Software without restriction, including
 # without limitation the rights to use, copy, modify, merge, publish,
 # distribute, sublicense, and/or sell copies of the Software, and to
-# permit persons to whom the Software is furnished to do so, subject to
+# permit persons to whom the Software is furnished to do so,enum subject to
 # the following conditions:
 #
 # The above copyright notice and this permission notice (including the
@@ -102,19 +102,21 @@ class WaylandParser:
         protocols = deepcopy(self.interfaces)
 
         if minimise:
-            # Remove descriptions to save space in runtime version
+            keys_to_remove = ["description", "signature", "summary"]
             for protocol in protocols.values():
-                for items in protocol.values():
-                    for method in items:
-                        if "description" in method:
-                            del method["description"]
-                        if "signature" in method:
-                            del method["signature"]
-                        if "args" in method:
-                            for arg in method["args"]:
-                                if "summary" in arg:
-                                    del arg["summary"]
+                self._remove_keys(protocol, keys_to_remove)
+
         return json.dumps(protocols, indent=1)
+
+    def _remove_keys(self, obj, keys):
+        if isinstance(obj, dict):
+            for key in keys:
+                obj.pop(key, None)
+            for value in obj.values():
+                self._remove_keys(value, keys)
+        elif isinstance(obj, list):
+            for item in obj:
+                self._remove_keys(item, keys)
 
     def add_method(self, interface, method):
         # Check for python keyword collision
@@ -122,10 +124,30 @@ class WaylandParser:
             method["name"] = method["name"] + "_"
             log.info(f"Renamed {self.protocol_name}.{interface}.{method['name']}")
         if interface not in self.interfaces:
-            self.interfaces[interface] = {"events": [], "methods": []}
+            self.interfaces[interface] = {"events": [], "methods": [], "enums": []}
         methods = self.interfaces.get(interface, {}).get("methods", [])
         method["opcode"] = len(methods)
         methods.append(method)
+
+    def parse_value(self, value):
+        if value.startswith("0b"):  # binary
+            return int(value, 2)
+        if value.startswith("0x"):  # hexadecimal
+            return int(value, 16)
+
+        return int(value)
+
+    def add_enum(self, interface, enum):
+        # Check for python keyword collision
+        if keyword.iskeyword(enum["name"]):
+            enum["name"] = enum["name"] + "_"
+            log.info(f"Renamed {self.protocol_name}.{interface}.{enum['name']}")
+
+        if interface not in self.interfaces:
+            self.interfaces[interface] = {"events": [], "methods": [], "enums": []}
+
+        enums = self.interfaces.get(interface, {}).get("enums", [])
+        enums.append(enum)
 
     def add_event(self, interface, event):
         # Check for python keyword collision
@@ -133,7 +155,7 @@ class WaylandParser:
             event["name"] = event["name"] + "_"
             log.info(f"Renamed {self.protocol_name}.{interface}.{event['name']}")
         if interface not in self.interfaces:
-            self.interfaces[interface] = {"events": [], "methods": []}
+            self.interfaces[interface] = {"events": [], "methods": [], "enums": []}
         events = self.interfaces.get(interface, {}).get("events", [])
         event["opcode"] = len(events)
         # Check for name collision
@@ -160,47 +182,63 @@ class WaylandParser:
         except AttributeError:
             self.protocol_name = tree.attrib["name"]
 
-        self.parse_xml(tree, "/protocol/interface/request", self.add_method)
-        self.parse_xml(tree, "/protocol/interface/event", self.add_event)
+        self.parse_xml(tree, "/protocol/interface/request")
+        self.parse_xml(tree, "/protocol/interface/event")
+        self.parse_xml(tree, "/protocol/interface/enum")
 
-    def parse_xml(self, tree, xpath, add_item_func):
+    def get_description(self, description):
+        doc = ""
+        if description is not None:
+            summary = dict(description.items())["summary"]
+            if description.text:
+                text = [x.strip() for x in description.text.split("\n")]
+                doc = f"{summary.strip()}\n{'\n'.join(text)}"
+            else:
+                doc = f"{summary.strip()}"
+        return doc
+
+    def parse_xml(self, tree, xpath):
         all_elements = tree.xpath(xpath)
 
         for node in all_elements:
-            request = dict(node.items())
+            interface_name = node.getparent().get("name")
+            object_type = node.tag
+            object_name = node.get("name")
+            log.info(f"    ({object_type}) {interface_name}.{object_name}")
+
+            wayland_object = dict(node.items())
 
             # Read the interface
             interface = dict(node.getparent().items())
 
-            # Get request arguments
-            params = node.findall("arg")
-            description = node.find("description")
-            doc = ""
-            if description is not None:
-                summary = dict(description.items())["summary"]
-                if description.text:
-                    text = [x.strip() for x in description.text.split("\n")]
-                    doc = f"{summary.strip()}\n{'\n'.join(text)}"
-                else:
-                    doc = f"{summary.strip()}"
+            # Get arguments
+            params = (
+                node.findall("arg") if object_type != "enum" else node.findall("entry")
+            )
+            description = self.get_description(node.find("description"))
+
             args = [dict(x.items()) for x in params]
+            args = self.fix_arguments(args, object_type)
+            signature_args = [f"{x.get('name')}: {x.get('type')}" for x in args]
 
-            args = self.manipulate_args(args, add_item_func)
+            # signature
+            signature = f"{interface_name}.{object_name}({', '.join(signature_args)})"
 
-            fargs = [f"{x['name']}: {x['type']}" for x in args]
+            wayland_object["args"] = args
+            wayland_object["description"] = description
+            wayland_object["signature"] = signature
 
-            # method signature
-            signature = f"{interface['name']}.{request['name']}({', '.join(fargs)})"
-            method = request
-            method["args"] = args
-            method["description"] = doc
-            method["signature"] = signature
-            add_item_func(interface["name"], method)
+            if object_type == "request":
+                self.add_method(interface_name, wayland_object)
+            elif object_type == "event":
+                self.add_event(interface_name, wayland_object)
+            elif object_type == "enum":
+                self.add_enum(interface_name, wayland_object)
 
             # Add the interface details
-            if not self.interfaces.get(interface["name"], {}).get("version"):
+            if not self.interfaces.get(interface_name, {}).get("version"):
                 # Interface version
-                self.interfaces[interface["name"]]["version"] = interface.get(
+                self.interfaces[interface_name]["version"] = interface.get(
                     "version", "1"
                 )
                 # Interface description
@@ -213,11 +251,9 @@ class WaylandParser:
                         interface_description = f"{summary}\n{'\n'.join(text)}"
                     else:
                         interface_description = summary
-                self.interfaces[interface["name"]]["description"] = (
-                    interface_description
-                )
+                self.interfaces[interface_name]["description"] = interface_description
 
-    def manipulate_args(self, original_args, item_type):
+    def fix_arguments(self, original_args, item_type):
         new_args = []
         for arg in original_args:
             # Rename python keyword collisions with wayland arguments
@@ -227,12 +263,12 @@ class WaylandParser:
                     f"Renamed request/event argument to {arg['name']} in protocol {self.protocol_name}"
                 )
 
-            if arg["type"] == "new_id":
+            if arg.get("type") == "new_id":
                 interface = arg.get("interface", None)
 
                 if not interface:
                     # Not expecting this for events
-                    if item_type is self.add_event:
+                    if item_type == "event":
                         msg = "Event with dynamic new_id not supported"
                         raise NotImplementedError(msg)
                     # Creating a new instance of an unknown interface
@@ -263,6 +299,7 @@ class WaylandParser:
             "# for editors, it is not used at runtime.",
             "",
             "from typing import TypeAlias, Annotated",
+            "from enum import Enum",
             "new_id: TypeAlias = int",
             "object: TypeAlias = int",
             "uint: TypeAlias = int",
@@ -285,15 +322,17 @@ class WaylandParser:
                 f"    object_id = 0\n    version = {details['version']}\n\n"
             )
 
-            # Add requests and events
+            # Add requests and events and enums
             class_body = ""
             class_body += self.process_members(details.get("methods", []))
             class_events_declaration = "    class events:\n"
             class_events = self.process_members(details.get("events", []), events=True)
+            class_enums = self.process_enums(details.get("enums", []))
+
             if not class_events:
                 class_events_declaration = ""  # no events? don't create events class
             else:
-                class_body += class_events_declaration + class_events
+                class_body += class_events_declaration + class_events + class_enums
 
             class_definitions.append(class_declaration + class_body)
 
@@ -350,6 +389,30 @@ class WaylandParser:
             method_signature += self.indent(member["description"], indent_body)
             method_signature += f"{pad_body}...\n\n"
             definitions += f"{pad}{method_signature}"
+
+            if not definitions:
+                definitions = f"{pad_body}..."
+
+        return definitions
+
+    def process_enums(self, members):
+        indent_declaration = 4
+        indent_body = 8
+
+        pad = " " * indent_declaration
+        pad_body = " " * indent_body
+
+        definitions = ""
+
+        for member in members:
+            enum_name = member.get("name")
+            enum_args = member.get("args")
+
+            method_signature = f"{pad}class {enum_name}(Enum):\n"
+            for arg in enum_args:
+                method_signature += f"{pad_body}{arg['name']}: int\n"
+
+            definitions += f"{method_signature}\n"
 
             if not definitions:
                 definitions = f"{pad_body}..."

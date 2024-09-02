@@ -4,6 +4,7 @@
 # for editors, it is not used at runtime.
 
 from typing import TypeAlias, Annotated
+from enum import Enum
 new_id: TypeAlias = int
 object: TypeAlias = int
 uint: TypeAlias = int
@@ -90,6 +91,12 @@ class wl_display:
             it will know that it can safely reuse the object ID.
             """
             ...
+
+    class error(Enum):
+        invalid_object: int
+        invalid_method: int
+        no_memory: int
+        implementation: int
 
 class wl_registry:
     """
@@ -319,6 +326,136 @@ class wl_shm:
             argb8888 and xrgb8888.
             """
             ...
+
+    class error(Enum):
+        invalid_format: int
+        invalid_stride: int
+        invalid_fd: int
+
+    class format(Enum):
+        argb8888: int
+        xrgb8888: int
+        c8: int
+        rgb332: int
+        bgr233: int
+        xrgb4444: int
+        xbgr4444: int
+        rgbx4444: int
+        bgrx4444: int
+        argb4444: int
+        abgr4444: int
+        rgba4444: int
+        bgra4444: int
+        xrgb1555: int
+        xbgr1555: int
+        rgbx5551: int
+        bgrx5551: int
+        argb1555: int
+        abgr1555: int
+        rgba5551: int
+        bgra5551: int
+        rgb565: int
+        bgr565: int
+        rgb888: int
+        bgr888: int
+        xbgr8888: int
+        rgbx8888: int
+        bgrx8888: int
+        abgr8888: int
+        rgba8888: int
+        bgra8888: int
+        xrgb2101010: int
+        xbgr2101010: int
+        rgbx1010102: int
+        bgrx1010102: int
+        argb2101010: int
+        abgr2101010: int
+        rgba1010102: int
+        bgra1010102: int
+        yuyv: int
+        yvyu: int
+        uyvy: int
+        vyuy: int
+        ayuv: int
+        nv12: int
+        nv21: int
+        nv16: int
+        nv61: int
+        yuv410: int
+        yvu410: int
+        yuv411: int
+        yvu411: int
+        yuv420: int
+        yvu420: int
+        yuv422: int
+        yvu422: int
+        yuv444: int
+        yvu444: int
+        r8: int
+        r16: int
+        rg88: int
+        gr88: int
+        rg1616: int
+        gr1616: int
+        xrgb16161616f: int
+        xbgr16161616f: int
+        argb16161616f: int
+        abgr16161616f: int
+        xyuv8888: int
+        vuy888: int
+        vuy101010: int
+        y210: int
+        y212: int
+        y216: int
+        y410: int
+        y412: int
+        y416: int
+        xvyu2101010: int
+        xvyu12_16161616: int
+        xvyu16161616: int
+        y0l0: int
+        x0l0: int
+        y0l2: int
+        x0l2: int
+        yuv420_8bit: int
+        yuv420_10bit: int
+        xrgb8888_a8: int
+        xbgr8888_a8: int
+        rgbx8888_a8: int
+        bgrx8888_a8: int
+        rgb888_a8: int
+        bgr888_a8: int
+        rgb565_a8: int
+        bgr565_a8: int
+        nv24: int
+        nv42: int
+        p210: int
+        p010: int
+        p012: int
+        p016: int
+        axbxgxrx106106106106: int
+        nv15: int
+        q410: int
+        q401: int
+        xrgb16161616: int
+        xbgr16161616: int
+        argb16161616: int
+        abgr16161616: int
+        c1: int
+        c2: int
+        c4: int
+        d1: int
+        d2: int
+        d4: int
+        d8: int
+        r1: int
+        r2: int
+        r4: int
+        r10: int
+        r12: int
+        avuy8888: int
+        xvuy8888: int
+        p030: int
 
 class wl_buffer:
     """
@@ -581,6 +718,12 @@ class wl_data_offer:
             """
             ...
 
+    class error(Enum):
+        invalid_finish: int
+        invalid_action_mask: int
+        invalid_action: int
+        invalid_offer: int
+
 class wl_data_source:
     """
     offer to transfer data
@@ -759,6 +902,10 @@ class wl_data_source:
             """
             ...
 
+    class error(Enum):
+        invalid_action_mask: int
+        invalid_source: int
+
 class wl_data_device:
     """
     data transfer device
@@ -934,6 +1081,10 @@ class wl_data_device:
             data_offer, if any, upon receiving this event.
             """
             ...
+
+    class error(Enum):
+        role: int
+        used_source: int
 
 class wl_data_device_manager:
     """
@@ -1267,6 +1418,26 @@ class wl_shell_surface:
             to the client owning the popup surface.
             """
             ...
+
+    class resize(Enum):
+        none: int
+        top: int
+        bottom: int
+        left: int
+        top_left: int
+        bottom_left: int
+        right: int
+        top_right: int
+        bottom_right: int
+
+    class transient(Enum):
+        inactive: int
+
+    class fullscreen_method(Enum):
+        default: int
+        scale: int
+        driver: int
+        fill: int
 
 class wl_surface:
     """
@@ -1770,6 +1941,13 @@ class wl_surface:
             """
             ...
 
+    class error(Enum):
+        invalid_scale: int
+        invalid_transform: int
+        invalid_size: int
+        invalid_offset: int
+        defunct_role_object: int
+
 class wl_seat:
     """
     group of input devices
@@ -1902,6 +2080,14 @@ class wl_seat:
             destroyed and re-created later.
             """
             ...
+
+    class capability(Enum):
+        pointer: int
+        keyboard: int
+        touch: int
+
+    class error(Enum):
+        missing_capability: int
 
 class wl_pointer:
     """
@@ -2278,6 +2464,27 @@ class wl_pointer:
             """
             ...
 
+    class error(Enum):
+        role: int
+
+    class button_state(Enum):
+        released: int
+        pressed: int
+
+    class axis(Enum):
+        vertical_scroll: int
+        horizontal_scroll: int
+
+    class axis_source(Enum):
+        wheel: int
+        finger: int
+        continuous: int
+        wheel_tilt: int
+
+    class axis_relative_direction(Enum):
+        identical: int
+        inverted: int
+
 class wl_keyboard:
     """
     keyboard input device
@@ -2429,6 +2636,14 @@ class wl_keyboard:
             of wl_keyboard.
             """
             ...
+
+    class keymap_format(Enum):
+        no_keymap: int
+        xkb_v1: int
+
+    class key_state(Enum):
+        released: int
+        pressed: int
 
 class wl_touch:
     """
@@ -2787,6 +3002,28 @@ class wl_output:
             The description event will be followed by a done event.
             """
             ...
+
+    class subpixel(Enum):
+        unknown: int
+        none: int
+        horizontal_rgb: int
+        horizontal_bgr: int
+        vertical_rgb: int
+        vertical_bgr: int
+
+    class transform(Enum):
+        normal: int
+        90: int
+        180: int
+        270: int
+        flipped: int
+        flipped_90: int
+        flipped_180: int
+        flipped_270: int
+
+    class mode(Enum):
+        current: int
+        preferred: int
 
 class wl_region:
     """
@@ -4302,6 +4539,9 @@ class ext_image_copy_capture_session_v1:
             """
             ...
 
+    class error(Enum):
+        duplicate_frame: int
+
 class ext_image_copy_capture_frame_v1:
     """
     image capture frame
@@ -4470,6 +4710,16 @@ class ext_image_copy_capture_frame_v1:
             """
             ...
 
+    class error(Enum):
+        no_buffer: int
+        invalid_buffer_damage: int
+        already_captured: int
+
+    class failure_reason(Enum):
+        unknown: int
+        buffer_constraints: int
+        stopped: int
+
 class ext_image_copy_capture_cursor_session_v1:
     """
     cursor capture session
@@ -4573,6 +4823,9 @@ class ext_image_copy_capture_cursor_session_v1:
             Compositors may delay this event until the client captures a new frame.
             """
             ...
+
+    class error(Enum):
+        duplicate_session: int
 
 class ext_session_lock_manager_v1:
     """
@@ -4784,6 +5037,13 @@ class ext_session_lock_v1:
             """
             ...
 
+    class error(Enum):
+        invalid_destroy: int
+        invalid_unlock: int
+        role: int
+        duplicate_output: int
+        already_constructed: int
+
 class ext_session_lock_surface_v1:
     """
     a surface displayed while the session is locked
@@ -4873,6 +5133,12 @@ class ext_session_lock_surface_v1:
             commit after acking a configure is a protocol error.
             """
             ...
+
+    class error(Enum):
+        commit_before_first_ack: int
+        null_buffer: int
+        dimensions_mismatch: int
+        invalid_serial: int
 
 class ext_transient_seat_manager_v1:
     """
@@ -5690,6 +5956,9 @@ class xdg_activation_token_v1:
             and notifies that the provider is done.
             """
             ...
+
+    class error(Enum):
+        already_used: int
 
 class xdg_wm_dialog_v1:
     """
@@ -6566,6 +6835,21 @@ class zwp_linux_buffer_params_v1:
             """
             ...
 
+    class error(Enum):
+        already_used: int
+        plane_idx: int
+        plane_set: int
+        incomplete: int
+        invalid_format: int
+        invalid_dimensions: int
+        out_of_bounds: int
+        invalid_wl_buffer: int
+
+    class flags(Enum):
+        y_invert: int
+        interlaced: int
+        bottom_first: int
+
 class zwp_linux_dmabuf_feedback_v1:
     """
     dmabuf feedback
@@ -6778,6 +7062,9 @@ class zwp_linux_dmabuf_feedback_v1:
             """
             ...
 
+    class tranche_flags(Enum):
+        scanout: int
+
 class wp_presentation:
     """
     timed presentation related wl_surface requests
@@ -6853,6 +7140,10 @@ class wp_presentation:
             value directly, not by asking the compositor.
             """
             ...
+
+    class error(Enum):
+        invalid_timestamp: int
+        invalid_flag: int
 
 class wp_presentation_feedback:
     """
@@ -6950,6 +7241,12 @@ class wp_presentation_feedback:
             The content update was never displayed to the user.
             """
             ...
+
+    class kind(Enum):
+        vsync: int
+        hw_clock: int
+        hw_completion: int
+        zero_copy: int
 
 class zwp_tablet_manager_v2:
     """
@@ -7449,6 +7746,31 @@ class zwp_tablet_tool_v2:
             """
             ...
 
+    class type(Enum):
+        pen: int
+        eraser: int
+        brush: int
+        pencil: int
+        airbrush: int
+        finger: int
+        mouse: int
+        lens: int
+
+    class capability(Enum):
+        tilt: int
+        pressure: int
+        distance: int
+        rotation: int
+        slider: int
+        wheel: int
+
+    class button_state(Enum):
+        released: int
+        pressed: int
+
+    class error(Enum):
+        role: int
+
 class zwp_tablet_v2:
     """
     graphics tablet device
@@ -7684,6 +8006,9 @@ class zwp_tablet_pad_ring_v2:
             """
             ...
 
+    class source(Enum):
+        finger: int
+
 class zwp_tablet_pad_strip_v2:
     """
     pad strip
@@ -7812,6 +8137,9 @@ class zwp_tablet_pad_strip_v2:
             position, frame, etc.
             """
             ...
+
+    class source(Enum):
+        finger: int
 
 class zwp_tablet_pad_group_v2:
     """
@@ -8154,6 +8482,10 @@ class zwp_tablet_pad_v2:
             """
             ...
 
+    class button_state(Enum):
+        released: int
+        pressed: int
+
 class wp_viewporter:
     """
     surface cropping and scaling
@@ -8399,6 +8731,15 @@ class xdg_wm_base:
             always respond to any xdg_wm_base object it created.
             """
             ...
+
+    class error(Enum):
+        role: int
+        defunct_surfaces: int
+        not_the_topmost_popup: int
+        invalid_popup_parent: int
+        invalid_surface_state: int
+        invalid_positioner: int
+        unresponsive: int
 
 class xdg_positioner:
     """
@@ -8797,6 +9138,14 @@ class xdg_surface:
             to one, it is free to discard all but the last event it received.
             """
             ...
+
+    class error(Enum):
+        not_constructed: int
+        already_constructed: int
+        unconfigured_buffer: int
+        invalid_serial: int
+        invalid_size: int
+        defunct_role_object: int
 
 class xdg_toplevel:
     """
@@ -9317,6 +9666,39 @@ class xdg_toplevel:
             """
             ...
 
+    class error(Enum):
+        invalid_resize_edge: int
+        invalid_parent: int
+        invalid_size: int
+
+    class resize_edge(Enum):
+        none: int
+        top: int
+        bottom: int
+        left: int
+        top_left: int
+        bottom_left: int
+        right: int
+        top_right: int
+        bottom_right: int
+
+    class state(Enum):
+        maximized: int
+        fullscreen: int
+        resizing: int
+        activated: int
+        tiled_left: int
+        tiled_right: int
+        tiled_top: int
+        tiled_bottom: int
+        suspended: int
+
+    class wm_capabilities(Enum):
+        window_menu: int
+        maximize: int
+        fullscreen: int
+        minimize: int
+
 class xdg_popup:
     """
     short-lived, popup surfaces for menus
@@ -9498,4 +9880,7 @@ class xdg_popup:
             effect. See xdg_surface.ack_configure for details.
             """
             ...
+
+    class error(Enum):
+        invalid_grab: int
 

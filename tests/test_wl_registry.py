@@ -5,11 +5,7 @@ wayland = wl.initialise()
 
 
 def test_get_registry():
-    protocols = [
-        "wl_shm",
-        "xdg_wm_base",
-        "wl_compositor"
-    ]
+    protocols = ["wl_shm", "xdg_wm_base", "wl_compositor"]
 
     received_protocols = []
 
