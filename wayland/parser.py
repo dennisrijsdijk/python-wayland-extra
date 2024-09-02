@@ -324,17 +324,19 @@ class WaylandParser:
 
             # Add requests and events and enums
             class_body = ""
-            class_body += self.process_members(details.get("requests", []))
+            class_body += self.process_members(class_name, details.get("requests", []))
             class_events_declaration = "    class events:\n"
-            class_events = self.process_members(details.get("events", []), events=True)
+            class_events = self.process_members(
+                class_name, details.get("events", []), events=True
+            )
             class_enums = self.process_enums(details.get("enums", []))
 
             if not class_events:
                 class_events_declaration = ""  # no events? don't create events class
             else:
-                class_body += class_events_declaration + class_events + class_enums
+                class_body += class_events_declaration + class_events
 
-            class_definitions.append(class_declaration + class_body)
+            class_definitions.append(class_declaration + class_enums + class_body)
 
         class_definitions = self.headers + class_definitions
 
@@ -342,7 +344,7 @@ class WaylandParser:
             for class_def in class_definitions:
                 outfile.write(class_def)
 
-    def process_members(self, members, *, events=False):
+    def process_members(self, class_name, members, *, events=False):
         if events:
             indent_declaration = 8
             indent_body = 12
@@ -372,6 +374,10 @@ class WaylandParser:
                     if interface and events:
                         # use the object type as the arg type instead of new_id
                         arg["type"] = interface
+
+                # Change enum types into the specific type of enum
+                elif arg.get("enum"):
+                    arg["type"] = f"{class_name}.{arg['enum']}"
 
                 new_args.append(arg)
 

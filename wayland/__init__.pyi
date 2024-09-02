@@ -23,6 +23,12 @@ class wl_display:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        invalid_object: int
+        invalid_method: int
+        no_memory: int
+        implementation: int
+
     # opcode 0
     @staticmethod
     def sync() -> wl_callback:
@@ -91,12 +97,6 @@ class wl_display:
             it will know that it can safely reuse the object ID.
             """
             ...
-
-    class error(Enum):
-        invalid_object: int
-        invalid_method: int
-        no_memory: int
-        implementation: int
 
 class wl_registry:
     """
@@ -219,7 +219,7 @@ class wl_shm_pool:
 
     # opcode 0
     @staticmethod
-    def create_buffer(offset: int, width: int, height: int, stride: int, format: uint) -> wl_buffer:
+    def create_buffer(offset: int, width: int, height: int, stride: int, format: wl_shm_pool.wl_shm.format) -> wl_buffer:
         """
         create a buffer from the pool
         
@@ -286,46 +286,6 @@ class wl_shm:
     """
     object_id = 0
     version = 2
-
-    # opcode 0
-    @staticmethod
-    def create_pool(fd: fd, size: int) -> wl_shm_pool:
-        """
-        create a shm pool
-        
-        Create a new wl_shm_pool object.
-        
-        The pool can be used to create shared memory based buffer
-        objects.  The server will mmap size bytes of the passed file
-        descriptor, to use as backing memory for the pool.
-        """
-        ...
-
-    # opcode 1
-    @staticmethod
-    def release() -> None:
-        """
-        release the shm object
-        
-        Using this request a client can tell the server that it is not going to
-        use the shm object anymore.
-        
-        Objects created via this interface remain unaffected.
-        """
-        ...
-
-    class events:
-        # opcode 0
-        @staticmethod
-        def format(format: uint) -> None:
-            """
-            pixel format description
-            
-            Informs the client about a valid pixel format that
-            can be used for buffers. Known formats include
-            argb8888 and xrgb8888.
-            """
-            ...
 
     class error(Enum):
         invalid_format: int
@@ -457,6 +417,46 @@ class wl_shm:
         xvuy8888: int
         p030: int
 
+    # opcode 0
+    @staticmethod
+    def create_pool(fd: fd, size: int) -> wl_shm_pool:
+        """
+        create a shm pool
+        
+        Create a new wl_shm_pool object.
+        
+        The pool can be used to create shared memory based buffer
+        objects.  The server will mmap size bytes of the passed file
+        descriptor, to use as backing memory for the pool.
+        """
+        ...
+
+    # opcode 1
+    @staticmethod
+    def release() -> None:
+        """
+        release the shm object
+        
+        Using this request a client can tell the server that it is not going to
+        use the shm object anymore.
+        
+        Objects created via this interface remain unaffected.
+        """
+        ...
+
+    class events:
+        # opcode 0
+        @staticmethod
+        def format(format: wl_shm.format) -> None:
+            """
+            pixel format description
+            
+            Informs the client about a valid pixel format that
+            can be used for buffers. Known formats include
+            argb8888 and xrgb8888.
+            """
+            ...
+
 class wl_buffer:
     """
     content for a wl_surface
@@ -528,6 +528,12 @@ class wl_data_offer:
     """
     object_id = 0
     version = 3
+
+    class error(Enum):
+        invalid_finish: int
+        invalid_action_mask: int
+        invalid_action: int
+        invalid_offer: int
 
     # opcode 0
     @staticmethod
@@ -611,7 +617,7 @@ class wl_data_offer:
 
     # opcode 4
     @staticmethod
-    def set_actions(dnd_actions: uint, preferred_action: uint) -> None:
+    def set_actions(dnd_actions: wl_data_offer.wl_data_device_manager.dnd_action, preferred_action: wl_data_offer.wl_data_device_manager.dnd_action) -> None:
         """
         set the available/preferred drag-and-drop actions
         
@@ -663,7 +669,7 @@ class wl_data_offer:
 
         # opcode 1
         @staticmethod
-        def source_actions(source_actions: uint) -> None:
+        def source_actions(source_actions: wl_data_offer.wl_data_device_manager.dnd_action) -> None:
             """
             notify the source-side available actions
             
@@ -676,7 +682,7 @@ class wl_data_offer:
 
         # opcode 2
         @staticmethod
-        def action(dnd_action: uint) -> None:
+        def action(dnd_action: wl_data_offer.wl_data_device_manager.dnd_action) -> None:
             """
             notify the selected action
             
@@ -718,12 +724,6 @@ class wl_data_offer:
             """
             ...
 
-    class error(Enum):
-        invalid_finish: int
-        invalid_action_mask: int
-        invalid_action: int
-        invalid_offer: int
-
 class wl_data_source:
     """
     offer to transfer data
@@ -735,6 +735,10 @@ class wl_data_source:
     """
     object_id = 0
     version = 3
+
+    class error(Enum):
+        invalid_action_mask: int
+        invalid_source: int
 
     # opcode 0
     @staticmethod
@@ -760,7 +764,7 @@ class wl_data_source:
 
     # opcode 2
     @staticmethod
-    def set_actions(dnd_actions: uint) -> None:
+    def set_actions(dnd_actions: wl_data_source.wl_data_device_manager.dnd_action) -> None:
         """
         set the available drag-and-drop actions
         
@@ -870,7 +874,7 @@ class wl_data_source:
 
         # opcode 5
         @staticmethod
-        def action(dnd_action: uint) -> None:
+        def action(dnd_action: wl_data_source.wl_data_device_manager.dnd_action) -> None:
             """
             notify the selected action
             
@@ -902,10 +906,6 @@ class wl_data_source:
             """
             ...
 
-    class error(Enum):
-        invalid_action_mask: int
-        invalid_source: int
-
 class wl_data_device:
     """
     data transfer device
@@ -918,6 +918,10 @@ class wl_data_device:
     """
     object_id = 0
     version = 3
+
+    class error(Enum):
+        role: int
+        used_source: int
 
     # opcode 0
     @staticmethod
@@ -1082,10 +1086,6 @@ class wl_data_device:
             """
             ...
 
-    class error(Enum):
-        role: int
-        used_source: int
-
 class wl_data_device_manager:
     """
     data transfer interface
@@ -1103,6 +1103,12 @@ class wl_data_device_manager:
     """
     object_id = 0
     version = 3
+
+    class dnd_action(IntFlag):
+        none: int
+        copy: int
+        move: int
+        ask: int
 
     # opcode 0
     @staticmethod
@@ -1141,6 +1147,9 @@ class wl_shell:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        role: int
+
     # opcode 0
     @staticmethod
     def get_shell_surface(surface: object) -> wl_shell_surface:
@@ -1174,6 +1183,26 @@ class wl_shell_surface:
     object_id = 0
     version = 1
 
+    class resize(IntFlag):
+        none: int
+        top: int
+        bottom: int
+        left: int
+        top_left: int
+        bottom_left: int
+        right: int
+        top_right: int
+        bottom_right: int
+
+    class transient(IntFlag):
+        inactive: int
+
+    class fullscreen_method(Enum):
+        default: int
+        scale: int
+        driver: int
+        fill: int
+
     # opcode 0
     @staticmethod
     def pong(serial: uint) -> None:
@@ -1201,7 +1230,7 @@ class wl_shell_surface:
 
     # opcode 2
     @staticmethod
-    def resize(seat: object, serial: uint, edges: uint) -> None:
+    def resize(seat: object, serial: uint, edges: wl_shell_surface.resize) -> None:
         """
         start an interactive resize
         
@@ -1227,7 +1256,7 @@ class wl_shell_surface:
 
     # opcode 4
     @staticmethod
-    def set_transient(parent: object, x: int, y: int, flags: uint) -> None:
+    def set_transient(parent: object, x: int, y: int, flags: wl_shell_surface.transient) -> None:
         """
         make the surface a transient surface
         
@@ -1243,7 +1272,7 @@ class wl_shell_surface:
 
     # opcode 5
     @staticmethod
-    def set_fullscreen(method: uint, framerate: uint, output: object) -> None:
+    def set_fullscreen(method: wl_shell_surface.fullscreen_method, framerate: uint, output: object) -> None:
         """
         make the surface a fullscreen surface
         
@@ -1285,7 +1314,7 @@ class wl_shell_surface:
 
     # opcode 6
     @staticmethod
-    def set_popup(seat: object, serial: uint, parent: object, x: int, y: int, flags: uint) -> None:
+    def set_popup(seat: object, serial: uint, parent: object, x: int, y: int, flags: wl_shell_surface.transient) -> None:
         """
         make the surface a popup surface
         
@@ -1383,7 +1412,7 @@ class wl_shell_surface:
 
         # opcode 1
         @staticmethod
-        def configure(edges: uint, width: int, height: int) -> None:
+        def configure(edges: wl_shell_surface.resize, width: int, height: int) -> None:
             """
             suggest resize
             
@@ -1418,26 +1447,6 @@ class wl_shell_surface:
             to the client owning the popup surface.
             """
             ...
-
-    class resize(IntFlag):
-        none: int
-        top: int
-        bottom: int
-        left: int
-        top_left: int
-        bottom_left: int
-        right: int
-        top_right: int
-        bottom_right: int
-
-    class transient(IntFlag):
-        inactive: int
-
-    class fullscreen_method(Enum):
-        default: int
-        scale: int
-        driver: int
-        fill: int
 
 class wl_surface:
     """
@@ -1488,6 +1497,13 @@ class wl_surface:
     """
     object_id = 0
     version = 6
+
+    class error(Enum):
+        invalid_scale: int
+        invalid_transform: int
+        invalid_size: int
+        invalid_offset: int
+        defunct_role_object: int
 
     # opcode 0
     @staticmethod
@@ -1737,7 +1753,7 @@ class wl_surface:
 
     # opcode 7
     @staticmethod
-    def set_buffer_transform(transform: int) -> None:
+    def set_buffer_transform(transform: wl_surface.wl_output.transform) -> None:
         """
         sets the buffer transformation
         
@@ -1925,7 +1941,7 @@ class wl_surface:
 
         # opcode 3
         @staticmethod
-        def preferred_buffer_transform(transform: uint) -> None:
+        def preferred_buffer_transform(transform: wl_surface.wl_output.transform) -> None:
             """
             preferred buffer transform for the surface
             
@@ -1941,13 +1957,6 @@ class wl_surface:
             """
             ...
 
-    class error(Enum):
-        invalid_scale: int
-        invalid_transform: int
-        invalid_size: int
-        invalid_offset: int
-        defunct_role_object: int
-
 class wl_seat:
     """
     group of input devices
@@ -1959,6 +1968,14 @@ class wl_seat:
     """
     object_id = 0
     version = 9
+
+    class capability(IntFlag):
+        pointer: int
+        keyboard: int
+        touch: int
+
+    class error(Enum):
+        missing_capability: int
 
     # opcode 0
     @staticmethod
@@ -2025,7 +2042,7 @@ class wl_seat:
     class events:
         # opcode 0
         @staticmethod
-        def capabilities(capabilities: uint) -> None:
+        def capabilities(capabilities: wl_seat.capability) -> None:
             """
             seat capabilities changed
             
@@ -2081,14 +2098,6 @@ class wl_seat:
             """
             ...
 
-    class capability(IntFlag):
-        pointer: int
-        keyboard: int
-        touch: int
-
-    class error(Enum):
-        missing_capability: int
-
 class wl_pointer:
     """
     pointer input device
@@ -2104,6 +2113,27 @@ class wl_pointer:
     """
     object_id = 0
     version = 9
+
+    class error(Enum):
+        role: int
+
+    class button_state(Enum):
+        released: int
+        pressed: int
+
+    class axis(Enum):
+        vertical_scroll: int
+        horizontal_scroll: int
+
+    class axis_source(Enum):
+        wheel: int
+        finger: int
+        continuous: int
+        wheel_tilt: int
+
+    class axis_relative_direction(Enum):
+        identical: int
+        inverted: int
 
     # opcode 0
     @staticmethod
@@ -2205,7 +2235,7 @@ class wl_pointer:
 
         # opcode 3
         @staticmethod
-        def button(serial: uint, time: uint, button: uint, state: uint) -> None:
+        def button(serial: uint, time: uint, button: uint, state: wl_pointer.button_state) -> None:
             """
             pointer button event
             
@@ -2228,7 +2258,7 @@ class wl_pointer:
 
         # opcode 4
         @staticmethod
-        def axis(time: uint, axis: uint, value: fixed) -> None:
+        def axis(time: uint, axis: wl_pointer.axis, value: fixed) -> None:
             """
             axis event
             
@@ -2296,7 +2326,7 @@ class wl_pointer:
 
         # opcode 6
         @staticmethod
-        def axis_source(axis_source: uint) -> None:
+        def axis_source(axis_source: wl_pointer.axis_source) -> None:
             """
             axis source event
             
@@ -2330,7 +2360,7 @@ class wl_pointer:
 
         # opcode 7
         @staticmethod
-        def axis_stop(time: uint, axis: uint) -> None:
+        def axis_stop(time: uint, axis: wl_pointer.axis) -> None:
             """
             axis stop event
             
@@ -2353,7 +2383,7 @@ class wl_pointer:
 
         # opcode 8
         @staticmethod
-        def axis_discrete(axis: uint, discrete: int) -> None:
+        def axis_discrete(axis: wl_pointer.axis, discrete: int) -> None:
             """
             axis click event
             
@@ -2392,7 +2422,7 @@ class wl_pointer:
 
         # opcode 9
         @staticmethod
-        def axis_value120(axis: uint, value120: int) -> None:
+        def axis_value120(axis: wl_pointer.axis, value120: int) -> None:
             """
             axis high-resolution scroll event
             
@@ -2422,7 +2452,7 @@ class wl_pointer:
 
         # opcode 10
         @staticmethod
-        def axis_relative_direction(axis: uint, direction: uint) -> None:
+        def axis_relative_direction(axis: wl_pointer.axis, direction: wl_pointer.axis_relative_direction) -> None:
             """
             axis relative physical direction event
             
@@ -2464,27 +2494,6 @@ class wl_pointer:
             """
             ...
 
-    class error(Enum):
-        role: int
-
-    class button_state(Enum):
-        released: int
-        pressed: int
-
-    class axis(Enum):
-        vertical_scroll: int
-        horizontal_scroll: int
-
-    class axis_source(Enum):
-        wheel: int
-        finger: int
-        continuous: int
-        wheel_tilt: int
-
-    class axis_relative_direction(Enum):
-        identical: int
-        inverted: int
-
 class wl_keyboard:
     """
     keyboard input device
@@ -2505,6 +2514,14 @@ class wl_keyboard:
     object_id = 0
     version = 9
 
+    class keymap_format(Enum):
+        no_keymap: int
+        xkb_v1: int
+
+    class key_state(Enum):
+        released: int
+        pressed: int
+
     # opcode 0
     @staticmethod
     def release() -> None:
@@ -2516,7 +2533,7 @@ class wl_keyboard:
     class events:
         # opcode 0
         @staticmethod
-        def keymap(format: uint, fd: fd, size: uint) -> None:
+        def keymap(format: wl_keyboard.keymap_format, fd: fd, size: uint) -> None:
             """
             keyboard mapping
             
@@ -2569,7 +2586,7 @@ class wl_keyboard:
 
         # opcode 3
         @staticmethod
-        def key(serial: uint, time: uint, key: uint, state: uint) -> None:
+        def key(serial: uint, time: uint, key: uint, state: wl_keyboard.key_state) -> None:
             """
             key event
             
@@ -2636,14 +2653,6 @@ class wl_keyboard:
             of wl_keyboard.
             """
             ...
-
-    class keymap_format(Enum):
-        no_keymap: int
-        xkb_v1: int
-
-    class key_state(Enum):
-        released: int
-        pressed: int
 
 class wl_touch:
     """
@@ -2819,6 +2828,28 @@ class wl_output:
     object_id = 0
     version = 4
 
+    class subpixel(Enum):
+        unknown: int
+        none: int
+        horizontal_rgb: int
+        horizontal_bgr: int
+        vertical_rgb: int
+        vertical_bgr: int
+
+    class transform(Enum):
+        normal: int
+        90: int
+        180: int
+        270: int
+        flipped: int
+        flipped_90: int
+        flipped_180: int
+        flipped_270: int
+
+    class mode(IntFlag):
+        current: int
+        preferred: int
+
     # opcode 0
     @staticmethod
     def release() -> None:
@@ -2833,7 +2864,7 @@ class wl_output:
     class events:
         # opcode 0
         @staticmethod
-        def geometry(x: int, y: int, physical_width: int, physical_height: int, subpixel: int, make: string, model: string, transform: int) -> None:
+        def geometry(x: int, y: int, physical_width: int, physical_height: int, subpixel: wl_output.subpixel, make: string, model: string, transform: wl_output.transform) -> None:
             """
             properties of the output
             
@@ -2862,7 +2893,7 @@ class wl_output:
 
         # opcode 1
         @staticmethod
-        def mode(flags: uint, width: int, height: int, refresh: int) -> None:
+        def mode(flags: wl_output.mode, width: int, height: int, refresh: int) -> None:
             """
             advertise available modes for the output
             
@@ -3003,28 +3034,6 @@ class wl_output:
             """
             ...
 
-    class subpixel(Enum):
-        unknown: int
-        none: int
-        horizontal_rgb: int
-        horizontal_bgr: int
-        vertical_rgb: int
-        vertical_bgr: int
-
-    class transform(Enum):
-        normal: int
-        90: int
-        180: int
-        270: int
-        flipped: int
-        flipped_90: int
-        flipped_180: int
-        flipped_270: int
-
-    class mode(IntFlag):
-        current: int
-        preferred: int
-
 class wl_region:
     """
     region interface
@@ -3093,6 +3102,10 @@ class wl_subcompositor:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        bad_surface: int
+        bad_parent: int
 
     # opcode 0
     @staticmethod
@@ -3193,6 +3206,9 @@ class wl_subsurface:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        bad_surface: int
 
     # opcode 0
     @staticmethod
@@ -3353,6 +3369,9 @@ class wp_alpha_modifier_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        already_constructed: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -3390,6 +3409,9 @@ class wp_alpha_modifier_surface_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        no_surface: int
 
     # opcode 0
     @staticmethod
@@ -3440,6 +3462,9 @@ class wp_content_type_manager_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        already_constructed: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -3479,6 +3504,12 @@ class wp_content_type_v1:
     object_id = 0
     version = 1
 
+    class type(Enum):
+        none: int
+        photo: int
+        video: int
+        game: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -3493,7 +3524,7 @@ class wp_content_type_v1:
 
     # opcode 1
     @staticmethod
-    def set_content_type(content_type: uint) -> None:
+    def set_content_type(content_type: wp_content_type_v1.type) -> None:
         """
         specify the content type
         
@@ -3563,6 +3594,45 @@ class wp_cursor_shape_device_v1:
     object_id = 0
     version = 1
 
+    class shape(Enum):
+        default: int
+        context_menu: int
+        help: int
+        pointer: int
+        progress: int
+        wait: int
+        cell: int
+        crosshair: int
+        text: int
+        vertical_text: int
+        alias: int
+        copy: int
+        move: int
+        no_drop: int
+        not_allowed: int
+        grab: int
+        grabbing: int
+        e_resize: int
+        n_resize: int
+        ne_resize: int
+        nw_resize: int
+        s_resize: int
+        se_resize: int
+        sw_resize: int
+        w_resize: int
+        ew_resize: int
+        ns_resize: int
+        nesw_resize: int
+        nwse_resize: int
+        col_resize: int
+        row_resize: int
+        all_scroll: int
+        zoom_in: int
+        zoom_out: int
+
+    class error(Enum):
+        invalid_shape: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -3577,7 +3647,7 @@ class wp_cursor_shape_device_v1:
 
     # opcode 1
     @staticmethod
-    def set_shape(serial: uint, shape: uint) -> None:
+    def set_shape(serial: uint, shape: wp_cursor_shape_device_v1.shape) -> None:
         """
         set device cursor to the shape
         
@@ -3845,6 +3915,11 @@ class wp_drm_lease_request_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        wrong_device: int
+        duplicate_connector: int
+        empty_lease: int
 
     # opcode 0
     @staticmethod
@@ -4359,9 +4434,15 @@ class ext_image_copy_capture_manager_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        invalid_option: int
+
+    class options(IntFlag):
+        paint_cursors: int
+
     # opcode 0
     @staticmethod
-    def create_session(source: object, options: uint) -> ext_image_copy_capture_session_v1:
+    def create_session(source: object, options: ext_image_copy_capture_manager_v1.options) -> ext_image_copy_capture_session_v1:
         """
         capture an image capture source
         
@@ -4423,6 +4504,9 @@ class ext_image_copy_capture_session_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        duplicate_frame: int
+
     # opcode 0
     @staticmethod
     def create_frame() -> ext_image_copy_capture_frame_v1:
@@ -4466,7 +4550,7 @@ class ext_image_copy_capture_session_v1:
 
         # opcode 1
         @staticmethod
-        def shm_format(format: uint) -> None:
+        def shm_format(format: ext_image_copy_capture_session_v1.wl_shm.format) -> None:
             """
             shm buffer format
             
@@ -4539,9 +4623,6 @@ class ext_image_copy_capture_session_v1:
             """
             ...
 
-    class error(Enum):
-        duplicate_frame: int
-
 class ext_image_copy_capture_frame_v1:
     """
     image capture frame
@@ -4559,6 +4640,16 @@ class ext_image_copy_capture_frame_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        no_buffer: int
+        invalid_buffer_damage: int
+        already_captured: int
+
+    class failure_reason(Enum):
+        unknown: int
+        buffer_constraints: int
+        stopped: int
 
     # opcode 0
     @staticmethod
@@ -4639,7 +4730,7 @@ class ext_image_copy_capture_frame_v1:
     class events:
         # opcode 0
         @staticmethod
-        def transform(transform: uint) -> None:
+        def transform(transform: ext_image_copy_capture_frame_v1.wl_output.transform) -> None:
             """
             buffer transform
             
@@ -4700,7 +4791,7 @@ class ext_image_copy_capture_frame_v1:
 
         # opcode 4
         @staticmethod
-        def failed(reason: uint) -> None:
+        def failed(reason: ext_image_copy_capture_frame_v1.failure_reason) -> None:
             """
             capture failed
             
@@ -4709,16 +4800,6 @@ class ext_image_copy_capture_frame_v1:
             After receiving this event, the client must destroy the object.
             """
             ...
-
-    class error(Enum):
-        no_buffer: int
-        invalid_buffer_damage: int
-        already_captured: int
-
-    class failure_reason(Enum):
-        unknown: int
-        buffer_constraints: int
-        stopped: int
 
 class ext_image_copy_capture_cursor_session_v1:
     """
@@ -4729,6 +4810,9 @@ class ext_image_copy_capture_cursor_session_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        duplicate_session: int
 
     # opcode 0
     @staticmethod
@@ -4824,9 +4908,6 @@ class ext_image_copy_capture_cursor_session_v1:
             """
             ...
 
-    class error(Enum):
-        duplicate_session: int
-
 class ext_session_lock_manager_v1:
     """
     used to lock the session
@@ -4916,6 +4997,13 @@ class ext_session_lock_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        invalid_destroy: int
+        invalid_unlock: int
+        role: int
+        duplicate_output: int
+        already_constructed: int
 
     # opcode 0
     @staticmethod
@@ -5037,13 +5125,6 @@ class ext_session_lock_v1:
             """
             ...
 
-    class error(Enum):
-        invalid_destroy: int
-        invalid_unlock: int
-        role: int
-        duplicate_output: int
-        already_constructed: int
-
 class ext_session_lock_surface_v1:
     """
     a surface displayed while the session is locked
@@ -5066,6 +5147,12 @@ class ext_session_lock_surface_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        commit_before_first_ack: int
+        null_buffer: int
+        dimensions_mismatch: int
+        invalid_serial: int
 
     # opcode 0
     @staticmethod
@@ -5133,12 +5220,6 @@ class ext_session_lock_surface_v1:
             commit after acking a configure is a protocol error.
             """
             ...
-
-    class error(Enum):
-        commit_before_first_ack: int
-        null_buffer: int
-        dimensions_mismatch: int
-        invalid_serial: int
 
 class ext_transient_seat_manager_v1:
     """
@@ -5238,6 +5319,9 @@ class wp_fractional_scale_manager_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        fractional_scale_exists: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -5309,6 +5393,10 @@ class wp_linux_drm_syncobj_manager_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        surface_exists: int
+        invalid_timeline: int
 
     # opcode 0
     @staticmethod
@@ -5407,6 +5495,14 @@ class wp_linux_drm_syncobj_surface_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        no_surface: int
+        unsupported_buffer: int
+        no_buffer: int
+        no_acquire_point: int
+        no_release_point: int
+        conflicting_points: int
 
     # opcode 0
     @staticmethod
@@ -5532,6 +5628,10 @@ class wp_security_context_manager_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        invalid_listen_fd: int
+        nested: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -5584,6 +5684,11 @@ class wp_security_context_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        already_used: int
+        already_set: int
+        invalid_metadata: int
 
     # opcode 0
     @staticmethod
@@ -5733,6 +5838,9 @@ class wp_tearing_control_manager_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        tearing_control_exists: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -5775,9 +5883,13 @@ class wp_tearing_control_v1:
     object_id = 0
     version = 1
 
+    class presentation_hint(Enum):
+        vsync: int
+        async_: int
+
     # opcode 0
     @staticmethod
-    def set_presentation_hint(hint: uint) -> None:
+    def set_presentation_hint(hint: wp_tearing_control_v1.presentation_hint) -> None:
         """
         set presentation hint
         
@@ -5873,6 +5985,9 @@ class xdg_activation_token_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        already_used: int
+
     # opcode 0
     @staticmethod
     def set_serial(serial: uint, seat: object) -> None:
@@ -5957,9 +6072,6 @@ class xdg_activation_token_v1:
             """
             ...
 
-    class error(Enum):
-        already_used: int
-
 class xdg_wm_dialog_v1:
     """
     create dialogs related to other toplevels
@@ -5978,6 +6090,9 @@ class xdg_wm_dialog_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        already_used: int
 
     # opcode 0
     @staticmethod
@@ -6105,6 +6220,9 @@ class xdg_toplevel_drag_manager_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        invalid_source: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -6143,6 +6261,10 @@ class xdg_toplevel_drag_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        toplevel_attached: int
+        ongoing_drag: int
 
     # opcode 0
     @staticmethod
@@ -6289,6 +6411,11 @@ class xdg_toplevel_icon_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        invalid_buffer: int
+        immutable: int
+        no_buffer: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -6379,6 +6506,9 @@ class xwayland_shell_v1:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        role: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -6424,6 +6554,10 @@ class xwayland_surface_v1:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        already_associated: int
+        invalid_serial: int
 
     # opcode 0
     @staticmethod
@@ -6666,6 +6800,21 @@ class zwp_linux_buffer_params_v1:
     object_id = 0
     version = 5
 
+    class error(Enum):
+        already_used: int
+        plane_idx: int
+        plane_set: int
+        incomplete: int
+        invalid_format: int
+        invalid_dimensions: int
+        out_of_bounds: int
+        invalid_wl_buffer: int
+
+    class flags(IntFlag):
+        y_invert: int
+        interlaced: int
+        bottom_first: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -6707,7 +6856,7 @@ class zwp_linux_buffer_params_v1:
 
     # opcode 2
     @staticmethod
-    def create(width: int, height: int, format: uint, flags: uint) -> None:
+    def create(width: int, height: int, format: uint, flags: zwp_linux_buffer_params_v1.flags) -> None:
         """
         create a wl_buffer from the given dmabufs
         
@@ -6775,7 +6924,7 @@ class zwp_linux_buffer_params_v1:
 
     # opcode 3
     @staticmethod
-    def create_immed(width: int, height: int, format: uint, flags: uint) -> wl_buffer:
+    def create_immed(width: int, height: int, format: uint, flags: zwp_linux_buffer_params_v1.flags) -> wl_buffer:
         """
         immediately create a wl_buffer from the given                      dmabufs
         
@@ -6835,21 +6984,6 @@ class zwp_linux_buffer_params_v1:
             """
             ...
 
-    class error(Enum):
-        already_used: int
-        plane_idx: int
-        plane_set: int
-        incomplete: int
-        invalid_format: int
-        invalid_dimensions: int
-        out_of_bounds: int
-        invalid_wl_buffer: int
-
-    class flags(IntFlag):
-        y_invert: int
-        interlaced: int
-        bottom_first: int
-
 class zwp_linux_dmabuf_feedback_v1:
     """
     dmabuf feedback
@@ -6882,6 +7016,9 @@ class zwp_linux_dmabuf_feedback_v1:
     """
     object_id = 0
     version = 5
+
+    class tranche_flags(IntFlag):
+        scanout: int
 
     # opcode 0
     @staticmethod
@@ -7047,7 +7184,7 @@ class zwp_linux_dmabuf_feedback_v1:
 
         # opcode 6
         @staticmethod
-        def tranche_flags(flags: uint) -> None:
+        def tranche_flags(flags: zwp_linux_dmabuf_feedback_v1.tranche_flags) -> None:
             """
             tranche flags
             
@@ -7062,9 +7199,6 @@ class zwp_linux_dmabuf_feedback_v1:
             """
             ...
 
-    class tranche_flags(IntFlag):
-        scanout: int
-
 class wp_presentation:
     """
     timed presentation related wl_surface requests
@@ -7073,6 +7207,10 @@ class wp_presentation:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        invalid_timestamp: int
+        invalid_flag: int
 
     # opcode 0
     @staticmethod
@@ -7141,10 +7279,6 @@ class wp_presentation:
             """
             ...
 
-    class error(Enum):
-        invalid_timestamp: int
-        invalid_flag: int
-
 class wp_presentation_feedback:
     """
     presentation time feedback event
@@ -7163,6 +7297,12 @@ class wp_presentation_feedback:
     """
     object_id = 0
     version = 1
+
+    class kind(IntFlag):
+        vsync: int
+        hw_clock: int
+        hw_completion: int
+        zero_copy: int
 
     class events:
         # opcode 0
@@ -7184,7 +7324,7 @@ class wp_presentation_feedback:
 
         # opcode 1
         @staticmethod
-        def presented(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint, refresh: uint, seq_hi: uint, seq_lo: uint, flags: uint) -> None:
+        def presented(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint, refresh: uint, seq_hi: uint, seq_lo: uint, flags: wp_presentation_feedback.kind) -> None:
             """
             the content update was displayed
             
@@ -7241,12 +7381,6 @@ class wp_presentation_feedback:
             The content update was never displayed to the user.
             """
             ...
-
-    class kind(IntFlag):
-        vsync: int
-        hw_clock: int
-        hw_completion: int
-        zero_copy: int
 
 class zwp_tablet_manager_v2:
     """
@@ -7377,6 +7511,31 @@ class zwp_tablet_tool_v2:
     object_id = 0
     version = 1
 
+    class type(Enum):
+        pen: int
+        eraser: int
+        brush: int
+        pencil: int
+        airbrush: int
+        finger: int
+        mouse: int
+        lens: int
+
+    class capability(Enum):
+        tilt: int
+        pressure: int
+        distance: int
+        rotation: int
+        slider: int
+        wheel: int
+
+    class button_state(Enum):
+        released: int
+        pressed: int
+
+    class error(Enum):
+        role: int
+
     # opcode 0
     @staticmethod
     def set_cursor(serial: uint, surface: object, hotspot_x: int, hotspot_y: int) -> None:
@@ -7429,7 +7588,7 @@ class zwp_tablet_tool_v2:
     class events:
         # opcode 0
         @staticmethod
-        def type(tool_type: uint) -> None:
+        def type(tool_type: zwp_tablet_tool_v2.type) -> None:
             """
             tool type
             
@@ -7486,7 +7645,7 @@ class zwp_tablet_tool_v2:
 
         # opcode 3
         @staticmethod
-        def capability(capability: uint) -> None:
+        def capability(capability: zwp_tablet_tool_v2.capability) -> None:
             """
             tool capability notification
             
@@ -7720,7 +7879,7 @@ class zwp_tablet_tool_v2:
 
         # opcode 17
         @staticmethod
-        def button(serial: uint, button: uint, state: uint) -> None:
+        def button(serial: uint, button: uint, state: zwp_tablet_tool_v2.button_state) -> None:
             """
             button event
             
@@ -7745,31 +7904,6 @@ class zwp_tablet_tool_v2:
             one hardware event.
             """
             ...
-
-    class type(Enum):
-        pen: int
-        eraser: int
-        brush: int
-        pencil: int
-        airbrush: int
-        finger: int
-        mouse: int
-        lens: int
-
-    class capability(Enum):
-        tilt: int
-        pressure: int
-        distance: int
-        rotation: int
-        slider: int
-        wheel: int
-
-    class button_state(Enum):
-        released: int
-        pressed: int
-
-    class error(Enum):
-        role: int
 
 class zwp_tablet_v2:
     """
@@ -7892,6 +8026,9 @@ class zwp_tablet_pad_ring_v2:
     object_id = 0
     version = 1
 
+    class source(Enum):
+        finger: int
+
     # opcode 0
     @staticmethod
     def set_feedback(description: string, serial: uint) -> None:
@@ -7933,7 +8070,7 @@ class zwp_tablet_pad_ring_v2:
     class events:
         # opcode 0
         @staticmethod
-        def source(source: uint) -> None:
+        def source(source: zwp_tablet_pad_ring_v2.source) -> None:
             """
             ring event source
             
@@ -8006,9 +8143,6 @@ class zwp_tablet_pad_ring_v2:
             """
             ...
 
-    class source(Enum):
-        finger: int
-
 class zwp_tablet_pad_strip_v2:
     """
     pad strip
@@ -8021,6 +8155,9 @@ class zwp_tablet_pad_strip_v2:
     """
     object_id = 0
     version = 1
+
+    class source(Enum):
+        finger: int
 
     # opcode 0
     @staticmethod
@@ -8063,7 +8200,7 @@ class zwp_tablet_pad_strip_v2:
     class events:
         # opcode 0
         @staticmethod
-        def source(source: uint) -> None:
+        def source(source: zwp_tablet_pad_strip_v2.source) -> None:
             """
             strip event source
             
@@ -8137,9 +8274,6 @@ class zwp_tablet_pad_strip_v2:
             position, frame, etc.
             """
             ...
-
-    class source(Enum):
-        finger: int
 
 class zwp_tablet_pad_group_v2:
     """
@@ -8331,6 +8465,10 @@ class zwp_tablet_pad_v2:
     object_id = 0
     version = 1
 
+    class button_state(Enum):
+        released: int
+        pressed: int
+
     # opcode 0
     @staticmethod
     def set_feedback(button: uint, description: string, serial: uint) -> None:
@@ -8438,7 +8576,7 @@ class zwp_tablet_pad_v2:
 
         # opcode 4
         @staticmethod
-        def button(time: uint, button: uint, state: uint) -> None:
+        def button(time: uint, button: uint, state: zwp_tablet_pad_v2.button_state) -> None:
             """
             physical button state
             
@@ -8482,10 +8620,6 @@ class zwp_tablet_pad_v2:
             """
             ...
 
-    class button_state(Enum):
-        released: int
-        pressed: int
-
 class wp_viewporter:
     """
     surface cropping and scaling
@@ -8499,6 +8633,9 @@ class wp_viewporter:
     """
     object_id = 0
     version = 1
+
+    class error(Enum):
+        viewport_exists: int
 
     # opcode 0
     @staticmethod
@@ -8587,6 +8724,12 @@ class wp_viewport:
     object_id = 0
     version = 1
 
+    class error(Enum):
+        bad_value: int
+        bad_size: int
+        out_of_buffer: int
+        no_surface: int
+
     # opcode 0
     @staticmethod
     def destroy() -> None:
@@ -8648,6 +8791,15 @@ class xdg_wm_base:
     """
     object_id = 0
     version = 6
+
+    class error(Enum):
+        role: int
+        defunct_surfaces: int
+        not_the_topmost_popup: int
+        invalid_popup_parent: int
+        invalid_surface_state: int
+        invalid_positioner: int
+        unresponsive: int
 
     # opcode 0
     @staticmethod
@@ -8732,15 +8884,6 @@ class xdg_wm_base:
             """
             ...
 
-    class error(Enum):
-        role: int
-        defunct_surfaces: int
-        not_the_topmost_popup: int
-        invalid_popup_parent: int
-        invalid_surface_state: int
-        invalid_positioner: int
-        unresponsive: int
-
 class xdg_positioner:
     """
     child surface positioner
@@ -8767,6 +8910,40 @@ class xdg_positioner:
     """
     object_id = 0
     version = 6
+
+    class error(Enum):
+        invalid_input: int
+
+    class anchor(Enum):
+        none: int
+        top: int
+        bottom: int
+        left: int
+        right: int
+        top_left: int
+        bottom_left: int
+        top_right: int
+        bottom_right: int
+
+    class gravity(Enum):
+        none: int
+        top: int
+        bottom: int
+        left: int
+        right: int
+        top_left: int
+        bottom_left: int
+        top_right: int
+        bottom_right: int
+
+    class constraint_adjustment(IntFlag):
+        none: int
+        slide_x: int
+        slide_y: int
+        flip_x: int
+        flip_y: int
+        resize_x: int
+        resize_y: int
 
     # opcode 0
     @staticmethod
@@ -8813,7 +8990,7 @@ class xdg_positioner:
 
     # opcode 3
     @staticmethod
-    def set_anchor(anchor: uint) -> None:
+    def set_anchor(anchor: xdg_positioner.anchor) -> None:
         """
         set anchor rectangle anchor
         
@@ -8828,7 +9005,7 @@ class xdg_positioner:
 
     # opcode 4
     @staticmethod
-    def set_gravity(gravity: uint) -> None:
+    def set_gravity(gravity: xdg_positioner.gravity) -> None:
         """
         set child surface gravity
         
@@ -8844,7 +9021,7 @@ class xdg_positioner:
 
     # opcode 5
     @staticmethod
-    def set_constraint_adjustment(constraint_adjustment: uint) -> None:
+    def set_constraint_adjustment(constraint_adjustment: xdg_positioner.constraint_adjustment) -> None:
         """
         set the adjustment to be done when constrained
         
@@ -8982,6 +9159,14 @@ class xdg_surface:
     """
     object_id = 0
     version = 6
+
+    class error(Enum):
+        not_constructed: int
+        already_constructed: int
+        unconfigured_buffer: int
+        invalid_serial: int
+        invalid_size: int
+        defunct_role_object: int
 
     # opcode 0
     @staticmethod
@@ -9139,14 +9324,6 @@ class xdg_surface:
             """
             ...
 
-    class error(Enum):
-        not_constructed: int
-        already_constructed: int
-        unconfigured_buffer: int
-        invalid_serial: int
-        invalid_size: int
-        defunct_role_object: int
-
 class xdg_toplevel:
     """
     toplevel surface
@@ -9175,6 +9352,39 @@ class xdg_toplevel:
     """
     object_id = 0
     version = 6
+
+    class error(Enum):
+        invalid_resize_edge: int
+        invalid_parent: int
+        invalid_size: int
+
+    class resize_edge(Enum):
+        none: int
+        top: int
+        bottom: int
+        left: int
+        top_left: int
+        bottom_left: int
+        right: int
+        top_right: int
+        bottom_right: int
+
+    class state(Enum):
+        maximized: int
+        fullscreen: int
+        resizing: int
+        activated: int
+        tiled_left: int
+        tiled_right: int
+        tiled_top: int
+        tiled_bottom: int
+        suspended: int
+
+    class wm_capabilities(Enum):
+        window_menu: int
+        maximize: int
+        fullscreen: int
+        minimize: int
 
     # opcode 0
     @staticmethod
@@ -9312,7 +9522,7 @@ class xdg_toplevel:
 
     # opcode 6
     @staticmethod
-    def resize(seat: object, serial: uint, edges: uint) -> None:
+    def resize(seat: object, serial: uint, edges: xdg_toplevel.resize_edge) -> None:
         """
         start an interactive resize
         
@@ -9666,39 +9876,6 @@ class xdg_toplevel:
             """
             ...
 
-    class error(Enum):
-        invalid_resize_edge: int
-        invalid_parent: int
-        invalid_size: int
-
-    class resize_edge(Enum):
-        none: int
-        top: int
-        bottom: int
-        left: int
-        top_left: int
-        bottom_left: int
-        right: int
-        top_right: int
-        bottom_right: int
-
-    class state(Enum):
-        maximized: int
-        fullscreen: int
-        resizing: int
-        activated: int
-        tiled_left: int
-        tiled_right: int
-        tiled_top: int
-        tiled_bottom: int
-        suspended: int
-
-    class wm_capabilities(Enum):
-        window_menu: int
-        maximize: int
-        fullscreen: int
-        minimize: int
-
 class xdg_popup:
     """
     short-lived, popup surfaces for menus
@@ -9730,6 +9907,9 @@ class xdg_popup:
     """
     object_id = 0
     version = 6
+
+    class error(Enum):
+        invalid_grab: int
 
     # opcode 0
     @staticmethod
@@ -9880,7 +10060,4 @@ class xdg_popup:
             effect. See xdg_surface.ack_configure for details.
             """
             ...
-
-    class error(Enum):
-        invalid_grab: int
 
