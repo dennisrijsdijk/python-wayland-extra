@@ -149,16 +149,16 @@ class WaylandState:
             self._socket.sendall(message)
 
     def send_wayland_message(
-        self, wayland_object, wayland_method, packet=b"", ancillary=None
+        self, wayland_object, wayland_request, packet=b"", ancillary=None
     ):
         if not wayland_object:
             msg = "NULL object passed as Wayland object"
             raise ValueError(msg)
 
-        # Pack the message header (4 bytes for object, 2 bytes for method, 2 bytes for size)
+        # Pack the message header (4 bytes for object, 2 bytes for request, 2 bytes for size)
         header = b""
         header += struct.pack("I", wayland_object)
-        header += struct.pack("H", wayland_method)
+        header += struct.pack("H", wayland_request)
         header += struct.pack("H", len(packet) + PROTOCOL_HEADER_SIZE)
         self._send(header + packet, ancillary)
 
@@ -172,7 +172,7 @@ class WaylandState:
 
         event = self.object_id_to_event(wayland_object, opcode)
         if event:
-            # Call the event handler, pass pointer to method to get fd if required
+            # Call the event handler, pass pointer to event to get fd if required
             event(packet, self._socket.get_next_fd)
             return True
 

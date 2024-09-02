@@ -30,7 +30,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "sync",
     "args": [
@@ -110,7 +110,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "bind",
     "args": [
@@ -139,7 +139,7 @@
  },
  "wl_compositor": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "create_surface",
     "args": [
@@ -168,7 +168,7 @@
  },
  "wl_shm_pool": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "create_buffer",
     "args": [
@@ -235,7 +235,7 @@
     "opcode": 0
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "create_pool",
     "args": [
@@ -789,7 +789,7 @@
     "opcode": 0
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -837,7 +837,7 @@
     "opcode": 2
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "accept",
     "args": [
@@ -979,7 +979,7 @@
     "opcode": 5
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "offer",
     "args": [
@@ -1109,7 +1109,7 @@
     "opcode": 5
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "start_drag",
     "args": [
@@ -1180,7 +1180,7 @@
  },
  "wl_data_device_manager": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "create_data_source",
     "args": [
@@ -1238,7 +1238,7 @@
  },
  "wl_shell": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "get_shell_surface",
     "args": [
@@ -1306,7 +1306,7 @@
     "opcode": 2
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "pong",
     "args": [
@@ -1593,7 +1593,7 @@
     "opcode": 3
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -1798,7 +1798,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "get_pointer",
     "args": [
@@ -2056,7 +2056,7 @@
     "opcode": 10
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "set_cursor",
     "args": [
@@ -2283,7 +2283,7 @@
     "opcode": 5
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "release",
     "type": "destructor",
@@ -2440,7 +2440,7 @@
     "opcode": 6
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "release",
     "type": "destructor",
@@ -2557,7 +2557,7 @@
     "opcode": 5
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "release",
     "type": "destructor",
@@ -2652,7 +2652,7 @@
  },
  "wl_region": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -2709,7 +2709,7 @@
  },
  "wl_subcompositor": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -2757,7 +2757,7 @@
  },
  "wl_subsurface": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -2838,13 +2838,13 @@
     "opcode": 0
    }
   ],
-  "methods": [],
+  "requests": [],
   "enums": [],
   "version": "1"
  },
  "wp_alpha_modifier_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -2883,7 +2883,7 @@
  },
  "wp_alpha_modifier_surface_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -2916,7 +2916,7 @@
  },
  "wp_content_type_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -2955,7 +2955,7 @@
  },
  "wp_content_type_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3001,7 +3001,7 @@
  },
  "wp_cursor_shape_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3046,7 +3046,7 @@
  },
  "wp_cursor_shape_device_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3258,7 +3258,7 @@
     "opcode": 3
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "create_lease_request",
     "args": [
@@ -3322,7 +3322,7 @@
     "opcode": 4
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3335,7 +3335,7 @@
  },
  "wp_drm_lease_request_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "request_connector",
     "args": [
@@ -3399,7 +3399,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3429,7 +3429,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "stop",
     "args": [],
@@ -3488,7 +3488,7 @@
     "opcode": 4
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3501,7 +3501,7 @@
  },
  "ext_idle_notifier_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3545,7 +3545,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3558,7 +3558,7 @@
  },
  "ext_image_capture_source_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3571,7 +3571,7 @@
  },
  "ext_output_image_capture_source_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "create_source",
     "args": [
@@ -3600,7 +3600,7 @@
  },
  "ext_foreign_toplevel_image_capture_source_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "create_source",
     "args": [
@@ -3629,7 +3629,7 @@
  },
  "ext_image_copy_capture_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "create_session",
     "args": [
@@ -3764,7 +3764,7 @@
     "opcode": 5
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "create_frame",
     "args": [
@@ -3866,7 +3866,7 @@
     "opcode": 4
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -3991,7 +3991,7 @@
     "opcode": 3
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4025,7 +4025,7 @@
  },
  "ext_session_lock_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4060,7 +4060,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4145,7 +4145,7 @@
     "opcode": 0
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4190,7 +4190,7 @@
  },
  "ext_transient_seat_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "create",
     "args": [
@@ -4230,7 +4230,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4243,7 +4243,7 @@
  },
  "wp_fractional_scale_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4293,7 +4293,7 @@
     "opcode": 0
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4306,7 +4306,7 @@
  },
  "wp_linux_drm_syncobj_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4364,7 +4364,7 @@
  },
  "wp_linux_drm_syncobj_timeline_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4377,7 +4377,7 @@
  },
  "wp_linux_drm_syncobj_surface_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4458,7 +4458,7 @@
  },
  "wp_security_context_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4504,7 +4504,7 @@
  },
  "wp_security_context_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4570,7 +4570,7 @@
  },
  "wp_single_pixel_buffer_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4610,7 +4610,7 @@
  },
  "wp_tearing_control_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4649,7 +4649,7 @@
  },
  "wp_tearing_control_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "set_presentation_hint",
     "args": [
@@ -4687,7 +4687,7 @@
  },
  "xdg_activation_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4737,7 +4737,7 @@
     "opcode": 0
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "set_serial",
     "args": [
@@ -4801,7 +4801,7 @@
  },
  "xdg_wm_dialog_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4840,7 +4840,7 @@
  },
  "xdg_dialog_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4863,7 +4863,7 @@
  },
  "xdg_toplevel_drag_manager_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4902,7 +4902,7 @@
  },
  "xdg_toplevel_drag_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -4964,7 +4964,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -5005,7 +5005,7 @@
  },
  "xdg_toplevel_icon_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -5061,7 +5061,7 @@
  },
  "xwayland_shell_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -5100,7 +5100,7 @@
  },
  "xwayland_surface_v1": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "set_serial",
     "args": [
@@ -5171,7 +5171,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -5241,7 +5241,7 @@
     "opcode": 1
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -5458,7 +5458,7 @@
     "opcode": 6
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -5493,7 +5493,7 @@
     "opcode": 0
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -5590,7 +5590,7 @@
     "opcode": 2
    }
   ],
-  "methods": [],
+  "requests": [],
   "enums": [
    {
     "name": "kind",
@@ -5619,7 +5619,7 @@
  },
  "zwp_tablet_manager_v2": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "get_tablet_seat",
     "args": [
@@ -5682,7 +5682,7 @@
     "opcode": 2
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -5907,7 +5907,7 @@
     "opcode": 18
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "set_cursor",
     "args": [
@@ -6078,7 +6078,7 @@
     "opcode": 4
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -6128,7 +6128,7 @@
     "opcode": 3
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "set_feedback",
     "args": [
@@ -6202,7 +6202,7 @@
     "opcode": 3
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "set_feedback",
     "args": [
@@ -6305,7 +6305,7 @@
     "opcode": 5
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -6414,7 +6414,7 @@
     "opcode": 7
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "set_feedback",
     "args": [
@@ -6459,7 +6459,7 @@
  },
  "wp_viewporter": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -6498,7 +6498,7 @@
  },
  "wp_viewport": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -6580,7 +6580,7 @@
     "opcode": 0
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -6664,7 +6664,7 @@
  },
  "xdg_positioner": {
   "events": [],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -6929,7 +6929,7 @@
     "opcode": 0
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -7087,7 +7087,7 @@
     "opcode": 3
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",
@@ -7416,7 +7416,7 @@
     "opcode": 2
    }
   ],
-  "methods": [
+  "requests": [
    {
     "name": "destroy",
     "type": "destructor",

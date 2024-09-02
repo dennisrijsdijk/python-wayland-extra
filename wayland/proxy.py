@@ -31,12 +31,12 @@ from wayland.state import WaylandState
 
 
 class Proxy:
-    class Method:
+    class Request:
         def __init__(self, parent, name, args, opcode, state):
             self.name = name
-            self.method_args = args
+            self.request_args = args
             self.opcode = opcode
-            self.method = True
+            self.request = True
             self.event = False
             self.parent = parent
             self.state = state
@@ -53,7 +53,7 @@ class Proxy:
         def __call__(self, *args):
             args = list(args)
 
-            # Read some properties from the class to which this method is bound
+            # Read some properties from the class to which this request is bound
             parent_interface = self.parent._name
             object_id = self.parent.object_id
             scope = self.parent._scope
@@ -63,7 +63,7 @@ class Proxy:
             interface = None
             ancillary = None
             return_value = None
-            for arg in self.method_args:
+            for arg in self.request_args:
                 # Remember any interface value we see
                 if arg["name"] == "interface":
                     interface = args.pop(0)
@@ -89,7 +89,7 @@ class Proxy:
                 # Debug info
                 values.append(self._format_debug_arg(value, arg["type"]))
 
-            log.method(
+            log.request(
                 f"{parent_interface}#{object_id}.{self.name}({', '.join(values)})"
             )
 
@@ -138,9 +138,9 @@ class Proxy:
         def __init__(self, parent, name, args, opcode):
             self.name = name
             self.parent = parent
-            self.method_args = args
+            self.event_args = args
             self.opcode = opcode
-            self.method = False
+            self.event = False
             self.event = True
             self._handlers = []
 
@@ -157,12 +157,12 @@ class Proxy:
             return self
 
         def __call__(self, packet, get_fd):
-            # Read some properties from the class to which this method is bound
+            # Read some properties from the class to which this event is bound
             parent_interface = self.parent._name
             object_id = self.parent.object_id
 
             kwargs = {}
-            for arg in self.method_args:
+            for arg in self.event_args:
                 arg_type = arg["type"]
                 # Get the value
                 packet, value = self._unpack_argument(packet, arg_type, get_fd)
@@ -235,39 +235,39 @@ class Proxy:
             self._object_id = value
             log.protocol(f"{self._name} assigned object_id {self._object_id}")
 
-        def __init__(self, name, scope, methods, events, state):
+        def __init__(self, name, scope, requests, events, state):
             self._name = name
             self._scope = scope
             self._state = state
-            self._methods = methods
+            self._requests = requests
             self._events = events
             self._object_id = 0
             # Special wayland case
             if name == "wl_display":
                 self.object_id, _ = self._state.new_object(self)
-            # Bind methods and events
+            # Bind requests and events
             self.events = Proxy.Events()
-            self._bind_methods(methods)
+            self._bind_requests(requests)
             self._bind_events(events)
 
         def copy(self):
             return self.__class__(
-                self._name, self._scope, self._methods, self._events, self._state
+                self._name, self._scope, self._requests, self._events, self._state
             )
 
-        def _bind_methods(self, methods):
-            for method in methods:
+        def _bind_requests(self, requests):
+            for request in requests:
                 # Avoid python keyword naming collisions
-                attr_name = method["name"]
+                attr_name = request["name"]
                 if keyword.iskeyword(attr_name):
                     attr_name += "_"
 
-                # Create a new method
-                method_obj = Proxy.Method(
-                    self, attr_name, method["args"], method["opcode"], self._state
+                # Create a new request
+                request_obj = Proxy.Request(
+                    self, attr_name, request["args"], request["opcode"], self._state
                 )
-                # Set the method with the correct binding
-                setattr(self, attr_name, method_obj)
+                # Set the request with the correct binding
+                setattr(self, attr_name, request_obj)
 
         def _bind_events(self, events):
             for event in events:
@@ -277,11 +277,11 @@ class Proxy:
                     attr_name += "_"
 
                 # Create a new event
-                method_obj = Proxy.Event(
+                event_obj = Proxy.Event(
                     self, attr_name, event["args"], event["opcode"]
                 )
-                # Set the method with the correct binding
-                setattr(self.events, attr_name, method_obj)
+                # Set the event with the correct binding
+                setattr(self.events, attr_name, event_obj)
 
         def __bool__(self):
             return self.object_id > 0
@@ -311,11 +311,11 @@ class Proxy:
 
         for class_name, details in structure.items():
             # Process requests
-            methods = details.get("methods", [])
+            requests = details.get("requests", [])
             events = details.get("events", [])
             dynamic_class = type(class_name, (Proxy.DynamicObject,), {})
             instance = dynamic_class(
-                class_name, self.scope, methods, events, self.state
+                class_name, self.scope, requests, events, self.state
             )
             # Inject instance into scope
             if isinstance(scope, dict):

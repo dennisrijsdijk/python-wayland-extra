@@ -27,19 +27,19 @@ import os
 # Define custom log levels
 PROTOCOL_LEVEL = 7
 EVENT_LEVEL = 8
-METHOD_LEVEL = 9
+REQUEST_LEVEL = 9
 
 # PROTOCOL: 7
 # DEBUG: 10
 # EVENT: 14
-# METHOD: 15
+# REQUEST: 15
 # INFO: 20
 # WARNING: 30
 # ERROR: 40
 # CRITICAL: 50
 
 logging.addLevelName(PROTOCOL_LEVEL, "PROTOCOL")
-logging.addLevelName(METHOD_LEVEL, "METHOD")
+logging.addLevelName(REQUEST_LEVEL, "REQUEST")
 logging.addLevelName(EVENT_LEVEL, "EVENT")
 
 
@@ -47,7 +47,7 @@ class WaylandLogger(logging.Logger):
     def __init__(self, name):
         super().__init__(name)
         self._protocol_enabled = True  # Flag to enable/disable PROTOCOL logging
-        self._method_enabled = True  # Flag to enable/disable METHOD logging
+        self._request_enabled = True  # Flag to enable/disable REQUEST logging
         self._event_enabled = True  # Flag to enable/disable EVENT logging
 
     # Standard logging methods (DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -71,14 +71,14 @@ class WaylandLogger(logging.Logger):
         if self.isEnabledFor(logging.CRITICAL):
             self.log(logging.CRITICAL, message, *args, **kwargs)
 
-    # Custom logging methods (PROTOCOL, METHOD)
+    # Custom logging methods (PROTOCOL, REQUEST)
     def protocol(self, message, *args, **kwargs):
         if self.isEnabledFor(PROTOCOL_LEVEL) and self._protocol_enabled:
             self.log(PROTOCOL_LEVEL, message, *args, **kwargs)
 
-    def method(self, message, *args, **kwargs):
-        if self.isEnabledFor(METHOD_LEVEL) and self._method_enabled:
-            self.log(METHOD_LEVEL, message, *args, **kwargs)
+    def request(self, message, *args, **kwargs):
+        if self.isEnabledFor(REQUEST_LEVEL) and self._request_enabled:
+            self.log(REQUEST_LEVEL, message, *args, **kwargs)
 
     def event(self, message, *args, **kwargs):
         if self.isEnabledFor(EVENT_LEVEL) and self._event_enabled:
@@ -91,16 +91,16 @@ class WaylandLogger(logging.Logger):
     def enable_protocol(self):
         self._protocol_enabled = True
 
-    def disable_method(self):
-        self._method_enabled = False
+    def disable_requests(self):
+        self._request_enabled = False
 
-    def enable_method(self):
-        self._method_enabled = True
+    def enable_requests(self):
+        self._request_enabled = True
 
-    def disable_event(self):
+    def disable_events(self):
         self._event_enabled = False
 
-    def enable_event(self):
+    def enable_events(self):
         self._event_enabled = True
 
     def enable(self, level=logging.INFO):
