@@ -22,6 +22,36 @@ Wayland identifiers that collide with Python builtin keywords are renamed to end
 * `wayland.wl_registry.global` renamed to `global_`
 * `xdg_foreign_unstable_v1.zxdg_importer_v1.import` renamed to `import_`
 
+Enums with integer names, which are not permitted in Python, have the value prefixed with the name of the enum. This is also very rare, at the time of writing the below example is the only case in the stable and staging protocols.
+
+For example:
+
+```python
+class wl_output.transform(Enum):
+    normal: int
+    90: int
+    180: int
+    270: int
+    flipped: int
+    flipped_90: int
+    flipped_180: int
+    flipped_270: int
+```
+
+becomes:
+
+```python
+class wl_output.transform(Enum):
+    normal: int
+    transform_90: int
+    transform_180: int
+    transform_270: int
+    flipped: int
+    flipped_90: int
+    flipped_180: int
+    flipped_270: int
+```
+
 ## Making Wayland Requests
 
 Requests are made in the standard manner, with the exception that `new_id` arguments should be omitted. There is no need to pass an integer ID for the object you want to create, that is handled automatically for you. An instance of the object created is simply returned by the request. 

@@ -415,7 +415,13 @@ class WaylandParser:
 
             signature = f"{pad}class {enum_name}({enum_type}):\n"
             for arg in enum_args:
-                signature += f"{pad_body}{arg['name']}: int\n"
+                value_name = arg["name"]
+                try:
+                    _ = int(value_name)
+                    value_name = f"{enum_name}_{value_name}"
+                except ValueError:
+                    pass  # ok
+                signature += f"{pad_body}{value_name}: int\n"
 
             definitions += f"{signature}\n"
 

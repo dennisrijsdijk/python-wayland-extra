@@ -2838,9 +2838,9 @@ class wl_output:
 
     class transform(Enum):
         normal: int
-        90: int
-        180: int
-        270: int
+        transform_90: int
+        transform_180: int
+        transform_270: int
         flipped: int
         flipped_90: int
         flipped_180: int

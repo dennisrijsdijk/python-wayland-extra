@@ -1,5 +1,9 @@
 ### Changelog
 
+### v0.6.0 (3rd September 2024)
+- Support Wayland enums as Python enums including bitfields.
+- Change terminology of "methods" to "requests" to match Wayland.
+
 ### v0.5.0 (31st August 2024)
 - Support multiple wayland contexts not just a single global context.
 - Support debug output without full protocol level debugging output.
