@@ -5,7 +5,7 @@
 # "Software"), to deal in the Software without restriction, including
 # without limitation the rights to use, copy, modify, merge, publish,
 # distribute, sublicense, and/or sell copies of the Software, and to
-# permit persons to whom the Software is furnished to do so,enum subject to
+# permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
 #
 # The above copyright notice and this permission notice (including the
@@ -25,258 +25,168 @@ import json
 import keyword
 import os
 from copy import deepcopy
+from typing import Dict, List, Union
 
 import requests
 from lxml import etree
 
 from wayland.log import log
 
-
 class WaylandParser:
     def __init__(self):
-        self.interfaces = {}
-        self.headers = []
-        self.protocol_name = ""
+        self.interfaces: Dict[str, Dict] = {}
+        self.protocol_name: str = ""
 
-    def get_remote_uris(self):
-        # Download the latest protocols
-        domain = "https://gitlab.freedesktop.org"
-        project = "projects/wayland%2Fwayland-protocols"
-        url = f"{domain}/api/v4/{project}/repository/"
+    def get_remote_uris(self) -> List[str]:
+        base_url = "https://gitlab.freedesktop.org/api/v4/projects/wayland%2Fwayland-protocols/repository/"
         paths = ["staging", "stable"]
         xml_uris = []
+
         for path in paths:
             log.info(f"Searching for {path} Wayland protocol definitions")
             page = 1
             while True:
-                params = {
-                    "per_page": 100,
-                    "page": page,
-                    "path": path,
-                    "recursive": True,
-                }
-
-                # Get all objects
-                response = requests.get(url=f"{url}/tree", params=params, timeout=30)
-                if not response.ok:
-                    response.raise_for_status()
-
-                # If nothing we are done
-                if not len(response.json()):
+                params = {"per_page": 100, "page": page, "path": path, "recursive": True}
+                response = requests.get(f"{base_url}/tree", params=params, timeout=30)
+                response.raise_for_status()
+                
+                if not response.json():
                     break
-
+                
+                xml_uris.extend(
+                    f"{base_url}/blobs/{x['id']}/raw"
+                    for x in response.json()
+                    if x["path"].endswith(".xml")
+                )
                 page += 1
 
-                # Add xml files to our list
-                xml_uris.extend(
-                    [
-                        f"{url}/blobs/{x['id']}/raw"
-                        for x in response.json()
-                        if os.path.splitext(x["path"])[-1] == ".xml"
-                    ]
-                )
-
-        xml_uris.insert(
-            0,
-            "https://gitlab.freedesktop.org/wayland/wayland/-/raw/main/protocol/wayland.xml",
-        )
-
+        xml_uris.insert(0, "https://gitlab.freedesktop.org/wayland/wayland/-/raw/main/protocol/wayland.xml")
         return xml_uris
 
-    def get_local_files(self):
-        # XXX: Not sure this assumption holds everywhere?
-        protocol_dirs = [
-            "/usr/share/wayland",
-            "/usr/share/wayland-protocols",
+    def get_local_files(self) -> List[str]:
+        protocol_dirs = ["/usr/share/wayland", "/usr/share/wayland-protocols"]
+        return [
+            os.path.join(root, file)
+            for directory in protocol_dirs
+            for root, _, files in os.walk(directory)
+            for file in files
+            if file.endswith(".xml")
         ]
-        xml_files = []
-        for directory in protocol_dirs:
-            log.info(f"Searching for local files in {directory}")
-            for root, _, files in os.walk(directory):
-                xml_files.extend(
-                    [os.path.join(root, x) for x in files if x.endswith(".xml")]
-                )
-        return xml_files
 
-    def to_json(self, *, minimise=True):
+    def to_json(self, *, minimise=True) -> str:
         protocols = deepcopy(self.interfaces)
-
         if minimise:
-            keys_to_remove = ["description", "signature", "summary"]
-            for protocol in protocols.values():
-                self._remove_keys(protocol, keys_to_remove)
-
+            self._remove_keys(protocols, ["description", "signature", "summary"])
         return json.dumps(protocols, indent=1)
 
-    def _remove_keys(self, obj, keys):
+    @staticmethod
+    def _remove_keys(obj: Union[Dict, List], keys: List[str]):
         if isinstance(obj, dict):
             for key in keys:
                 obj.pop(key, None)
             for value in obj.values():
-                self._remove_keys(value, keys)
+                WaylandParser._remove_keys(value, keys)
         elif isinstance(obj, list):
             for item in obj:
-                self._remove_keys(item, keys)
+                WaylandParser._remove_keys(item, keys)
 
-    def add_request(self, interface, request):
-        # Check for python keyword collision
-        if keyword.iskeyword(request["name"]):
-            request["name"] = request["name"] + "_"
-            log.info(f"Renamed {self.protocol_name}.{interface}.{request['name']}")
-        if interface not in self.interfaces:
-            self.interfaces[interface] = {"events": [], "requests": [], "enums": []}
-        requests = self.interfaces.get(interface, {}).get("requests", [])
-        request["opcode"] = len(requests)
-        requests.append(request)
-
-    def parse_value(self, value):
-        if value.startswith("0b"):  # binary
-            return int(value, 2)
-        if value.startswith("0x"):  # hexadecimal
-            return int(value, 16)
-
-        return int(value)
-
-    def add_enum(self, interface, enum):
-        # Check for python keyword collision
-        if keyword.iskeyword(enum["name"]):
-            enum["name"] = enum["name"] + "_"
-            log.info(f"Renamed {self.protocol_name}.{interface}.{enum['name']}")
+    def _add_interface_item(self, interface: str, item_type: str, item: Dict):
+        if keyword.iskeyword(item["name"]):
+            item["name"] += "_"
+            log.info(f"Renamed {self.protocol_name}.{interface}.{item['name']}")
 
         if interface not in self.interfaces:
             self.interfaces[interface] = {"events": [], "requests": [], "enums": []}
 
-        enums = self.interfaces.get(interface, {}).get("enums", [])
-        enums.append(enum)
+        items = self.interfaces[interface][f"{item_type}s"]
+        if item_type != "enum":
+            item["opcode"] = len(items)
 
-    def add_event(self, interface, event):
-        # Check for python keyword collision
-        if keyword.iskeyword(event["name"]):
-            event["name"] = event["name"] + "_"
-            log.info(f"Renamed {self.protocol_name}.{interface}.{event['name']}")
-        if interface not in self.interfaces:
-            self.interfaces[interface] = {"events": [], "requests": [], "enums": []}
-        events = self.interfaces.get(interface, {}).get("events", [])
-        event["opcode"] = len(events)
-        # Check for name collision
-        requests = [x["name"] for x in self.interfaces[interface]["requests"]]
-        if event["name"] in requests:
-            msg = f"Event {event['name']} collides with request of the same name."
-            raise ValueError(msg)
-        events.append(event)
+        if item_type == "event":
+            requests = [x["name"] for x in self.interfaces[interface]["requests"]]
+            if item["name"] in requests:
+                raise ValueError(f"Event {item['name']} collides with request of the same name.")
 
-    def parse(self, path):
+        items.append(item)
+
+    def add_request(self, interface: str, request: Dict):
+        self._add_interface_item(interface, "request", request)
+
+    def add_enum(self, interface: str, enum: Dict):
+        self._add_interface_item(interface, "enum", enum)
+
+    def add_event(self, interface: str, event: Dict):
+        self._add_interface_item(interface, "event", event)
+
+    def parse(self, path: str):
         if not path.strip():
             return
+
         if path.startswith("http"):
             response = requests.get(path, timeout=20)
-            if response.ok:
-                tree = etree.fromstring(response.content)
-            else:
-                response.raise_for_status()
+            response.raise_for_status()
+            tree = etree.fromstring(response.content)
         else:
             tree = etree.parse(path)
 
-        try:
-            self.protocol_name = tree.getroot().attrib["name"]
-        except AttributeError:
-            self.protocol_name = tree.attrib["name"]
+        self.protocol_name = tree.attrib["name"] or tree.getroot().attrib.get("name")
 
-        self.parse_xml(tree, "/protocol/interface/request")
-        self.parse_xml(tree, "/protocol/interface/event")
-        self.parse_xml(tree, "/protocol/interface/enum")
+        for xpath in ["/protocol/interface/request", "/protocol/interface/event", "/protocol/interface/enum"]:
+            self.parse_xml(tree, xpath)
 
-    def get_description(self, description):
-        doc = ""
-        if description is not None:
-            summary = dict(description.items())["summary"]
-            if description.text:
-                text = [x.strip() for x in description.text.split("\n")]
-                doc = f"{summary.strip()}\n{'\n'.join(text)}"
-            else:
-                doc = f"{summary.strip()}"
-        return doc
+    @staticmethod
+    def get_description(description: etree.Element) -> str:
+        if description is None:
+            return ""
+        summary = description.attrib.get("summary", "").strip()
+        text = "\n".join(line.strip() for line in (description.text or "").split("\n") if line.strip())
+        return f"{summary}\n{text}" if text else summary
 
-    def parse_xml(self, tree, xpath):
-        all_elements = tree.xpath(xpath)
-
-        for node in all_elements:
-            interface_name = node.getparent().get("name")
+    def parse_xml(self, tree: etree.ElementTree, xpath: str):
+        for node in tree.xpath(xpath):
+            interface_name = node.getparent().attrib["name"]
             object_type = node.tag
-            object_name = node.get("name")
+            object_name = node.attrib["name"]
             log.info(f"    ({object_type}) {interface_name}.{object_name}")
 
-            wayland_object = dict(node.items())
+            wayland_object = dict(node.attrib)
+            interface = dict(node.getparent().attrib)
 
-            # Read the interface
-            interface = dict(node.getparent().items())
-
-            # Get arguments
-            params = (
-                node.findall("arg") if object_type != "enum" else node.findall("entry")
-            )
+            params = node.findall("arg" if object_type != "enum" else "entry")
             description = self.get_description(node.find("description"))
 
-            args = [dict(x.items()) for x in params]
-            args = self.fix_arguments(args, object_type)
-            signature_args = [f"{x.get('name')}: {x.get('type')}" for x in args]
+            args = self.fix_arguments([dict(x.attrib) for x in params], object_type)
+            signature = f"{interface_name}.{object_name}({', '.join(f'{x['name']}: {x.get('type','')}' for x in args)})"
 
-            # signature
-            signature = f"{interface_name}.{object_name}({', '.join(signature_args)})"
+            wayland_object.update({
+                "args": args,
+                "description": description,
+                "signature": signature
+            })
 
-            wayland_object["args"] = args
-            wayland_object["description"] = description
-            wayland_object["signature"] = signature
+            getattr(self, f"add_{object_type}")(interface_name, wayland_object)
 
-            if object_type == "request":
-                self.add_request(interface_name, wayland_object)
-            elif object_type == "event":
-                self.add_event(interface_name, wayland_object)
-            elif object_type == "enum":
-                self.add_enum(interface_name, wayland_object)
+            if interface_name not in self.interfaces or "version" not in self.interfaces[interface_name]:
+                self.interfaces[interface_name].update({
+                    "version": interface.get("version", "1"),
+                    "description": self.get_description(node.getparent().find("description"))
+                })
 
-            # Add the interface details
-            if not self.interfaces.get(interface_name, {}).get("version"):
-                # Interface version
-                self.interfaces[interface_name]["version"] = interface.get(
-                    "version", "1"
-                )
-                # Interface description
-                idescnode = node.getparent().find("description")
-                interface_description = ""
-                if idescnode is not None:
-                    summary = dict(idescnode.items()).get("summary", "").strip()
-                    if idescnode.text:
-                        text = [x.strip() for x in idescnode.text.split("\n")]
-                        interface_description = f"{summary}\n{'\n'.join(text)}"
-                    else:
-                        interface_description = summary
-                self.interfaces[interface_name]["description"] = interface_description
-
-    def fix_arguments(self, original_args, item_type):
+    def fix_arguments(self, original_args: List[Dict], item_type: str) -> List[Dict]:
         new_args = []
         for arg in original_args:
-            # Rename python keyword collisions with wayland arguments
             if keyword.iskeyword(arg["name"]):
-                arg["name"] = arg["name"] + "_"
-                log.info(
-                    f"Renamed request/event argument to {arg['name']} in protocol {self.protocol_name}"
-                )
+                arg["name"] += "_"
+                log.info(f"Renamed request/event argument to {arg['name']} in protocol {self.protocol_name}")
 
-            if arg.get("type") == "new_id":
-                interface = arg.get("interface", None)
+            if arg.get("type") == "new_id" and not arg.get("interface"):
+                if item_type == "event":
+                    raise NotImplementedError("Event with dynamic new_id not supported")
+                new_args.extend([
+                    {"name": "interface", "type": "string"},
+                    {"name": "version", "type": "uint"}
+                ])
 
-                if not interface:
-                    # Not expecting this for events
-                    if item_type == "event":
-                        msg = "Event with dynamic new_id not supported"
-                        raise NotImplementedError(msg)
-                    # Creating a new instance of an unknown interface
-                    # so the caller must pass the details, we dynamically
-                    # adjust the args here
-                    new_args.extend([{"name": "interface", "type": "string"}])
-                    new_args.extend([{"name": "version", "type": "uint"}])
-
-            new_args.extend([arg])
+            new_args.append(arg)
 
         return new_args
