@@ -23,105 +23,50 @@
 
 import logging
 import os
+from typing import Dict, Any
 
-# Define custom log levels
-PROTOCOL_LEVEL = 7
-EVENT_LEVEL = 8
-REQUEST_LEVEL = 9
+# Custom log levels
+CUSTOM_LEVELS = {
+    "PROTOCOL": 7,
+    "EVENT": 8,
+    "REQUEST": 9
+}
 
-# PROTOCOL: 7
-# DEBUG: 10
-# EVENT: 14
-# REQUEST: 15
-# INFO: 20
-# WARNING: 30
-# ERROR: 40
-# CRITICAL: 50
-
-logging.addLevelName(PROTOCOL_LEVEL, "PROTOCOL")
-logging.addLevelName(REQUEST_LEVEL, "REQUEST")
-logging.addLevelName(EVENT_LEVEL, "EVENT")
-
+for name, level in CUSTOM_LEVELS.items():
+    logging.addLevelName(level, name)
 
 class WaylandLogger(logging.Logger):
-    def __init__(self, name):
+    def __init__(self, name: str):
         super().__init__(name)
-        self._protocol_enabled = True  # Flag to enable/disable PROTOCOL logging
-        self._request_enabled = True  # Flag to enable/disable REQUEST logging
-        self._event_enabled = True  # Flag to enable/disable EVENT logging
+        self._enabled_flags: Dict[str, bool] = {name.lower(): True for name in CUSTOM_LEVELS}
 
-    # Standard logging methods (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    def debug(self, message, *args, **kwargs):
-        if self.isEnabledFor(logging.DEBUG):
-            self.log(logging.DEBUG, message, *args, **kwargs)
+    def _log_if_enabled(self, level: int, msg: str, *args: Any, **kwargs: Any) -> None:
+        level_name = logging.getLevelName(level).lower()
+        if self.isEnabledFor(level) and self._enabled_flags.get(level_name, True):
+            self.log(level, msg, *args, **kwargs)
 
-    def info(self, message, *args, **kwargs):
-        if self.isEnabledFor(logging.INFO):
-            self.log(logging.INFO, message, *args, **kwargs)
+    def protocol(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        self._log_if_enabled(CUSTOM_LEVELS["PROTOCOL"], msg, *args, **kwargs)
 
-    def warning(self, message, *args, **kwargs):
-        if self.isEnabledFor(logging.WARNING):
-            self.log(logging.WARNING, message, *args, **kwargs)
+    def event(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        self._log_if_enabled(CUSTOM_LEVELS["EVENT"], msg, *args, **kwargs)
 
-    def error(self, message, *args, **kwargs):
-        if self.isEnabledFor(logging.ERROR):
-            self.log(logging.ERROR, message, *args, **kwargs)
+    def request(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        self._log_if_enabled(CUSTOM_LEVELS["REQUEST"], msg, *args, **kwargs)
 
-    def critical(self, message, *args, **kwargs):
-        if self.isEnabledFor(logging.CRITICAL):
-            self.log(logging.CRITICAL, message, *args, **kwargs)
+    def toggle_level(self, level_name: str, enable: bool) -> None:
+        self._enabled_flags[level_name.lower()] = enable
 
-    # Custom logging methods (PROTOCOL, REQUEST)
-    def protocol(self, message, *args, **kwargs):
-        if self.isEnabledFor(PROTOCOL_LEVEL) and self._protocol_enabled:
-            self.log(PROTOCOL_LEVEL, message, *args, **kwargs)
-
-    def request(self, message, *args, **kwargs):
-        if self.isEnabledFor(REQUEST_LEVEL) and self._request_enabled:
-            self.log(REQUEST_LEVEL, message, *args, **kwargs)
-
-    def event(self, message, *args, **kwargs):
-        if self.isEnabledFor(EVENT_LEVEL) and self._event_enabled:
-            self.log(EVENT_LEVEL, message, *args, **kwargs)
-
-    # Methods to enable/disable custom levels
-    def disable_protocol(self):
-        self._protocol_enabled = False
-
-    def enable_protocol(self):
-        self._protocol_enabled = True
-
-    def disable_requests(self):
-        self._request_enabled = False
-
-    def enable_requests(self):
-        self._request_enabled = True
-
-    def disable_events(self):
-        self._event_enabled = False
-
-    def enable_events(self):
-        self._event_enabled = True
-
-    def enable(self, level=logging.INFO):
-        log.setLevel(level)
-
+    def enable(self, level: int = logging.INFO) -> None:
+        self.setLevel(level)
         console_handler = logging.StreamHandler()
-
         console_handler.setLevel(level)
-
         formatter = logging.Formatter("%(levelname)s - %(message)s")
         console_handler.setFormatter(formatter)
+        self.addHandler(console_handler)
 
-        log.addHandler(console_handler)
-
-
-# Register the custom logger class
 logging.setLoggerClass(WaylandLogger)
-
-# Create a logger instance
 log = logging.getLogger("wayland")
-# log.disable_protocol()
 
-if not log.hasHandlers() and os.getenv("WAYLAND_DEBUG", "0") == "1":
-    log.enable(PROTOCOL_LEVEL)
+if not log.hasHandlers() and os.getenv("WAYLAND_DEBUG") == "1":
+    log.enable(CUSTOM_LEVELS["PROTOCOL"])
