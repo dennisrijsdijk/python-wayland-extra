@@ -24,6 +24,7 @@
 import os
 import string
 import struct
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from wayland.constants import PROTOCOL_HEADER_SIZE
 from wayland.log import log
@@ -42,144 +43,115 @@ class WaylandState:
     """
 
     def __init__(self):
-        path = os.getenv("XDG_RUNTIME_DIR")
-        display = os.getenv("WAYLAND_DISPLAY")
-        if not display:
-            display = "wayland-0"  # fallback
-        if not path:
-            msg = "XDG_RUNTIME_DIR environment variable not set."
-            raise ValueError(msg)
-
-        self._socket_path = f"{path}/{display}"
+        self._socket_path = self._get_socket_path()
         self._socket = UnixSocketConnection(self._socket_path)
-
         self._next_object_id = 1
-        self._object_id_to_instance = {}
-        self._instance_to_object_id = {}
-        self._event_handlers = []
+        self._object_id_to_instance: Dict[int, Any] = {}
+        self._instance_to_object_id: Dict[Any, int] = {}
 
-    def new_object(self, object_reference):
+    @staticmethod
+    def _get_socket_path() -> str:
+        path = os.getenv("XDG_RUNTIME_DIR")
+        display = os.getenv("WAYLAND_DISPLAY", "wayland-0")
+        if not path:
+            raise ValueError("XDG_RUNTIME_DIR environment variable not set.")
+        return f"{path}/{display}"
+
+    def new_object(self, object_reference: Any) -> Tuple[int, Any]:
         object_id = self._next_object_id
         self._next_object_id += 1
-        # Don't overwrite objects
+        
         if object_reference.object_id:
             object_reference = object_reference.copy()
-            self.add_object_reference(object_id, object_reference)
-        else:
-            self.add_object_reference(object_id, object_reference)
-
+        
+        self.add_object_reference(object_id, object_reference)
         return object_id, object_reference
 
-    def object_exists(self, object_id, object_reference):
+    def object_exists(self, object_id: int, object_reference: Any) -> bool:
         if object_id in self._object_id_to_instance:
             if self._object_id_to_instance[object_id] is not object_reference:
-                msg = "Object ID does not match expected object reference"
-                raise ValueError(msg)
+                raise ValueError("Object ID does not match expected object reference")
             if object_reference in self._instance_to_object_id:
                 if object_id != self._instance_to_object_id[object_reference]:
-                    msg = "Object reference does not match expected object id"
-                    raise ValueError(msg)
+                    raise ValueError("Object reference does not match expected object id")
                 return True
         return False
 
-    def add_object_reference(self, object_id, object_reference):
+    def add_object_reference(self, object_id: int, object_reference: Any) -> None:
         object_reference.object_id = object_id
         if not self.object_exists(object_id, object_reference):
             self._object_id_to_instance[object_id] = object_reference
             self._instance_to_object_id[object_reference] = object_id
         else:
-            msg = "Duplicate object id"
-            raise ValueError(msg)
+            raise ValueError("Duplicate object id")
 
-    def delete_object_reference(self, object_id, object_reference):
+    def delete_object_reference(self, object_id: int, object_reference: Any) -> None:
         if self.object_exists(object_id, object_reference):
             del self._object_id_to_instance[object_id]
             del self._instance_to_object_id[object_reference]
 
-    def object_id_to_object_reference(self, object_id):
-        return self._object_id_to_instance.get(object_id, None)
+    def object_id_to_object_reference(self, object_id: int) -> Optional[Any]:
+        return self._object_id_to_instance.get(object_id)
 
-    def object_reference_to_object_id(self, object_reference):
+    def object_reference_to_object_id(self, object_reference: Any) -> int:
         return self._instance_to_object_id.get(object_reference, 0)
 
-    def object_id_to_event(self, object_id, event_id):
+    def object_id_to_event(self, object_id: int, event_id: int) -> Optional[Callable]:
         obj = self.object_id_to_object_reference(object_id)
         if obj and hasattr(obj, "events"):
             obj = obj.events
             for attribute_name in dir(obj):
-                if attribute_name.startswith("_"):
-                    continue
-                attribute = getattr(obj, attribute_name)
-                if (
-                    callable(attribute)
-                    and hasattr(attribute, "opcode")
-                    and attribute.opcode == event_id
-                    and attribute.event
-                ):
-                    return attribute
+                if not attribute_name.startswith("_"):
+                    attribute = getattr(obj, attribute_name)
+                    if (callable(attribute) and
+                        hasattr(attribute, "opcode") and
+                        attribute.opcode == event_id and
+                        attribute.event):
+                        return attribute
         return None
 
-    def _debug_packet(self, data: bytes, ancillary=None):
+    def _debug_packet(self, data: bytes, ancillary: Any = None) -> None:
         for i in range(0, len(data), 4):
-            group = data[i : i + 4]
-            # Convert each byte in the group to a hex string and join them
-            hex_group = ""
-            string_group = ""
-            for byte in group:
-                hex_group += f"{byte:02X} "
-                if (
-                    chr(byte)
-                    in string.digits + string.ascii_letters + string.punctuation
-                ):
-                    string_group += chr(byte)
-                else:
-                    string_group += "."
+            group = data[i:i+4]
+            hex_group = " ".join(f"{byte:02X}" for byte in group)
+            string_group = "".join(chr(byte) if chr(byte) in string.printable else "." for byte in group)
             integer_value = int.from_bytes(group, byteorder="little")
-            hex_group = f"{hex_group}    {string_group}    {integer_value}"
-            log.protocol(f"    {hex_group}")
+            log.protocol(f"    {hex_group}    {string_group}    {integer_value}")
+        
         if ancillary:
             log.protocol(f"    Plus ancillary file descriptor data: {ancillary}")
 
-    def _send(self, message, ancillary=None):
+    def _send(self, message: bytes, ancillary: Any = None) -> None:
+        self._debug_packet(message, ancillary)
         if ancillary:
-            self._debug_packet(message, ancillary)
             self._socket.sendmsg([message], ancillary)
         else:
-            self._debug_packet(message)
             self._socket.sendall(message)
 
-    def send_wayland_message(
-        self, wayland_object, wayland_request, packet=b"", ancillary=None
-    ):
+    def send_wayland_message(self, wayland_object: int, wayland_request: int, packet: bytes = b"", ancillary: Any = None) -> None:
         if not wayland_object:
-            msg = "NULL object passed as Wayland object"
-            raise ValueError(msg)
+            raise ValueError("NULL object passed as Wayland object")
 
-        # Pack the message header (4 bytes for object, 2 bytes for request, 2 bytes for size)
-        header = b""
-        header += struct.pack("I", wayland_object)
-        header += struct.pack("H", wayland_request)
-        header += struct.pack("H", len(packet) + PROTOCOL_HEADER_SIZE)
+        header = struct.pack("IHH", wayland_object, wayland_request, len(packet) + PROTOCOL_HEADER_SIZE)
         self._send(header + packet, ancillary)
 
-    def get_next_message(self):
+    def get_next_message(self) -> bool:
         packet = self._socket.get_next_message()
         if not packet:
-            return
+            return False
 
         wayland_object, opcode, _ = struct.unpack_from("IHH", packet)
         packet = packet[PROTOCOL_HEADER_SIZE:]
 
         event = self.object_id_to_event(wayland_object, opcode)
         if event:
-            # Call the event handler, pass pointer to event to get fd if required
             event(packet, self._socket.get_next_fd)
             return True
 
         log.event(f"Unhandled event {wayland_object}#{opcode}")
         return True
 
-    def process_messages(self):
+    def process_messages(self) -> None:
         """Process all pending wayland messages"""
         while self.get_next_message():
             pass
