@@ -145,7 +145,7 @@ Example output:
 
 ## Protocol Level Debugging
 
-Set the environment variable `WAYLAND_DELAY=1`
+Set the environment variable `WAYLAND_DEBUG=1`
 
 ## Thanks
 
