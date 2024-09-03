@@ -1,142 +1,85 @@
 import argparse
 import sys
+import json
+from typing import Dict, Tuple
 
 from wayland import get_package_root
 from wayland.log import log
 from wayland.parser import WaylandParser
 from wayland.typehint import TypeHinter
 
-if __name__ == "__main__":
-    argparser = argparse.ArgumentParser(description="Process Wayland protocols.")
-    argparser.add_argument(
-        "--no-minimise",
-        default=True,
-        action="store_false",
-        help="Disable the minimisation of protocol files.",
-    )
-    argparser.add_argument(
-        "--download",
-        default=False,
-        action="store_true",
-        help=(
-            "Do not use the locally installed protocol definitions, instead"
-            "download the latest available protocol definitions."
-        ),
-    )
-    argparser.add_argument(
-        "--verbose",
-        default=False,
-        action="store_true",
-        help=("Verbose output when processing Wayland protocol files."),
-    )
-    argparser.add_argument(
-        "--compare",
-        default=False,
-        action="store_true",
-        help=(
-            "Output a report comparing the local protocol files with "
-            "the latest online versions. Only interfaces and there "
-            "version numbers are compared, not any variances in specific "
-            "requests or events."
-        ),
-    )
-    args = argparser.parse_args()
+def setup_argparser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Process Wayland protocols.")
+    parser.add_argument("--no-minimise", action="store_false", dest="minimise", help="Disable protocol file minimisation.")
+    parser.add_argument("--download", action="store_true", help="Download latest protocol definitions.")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
+    parser.add_argument("--compare", action="store_true", help="Compare local and remote protocol files.")
+    return parser
 
-    if args.verbose:
-        log.enable()
-        log.info("Starting Wayland protocol update.")
+def compare_protocols() -> None:
+    local_parser = WaylandParser()
+    remote_parser = WaylandParser()
 
-    # Compare protocol files if requested
-    if args.compare:
-        local_interfaces = {}
-        remote_interfaces = {}
+    def get_interfaces(parser: WaylandParser, uris: list) -> Dict[str, str]:
+        for i, protocol in enumerate(uris, 1):
+            log.info(f"Parsing protocol definition {i} of {len(uris)}")
+            parser.parse(protocol)
+        return {interface: details["version"] for interface, details in parser.interfaces.items()}
 
-        print(
-            "Comparing locally installed and latest official protocol definitions. Please wait."
-        )
+    print("Comparing locally installed and latest official protocol definitions. Please wait.")
 
-        # Get local protocols
-        parser = WaylandParser()
-        local_uris = parser.get_local_files()
-        if local_uris:
-            for i, protocol in enumerate(local_uris):
-                log.info(
-                    f"Parsing local protocol definition {i+1} of {len(local_uris)}"
-                )
-                parser.parse(protocol)
-            # Extract interfaces and versions
-            for interface, details in parser.interfaces.items():
-                local_interfaces[interface] = details["version"]
+    local_interfaces = get_interfaces(local_parser, local_parser.get_local_files() or [])
+    remote_interfaces = get_interfaces(remote_parser, remote_parser.get_remote_uris() or [])
 
-        # Remote interfaces
-        parser = WaylandParser()
-        remote_uris = parser.get_remote_uris()
-        if remote_uris:
-            for i, protocol in enumerate(remote_uris):
-                log.info(
-                    f"Parsing remote protocol definition {i+1} of {len(local_uris)}"
-                )
-                parser.parse(protocol)
-            # Extract interfaces and versions
-            for interface, details in parser.interfaces.items():
-                remote_interfaces[interface] = details["version"]
+    changed = {i: (local_interfaces[i], v) for i, v in remote_interfaces.items() if i in local_interfaces and local_interfaces[i] != v}
+    only_remote = {i: v for i, v in remote_interfaces.items() if i not in local_interfaces}
+    only_local = {i: v for i, v in local_interfaces.items() if i not in remote_interfaces}
 
-        # Compare
-        changed_interfaces = {}
-        for interface, local_version in local_interfaces.items():
-            remote_version = remote_interfaces.get(interface)
-            if remote_version is not None and local_version != remote_version:
-                changed_interfaces[interface] = (local_version, remote_version)
+    print("\nProtocol definitions which have been updated:")
+    for interface, (local_v, remote_v) in changed.items():
+        print(f"{interface}: local version {local_v}, remote version {remote_v}")
 
-        only_remote = {}
-        for interface, remote_version in remote_interfaces.items():
-            if interface not in local_interfaces:
-                only_remote[interface] = remote_version
+    print("\nAvailable remote protocol definitions, but not installed locally:")
+    for interface, version in only_remote.items():
+        print(f"{interface}: version {version}")
 
-        only_local = {}
-        for interface, local_version in local_interfaces.items():
-            if interface not in remote_interfaces:
-                only_local[interface] = local_version
+    print("\nProtocol definitions installed locally but not in official stable or staging repositories:")
+    for interface, version in only_local.items():
+        print(f"{interface}: version {version}")
 
-        # Print the report
-        print("\nProtocol definitions which have been updated:\n")
-        for interface, versions in changed_interfaces.items():
-            print(
-                f"{interface}: local version {versions[0]}, remote version {versions[1]}"
-            )
-
-        print("\nAvailable remote protocol definitions, but not installed locally:\n")
-        for interface, version in only_remote.items():
-            print(f"{interface}: version {version}")
-
-        print(
-            "\nProtocol definitions installed locally but not in official stable or staging repositories:\n"
-        )
-        for interface, version in only_local.items():
-            print(f"{interface}: version {version}")
-
-        sys.exit(0)
-
-    parser = WaylandParser()
-
-    # Try to parse local protocol files
-    if not args.download:
-        uris = parser.get_local_files()
-
-    # Download protocol definitions if no local one or explicitly requested
+def process_protocols(parser: WaylandParser, args: argparse.Namespace) -> None:
+    uris = parser.get_local_files() if not args.download else []
     if args.download or not uris:
         uris = parser.get_remote_uris()
 
-    for i, protocol in enumerate(uris):
-        log.info(f"Parsing protocol definition {i+1} of {len(uris)}")
+    for i, protocol in enumerate(uris, 1):
+        log.info(f"Parsing protocol definition {i} of {len(uris)}")
         parser.parse(protocol)
 
     type_hinter = TypeHinter()
     type_hinter.create_type_hinting(parser.interfaces, get_package_root())
     log.info("Created type hinting file.")
 
-    protocols = parser.to_json(minimise=args.no_minimise)
+    protocols = parser.to_json(minimise=args.minimise)
     filepath = f"{get_package_root()}/protocols.json"
     with open(filepath, "w", encoding="utf-8") as outfile:
-        outfile.write(protocols)
-    log.info("Created protocol database: " + filepath)
+        json.dump(json.loads(protocols), outfile, indent=2)
+    log.info(f"Created protocol database: {filepath}")
+
+def main():
+    args = setup_argparser().parse_args()
+
+    if args.verbose:
+        log.enable()
+        log.info("Starting Wayland protocol update.")
+
+    parser = WaylandParser()
+
+    if args.compare:
+        compare_protocols()
+        sys.exit(0)
+
+    process_protocols(parser, args)
+
+if __name__ == "__main__":
+    main()
