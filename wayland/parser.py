@@ -129,7 +129,10 @@ class WaylandParser:
         else:
             tree = etree.parse(path)
 
-        self.protocol_name = tree.attrib["name"] or tree.getroot().attrib.get("name")
+        if isinstance(tree, etree._Element):
+            self.protocol_name = tree.attrib["name"]
+        else:
+            tree.getroot().attrib.get("name")
 
         for xpath in ["/protocol/interface/request", "/protocol/interface/event", "/protocol/interface/enum"]:
             self.parse_xml(tree, xpath)
