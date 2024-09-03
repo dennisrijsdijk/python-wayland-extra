@@ -4,6 +4,7 @@ import sys
 from wayland import get_package_root
 from wayland.log import log
 from wayland.parser import WaylandParser
+from wayland.typehint import TypeHinter
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser(description="Process Wayland protocols.")
@@ -130,7 +131,8 @@ if __name__ == "__main__":
         log.info(f"Parsing protocol definition {i+1} of {len(uris)}")
         parser.parse(protocol)
 
-    parser.create_type_hinting(parser.interfaces, get_package_root())
+    type_hinter = TypeHinter()
+    type_hinter.create_type_hinting(parser.interfaces, get_package_root())
     log.info("Created type hinting file.")
 
     protocols = parser.to_json(minimise=args.no_minimise)
