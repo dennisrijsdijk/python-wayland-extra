@@ -21,24 +21,25 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import annotations
+
 import logging
 import os
-from typing import Dict, Any
+from typing import Any
 
 # Custom log levels
-CUSTOM_LEVELS = {
-    "PROTOCOL": 7,
-    "EVENT": 8,
-    "REQUEST": 9
-}
+CUSTOM_LEVELS = {"PROTOCOL": 7, "EVENT": 8, "REQUEST": 9}
 
 for name, level in CUSTOM_LEVELS.items():
     logging.addLevelName(level, name)
 
+
 class WaylandLogger(logging.Logger):
     def __init__(self, name: str):
         super().__init__(name)
-        self._enabled_flags: Dict[str, bool] = {name.lower(): True for name in CUSTOM_LEVELS}
+        self._enabled_flags: dict[str, bool] = {
+            name.lower(): True for name in CUSTOM_LEVELS
+        }
 
     def _log_if_enabled(self, level: int, msg: str, *args: Any, **kwargs: Any) -> None:
         level_name = logging.getLevelName(level).lower()
@@ -64,6 +65,7 @@ class WaylandLogger(logging.Logger):
         formatter = logging.Formatter("%(levelname)s - %(message)s")
         console_handler.setFormatter(formatter)
         self.addHandler(console_handler)
+
 
 logging.setLoggerClass(WaylandLogger)
 log = logging.getLogger("wayland")

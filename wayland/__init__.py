@@ -21,6 +21,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import contextlib
 import os
 
 from wayland.proxy import Proxy
@@ -46,7 +47,5 @@ def initialise(auto=None):
 
 # Auto initialise unless we are instructed not to
 if os.getenv("WAYLAND_INITIALISE", "TRUE") == "TRUE":
-    try:
+    with contextlib.suppress(FileNotFoundError):
         initialise(True)
-    except FileNotFoundError:
-        pass

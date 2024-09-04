@@ -21,15 +21,17 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import annotations
+
 import array
 import errno
 import socket
 import struct
 import threading
 from collections import deque
-from typing import Optional, Tuple, List
 
 from wayland.constants import PROTOCOL_HEADER_SIZE
+
 
 class UnixSocketConnection(threading.Thread):
     READ_BUFFER_SIZE = 4096
@@ -48,27 +50,32 @@ class UnixSocketConnection(threading.Thread):
         self.fd_buffer_lock = threading.Lock()
         self.start()
 
-    def _read(self) -> Tuple[bytes, Optional[int]]:
+    def _read(self) -> tuple[bytes, int | None]:
         peek = self._socket.recv(PROTOCOL_HEADER_SIZE, socket.MSG_PEEK)
         _, _, message_size = struct.unpack_from("IHH", peek)
         fdsize = array.array("i").itemsize
-        data, ancdata, _, _ = self._socket.recvmsg(message_size, socket.CMSG_LEN(fdsize))
-        
-        fd = next((
-            struct.unpack("I", cmsg_data)[-1]
-            for cmsg_level, cmsg_type, cmsg_data in ancdata
-            if cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS
-        ), None)
-        
+        data, ancdata, _, _ = self._socket.recvmsg(
+            message_size, socket.CMSG_LEN(fdsize)
+        )
+
+        fd = next(
+            (
+                struct.unpack("I", cmsg_data)[-1]
+                for cmsg_level, cmsg_type, cmsg_data in ancdata
+                if cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS
+            ),
+            None,
+        )
+
         return data, fd
 
     def read(self) -> None:
         with self.read_lock:
             data, fd = self._read()
-        
+
         with self.buffer_lock:
             self.buffer.append(data)
-        
+
         if fd is not None:
             with self.fd_buffer_lock:
                 self.fd_buffer.append(fd)
@@ -87,7 +94,7 @@ class UnixSocketConnection(threading.Thread):
         self.stop_event.set()
         self.join()
 
-    def sendmsg(self, buffers: List[bytes], ancillary: List[Tuple]) -> None:
+    def sendmsg(self, buffers: list[bytes], ancillary: list[tuple]) -> None:
         with self.write_lock:
             self._socket.sendmsg(buffers, ancillary)
 
@@ -95,10 +102,10 @@ class UnixSocketConnection(threading.Thread):
         with self.write_lock:
             self._socket.sendall(data)
 
-    def get_next_message(self) -> Optional[bytes]:
+    def get_next_message(self) -> bytes | None:
         with self.buffer_lock:
             return self.buffer.popleft() if self.buffer else None
 
-    def get_next_fd(self) -> Optional[int]:
+    def get_next_fd(self) -> int | None:
         with self.fd_buffer_lock:
             return self.fd_buffer.popleft() if self.fd_buffer else None
