@@ -46,4 +46,7 @@ def initialise(auto=None):
 
 # Auto initialise unless we are instructed not to
 if os.getenv("WAYLAND_INITIALISE", "TRUE") == "TRUE":
-    initialise(True)
+    try:
+        initialise(True)
+    except FileNotFoundError:
+        pass

@@ -1,12 +1,13 @@
 import argparse
-import sys
 import json
-from typing import Dict, Tuple
+import sys
+from typing import Dict
 
 from wayland import get_package_root
 from wayland.log import log
 from wayland.parser import WaylandParser
 from wayland.typehint import TypeHinter
+
 
 def setup_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Process Wayland protocols.")
@@ -63,7 +64,7 @@ def process_protocols(parser: WaylandParser, args: argparse.Namespace) -> None:
     protocols = parser.to_json(minimise=args.minimise)
     filepath = f"{get_package_root()}/protocols.json"
     with open(filepath, "w", encoding="utf-8") as outfile:
-        json.dump(json.loads(protocols), outfile, indent=2)
+        json.dump(json.loads(protocols), outfile, separators=(',', ':'), indent=1)
     log.info(f"Created protocol database: {filepath}")
 
 def main():
