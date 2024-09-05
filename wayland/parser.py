@@ -41,7 +41,7 @@ class WaylandParser:
 
     def get_remote_uris(self) -> list[str]:
         base_url = "https://gitlab.freedesktop.org/api/v4/projects/wayland%2Fwayland-protocols/repository/"
-        paths = ["staging", "stable"]
+        paths = ["staging", "stable", "unstable"]
         xml_uris = []
 
         for path in paths:
