@@ -112,7 +112,7 @@ class Proxy:
             elif arg_type == "int":
                 packet += struct.pack("i", value)
             elif arg_type == "enum":
-                packet += struct.pack("i", value.value)
+                packet += struct.pack("I", value.value)
             elif arg_type == "string":
                 length = len(value) + 1
                 value = self._pad(value)

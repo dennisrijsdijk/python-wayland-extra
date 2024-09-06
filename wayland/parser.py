@@ -37,11 +37,12 @@ from wayland.log import log
 class WaylandParser:
     def __init__(self):
         self.interfaces: dict[str, dict] = {}
+        self.unique_interfaces: list = []
         self.protocol_name: str = ""
 
     def get_remote_uris(self) -> list[str]:
         base_url = "https://gitlab.freedesktop.org/api/v4/projects/wayland%2Fwayland-protocols/repository/"
-        paths = ["staging", "stable"]
+        paths = ["staging", "stable", "unstable"]
         xml_uris = []
 
         for path in paths:
@@ -145,12 +146,16 @@ class WaylandParser:
         else:
             tree.getroot().attrib.get("name")
 
+        interface_names = []
         for xpath in [
             "/protocol/interface/request",
             "/protocol/interface/event",
             "/protocol/interface/enum",
         ]:
-            self.parse_xml(tree, xpath)
+            interface_names.extend(self.parse_xml(tree, xpath))
+
+        # Remember the interfaces that were parsed
+        self.unique_interfaces.extend(interface_names)
 
     @staticmethod
     def get_description(description: etree.Element) -> str:
@@ -165,8 +170,14 @@ class WaylandParser:
         return f"{summary}\n{text}" if text else summary
 
     def parse_xml(self, tree: etree.ElementTree, xpath: str):
+        interfaces = []
         for node in tree.xpath(xpath):
             interface_name = node.getparent().attrib["name"]
+            if interface_name in self.unique_interfaces:
+                log.warning(f"Ignoring duplicate interface {interface_name}")
+                return []
+            if interface_name not in interfaces:
+                interfaces.append(interface_name)
             object_type = node.tag
             object_name = node.attrib["name"]
             log.info(f"    ({object_type}) {interface_name}.{object_name}")
@@ -198,6 +209,8 @@ class WaylandParser:
                         ),
                     }
                 )
+
+        return interfaces
 
     def fix_arguments(self, original_args: list[dict], item_type: str) -> list[dict]:
         new_args = []
