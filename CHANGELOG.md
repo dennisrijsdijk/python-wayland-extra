@@ -1,7 +1,10 @@
 ### Changelog
 
-### Development (TBD)
+### v0.7.0 (29th March 2025)
 - Rename package to `python-wayland-extra`
+- Include Hyprland protocols by default.
+- Add typehints for functions in the root `wayland` module.
+- Do not initialise the `wayland` global by default.
 
 ### v0.6.0 (3rd September 2024)
 - Support Wayland enums as Python enums including bitfields.
