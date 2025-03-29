@@ -46,6 +46,6 @@ def initialise(auto=None):
 
 
 # Auto initialise unless we are instructed not to
-if os.getenv("WAYLAND_INITIALISE", "TRUE") == "TRUE":
+if os.getenv("WAYLAND_INITIALISE", "FALSE") == "TRUE":
     with contextlib.suppress(FileNotFoundError):
         initialise(True)
