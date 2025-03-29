@@ -3,15 +3,16 @@ requires = ["hatchling", "black", "lxml", "requests", "pytest", "ruff"]
 build-backend = "hatchling.build"
 
 [project]
-name = "python-wayland"
+name = "python-wayland-extra"
 dynamic = ["version"]
-description = 'An implementation of the Wayland protocol with no external dependencies. A Python replacement for libwayland, not a wrapper for it.'
+description = 'An implementation of the Wayland & Hyprland protocols with no external dependencies. A Python replacement for libwayland, not a wrapper for it.'
 readme = "README.md"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
 keywords = []
 authors = [
   { name = "Graham King", email = "grking.email@gmail.com" },
+  { name = "Dennis Rijsdijk", email = "hello@dennis.gg" }
 ]
 classifiers = [
   "Intended Audience :: Developers",
@@ -25,17 +26,19 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: Implementation :: CPython"
 ]
-dependencies = []
+dependencies = [
+  "python-wayland != *"
+]
 
 [project.optional-dependencies]
 build = ["lxml", "requests"]
 
 [project.urls]
-Homepage = "https://github.com/grking/python-wayland"
-Documentation = "https://github.com/grking/python-wayland#readme"
-Issues = "https://github.com/grking/python-wayland/issues"
-Source = "https://github.com/grking/python-wayland"
-Changelog = "https://github.com/grking/python-wayland/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/dennisrijsdijk/python-wayland-extra"
+Documentation = "https://github.com/dennisrijsdijk/python-wayland-extra#readme"
+Issues = "https://github.com/dennisrijsdijk/python-wayland-extra/issues"
+Source = "https://github.com/dennisrijsdijk/python-wayland-extra"
+Changelog = "https://github.com/dennisrijsdijk/python-wayland-extra/blob/main/CHANGELOG.md"
 
 [tool.hatch.version]
 path = "wayland/__about__.py"

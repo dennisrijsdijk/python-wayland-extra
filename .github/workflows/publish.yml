@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-24.04
     environment:
       name: release
-      url: https://pypi.org/p/python-wayland
+      url: https://pypi.org/p/python-wayland-extra
     permissions:
       id-token: write
 

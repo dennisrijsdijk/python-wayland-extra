@@ -1,8 +1,8 @@
-# python-wayland
+# python-wayland-extra
 
-[![PyPI - Version](https://img.shields.io/pypi/v/python-wayland.svg)](https://pypi.org/project/python-wayland) [![Tests](https://github.com/grking/python-wayland/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/grking/python-wayland/tree/main) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/python-wayland.svg)](https://pypi.org/project/python-wayland)
+[![PyPI - Version](https://img.shields.io/pypi/v/python-wayland-extra.svg)](https://pypi.org/project/python-wayland-extra) [![Tests](https://github.com/dennisrijsdijk/python-wayland-extra/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/dennisrijsdijk/python-wayland-extra/tree/main) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/python-wayland-extra.svg)](https://pypi.org/project/python-wayland-extra)
 
-A Python implementation of the Wayland protocol, from scratch, with no external dependencies, including no dependencies on any Wayland libraries.
+A Python implementation of the Wayland & Hyprland protocols, from scratch, with no external dependencies, including no dependencies on any Wayland libraries.
 
 This seeks to be a Python implementation of libwayland-client. 
 
@@ -150,4 +150,6 @@ Set the environment variable `WAYLAND_DEBUG=1`
 ## Thanks
 
 Thanks to Philippe Gaultier, whose article [Wayland From Scratch](https://gaultier.github.io/blog/wayland_from_scratch.html) inspired this project.
+
+Thanks to Graham King, author of the original [python-wayland](https://github.com/grking/python-wayland) library.
 
