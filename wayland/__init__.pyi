@@ -5,6 +5,7 @@
 
 from typing import TypeAlias, Annotated
 from enum import Enum, IntFlag
+from wayland.proxy import Proxy
 new_id: TypeAlias = int
 object: TypeAlias = int
 uint: TypeAlias = int
@@ -12,6 +13,21 @@ string: TypeAlias = str
 fd: TypeAlias = int
 array: TypeAlias = list
 fixed: TypeAlias = float
+
+def get_package_root() -> str:
+    # Returns the directory that this project is sitting in
+
+    ...
+
+def initialise(auto: bool = None) -> None or Proxy:
+    # Initialise the wayland connection
+
+    ...
+
+def process_messages() -> None:
+    # Process incoming messages
+
+    ...
 
 class wl_display:
     """
@@ -2880,12 +2896,22 @@ class wl_callback:
             """
 
             ...
-class wp_alpha_modifier_v1:
+class wp_commit_timing_manager_v1:
     """
-    surface alpha modifier manager
-    This interface allows a client to set a factor for the alpha values on a
-    surface, which can be used to offload such operations to the compositor,
-    which can in turn for example offload them to KMS.
+    commit timing
+    When a compositor latches on to new content updates it will check for
+    any number of requirements of the available content updates (such as
+    fences of all buffers being signalled) to consider the update ready.
+    This protocol provides a method for adding a time constraint to surface
+    content. This constraint indicates to the compositor that a content
+    update should be presented as closely as possible to, but not before,
+    a specified time.
+    This protocol does not change the Wayland property that content
+    updates are applied in the order they are received, even when some
+    content updates contain timestamps and others do not.
+    To provide timestamps, this global factory interface must be used to
+    acquire a wp_commit_timing_v1 object for a surface, which may then be
+    used to provide timestamp information for commits.
     Warning! The protocol described in this file is currently in the testing
     phase. Backward compatible changes may be added together with the
     corresponding interface version bump. Backward incompatible changes can
@@ -2895,69 +2921,452 @@ class wp_alpha_modifier_v1:
     version = 1
 
     class error(Enum):
-        already_constructed: int
+        commit_timer_exists: int
 
     @staticmethod
     def destroy() -> None:
         """
-        destroy the alpha modifier manager object
-        Destroy the alpha modifier manager. This doesn't destroy objects
-        created with the manager.
+        unbind from the commit timing interface
+        Informs the server that the client will no longer be using
+        this protocol object. Existing objects created by this object
+        are not affected.
         """
 
         ...
 
     @staticmethod
-    def get_surface(surface: object) -> wp_alpha_modifier_surface_v1:
+    def get_timer(surface: object) -> wp_commit_timer_v1:
         """
-        create a new toplevel decoration object
-        Create a new alpha modifier surface object associated with the
-        given wl_surface. If there is already such an object associated with
-        the wl_surface, the already_constructed error will be raised.
+        request commit timer interface for surface
+        Establish a timing controller for a surface.
+        Only one commit timer can be created for a surface, or a
+        commit_timer_exists protocol error will be generated.
         """
 
         ...
-class wp_alpha_modifier_surface_v1:
+class wp_commit_timer_v1:
     """
-    alpha modifier object for a surface
-    This interface allows the client to set a factor for the alpha values on
-    a surface, which can be used to offload such operations to the compositor.
-    The default factor is UINT32_MAX.
-    This object has to be destroyed before the associated wl_surface. Once the
-    wl_surface is destroyed, all request on this object will raise the
-    no_surface error.
+    Surface commit timer
+    An object to set a time constraint for a content update on a surface.
     """
     object_id = 0
     version = 1
 
     class error(Enum):
-        no_surface: int
+        invalid_timestamp: int
+        timestamp_exists: int
+        surface_destroyed: int
 
     @staticmethod
-    def destroy() -> None:
+    def set_timestamp(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
         """
-        destroy the alpha modifier object
-        This destroys the object, and is equivalent to set_multiplier with
-        a value of UINT32_MAX, with the same double-buffered semantics as
-        set_multiplier.
+        Specify time the following commit takes effect
+        Provide a timing constraint for a surface content update.
+        A set_timestamp request may be made before a wl_surface.commit to
+        tell the compositor that the content is intended to be presented
+        as closely as possible to, but not before, the specified time.
+        The time is in the domain of the compositor's presentation clock.
+        An invalid_timestamp error will be generated for invalid tv_nsec.
+        If a timestamp already exists on the surface, a timestamp_exists
+        error is generated.
+        Requesting set_timestamp after the commit_timer object's surface is
+        destroyed will generate a "surface_destroyed" error.
         """
 
         ...
 
     @staticmethod
-    def set_multiplier(factor: uint) -> None:
+    def destroy() -> None:
         """
-        specify the alpha multiplier
-        Sets the alpha multiplier for the surface. The alpha multiplier is
-        double-buffered state, see wl_surface.commit for details.
-        This factor is applied in the compositor's blending space, as an
-        additional step after the processing of per-pixel alpha values for the
-        wl_surface. The exact meaning of the factor is thus undefined, unless
-        the blending space is specified in a different extension.
-        This multiplier is applied even if the buffer attached to the
-        wl_surface doesn't have an alpha channel; in that case an alpha value
-        of one is used instead.
-        Zero means completely transparent, UINT32_MAX means completely opaque.
+        Destroy the timer
+        Informs the server that the client will no longer be using
+        this protocol object.
+        Existing timing constraints are not affected by the destruction.
+        """
+
+        ...
+class wp_single_pixel_buffer_manager_v1:
+    """
+    global factory for single-pixel buffers
+    The wp_single_pixel_buffer_manager_v1 interface is a factory for
+    single-pixel buffers.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        Destroy the wp_single_pixel_buffer_manager_v1 object.
+        The child objects created via this interface are unaffected.
+        """
+
+        ...
+
+    @staticmethod
+    def create_u32_rgba_buffer(r: uint, g: uint, b: uint, a: uint) -> wl_buffer:
+        """
+        create a 1×1 buffer from 32-bit RGBA values
+        Create a single-pixel buffer from four 32-bit RGBA values.
+        Unless specified in another protocol extension, the RGBA values use
+        pre-multiplied alpha.
+        The width and height of the buffer are 1.
+        """
+
+        ...
+class ext_transient_seat_manager_v1:
+    """
+    transient seat manager
+    The transient seat manager creates short-lived seats.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def create() -> ext_transient_seat_v1:
+        """
+        create a transient seat
+        Create a new seat that is removed when the client side transient seat
+        object is destroyed.
+        The actual seat may be removed sooner, in which case the transient seat
+        object shall become inert.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        Destroy the manager.
+        All objects created by the manager will remain valid until they are
+        destroyed themselves.
+        """
+
+        ...
+class ext_transient_seat_v1:
+    """
+    transient seat handle
+    When the transient seat handle is destroyed, the seat itself will also be
+    destroyed.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy transient seat
+        When the transient seat object is destroyed by the client, the
+        associated seat created by the compositor is also destroyed.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def ready(global_name: uint) -> None:
+            """
+            transient seat is ready
+            This event advertises the global name for the wl_seat to be used with
+            wl_registry_bind.
+            It is sent exactly once, immediately after the transient seat is created
+            and the new "wl_seat" global is advertised, if and only if the creation
+            of the transient seat was allowed.
+            """
+
+            ...
+
+        @staticmethod
+        def denied() -> None:
+            """
+            transient seat creation denied
+            The event informs the client that the compositor denied its request to
+            create a transient seat.
+            It is sent exactly once, immediately after the transient seat object is
+            created, if and only if the creation of the transient seat was denied.
+            After receiving this event, the client should destroy the object.
+            """
+
+            ...
+class ext_image_capture_source_v1:
+    """
+    opaque image capture source object
+    The image capture source object is an opaque descriptor for a capturable
+    resource.  This resource may be any sort of entity from which an image
+    may be derived.
+    Note, because ext_image_capture_source_v1 objects are created from multiple
+    independent factory interfaces, the ext_image_capture_source_v1 interface is
+    frozen at version 1.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        Destroys the image capture source. This request may be sent at any time
+        by the client.
+        """
+
+        ...
+class ext_output_image_capture_source_manager_v1:
+    """
+    image capture source manager for outputs
+    A manager for creating image capture source objects for wl_output objects.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def create_source(output: object) -> ext_image_capture_source_v1:
+        """
+        create source object for output
+        Creates a source object for an output. Images captured from this source
+        will show the same content as the output. Some elements may be omitted,
+        such as cursors and overlays that have been marked as transparent to
+        capturing.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        Destroys the manager. This request may be sent at any time by the client
+        and objects created by the manager will remain valid after its
+        destruction.
+        """
+
+        ...
+class ext_foreign_toplevel_image_capture_source_manager_v1:
+    """
+    image capture source manager for foreign toplevels
+    A manager for creating image capture source objects for
+    ext_foreign_toplevel_handle_v1 objects.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def create_source(toplevel_handle: object) -> ext_image_capture_source_v1:
+        """
+        create source object for foreign toplevel
+        Creates a source object for a foreign toplevel handle. Images captured
+        from this source will show the same content as the toplevel.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        Destroys the manager. This request may be sent at any time by the client
+        and objects created by the manager will remain valid after its
+        destruction.
+        """
+
+        ...
+class xdg_toplevel_drag_manager_v1:
+    """
+    Move a window during a drag
+    This protocol enhances normal drag and drop with the ability to move a
+    window at the same time. This allows having detachable parts of a window
+    that when dragged out of it become a new window and can be dragged over
+    an existing window to be reattached.
+    A typical workflow would be when the user starts dragging on top of a
+    detachable part of a window, the client would create a wl_data_source and
+    a xdg_toplevel_drag_v1 object and start the drag as normal via
+    wl_data_device.start_drag. Once the client determines that the detachable
+    window contents should be detached from the originating window, it creates
+    a new xdg_toplevel with these contents and issues a
+    xdg_toplevel_drag_v1.attach request before mapping it. From now on the new
+    window is moved by the compositor during the drag as if the client called
+    xdg_toplevel.move.
+    Dragging an existing window is similar. The client creates a
+    xdg_toplevel_drag_v1 object and attaches the existing toplevel before
+    starting the drag.
+    Clients use the existing drag and drop mechanism to detect when a window
+    can be docked or undocked. If the client wants to snap a window into a
+    parent window it should delete or unmap the dragged top-level. If the
+    contents should be detached again it attaches a new toplevel as described
+    above. If a drag operation is cancelled without being dropped, clients
+    should revert to the previous state, deleting any newly created windows
+    as appropriate. When a drag operation ends as indicated by
+    wl_data_source.dnd_drop_performed the dragged toplevel window's final
+    position is determined as if a xdg_toplevel_move operation ended.
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        invalid_source: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_toplevel_drag_manager_v1 object
+        Destroy this xdg_toplevel_drag_manager_v1 object. Other objects,
+        including xdg_toplevel_drag_v1 objects created by this factory, are not
+        affected by this request.
+        """
+
+        ...
+
+    @staticmethod
+    def get_xdg_toplevel_drag(data_source: object) -> xdg_toplevel_drag_v1:
+        """
+        get an xdg_toplevel_drag for a wl_data_source
+        Create an xdg_toplevel_drag for a drag and drop operation that is going
+        to be started with data_source.
+        This request can only be made on sources used in drag-and-drop, so it
+        must be performed before wl_data_device.start_drag. Attempting to use
+        the source other than for drag-and-drop such as in
+        wl_data_device.set_selection will raise an invalid_source error.
+        Destroying data_source while a toplevel is attached to the
+        xdg_toplevel_drag is undefined.
+        """
+
+        ...
+class xdg_toplevel_drag_v1:
+    """
+    Object representing a toplevel move during a drag
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        toplevel_attached: int
+        ongoing_drag: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy an xdg_toplevel_drag_v1 object
+        Destroy this xdg_toplevel_drag_v1 object. This request must only be
+        called after the underlying wl_data_source drag has ended, as indicated
+        by the dnd_drop_performed or cancelled events. In any other case an
+        ongoing_drag error is raised.
+        """
+
+        ...
+
+    @staticmethod
+    def attach(toplevel: object, x_offset: int, y_offset: int) -> None:
+        """
+        Move a toplevel with the drag operation
+        Request that the window will be moved with the cursor during the drag
+        operation. The offset is a hint to the compositor how the toplevel
+        should be positioned relative to the cursor hotspot in surface local
+        coordinates and relative to the geometry of the toplevel being attached.
+        See xdg_surface.set_window_geometry. For example it might only
+        be used when an unmapped window is attached. The attached window
+        does not participate in the selection of the drag target.
+        If the toplevel is unmapped while it is attached, it is automatically
+        detached from the drag. In this case this request has to be called again
+        if the window should be attached after it is remapped.
+        This request can be called multiple times but issuing it while a
+        toplevel with an active role is attached raises a toplevel_attached
+        error.
+        """
+
+        ...
+class xdg_wm_dialog_v1:
+    """
+    create dialogs related to other toplevels
+    The xdg_wm_dialog_v1 interface is exposed as a global object allowing
+    to register surfaces with a xdg_toplevel role as "dialogs" relative to
+    another toplevel.
+    The compositor may let this relation influence how the surface is
+    placed, displayed or interacted with.
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        already_used: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the dialog manager object
+        Destroys the xdg_wm_dialog_v1 object. This does not affect
+        the xdg_dialog_v1 objects generated through it.
+        """
+
+        ...
+
+    @staticmethod
+    def get_xdg_dialog(toplevel: object) -> xdg_dialog_v1:
+        """
+        create a dialog object
+        Creates a xdg_dialog_v1 object for the given toplevel. See the interface
+        description for more details.
+        Compositors must raise an already_used error if clients attempt to
+        create multiple xdg_dialog_v1 objects for the same xdg_toplevel.
+        """
+
+        ...
+class xdg_dialog_v1:
+    """
+    dialog object
+    A xdg_dialog_v1 object is an ancillary object tied to a xdg_toplevel. Its
+    purpose is hinting the compositor that the toplevel is a "dialog" (e.g. a
+    temporary window) relative to another toplevel (see
+    xdg_toplevel.set_parent). If the xdg_toplevel is destroyed, the xdg_dialog_v1
+    becomes inert.
+    Through this object, the client may provide additional hints about
+    the purpose of the secondary toplevel. This interface has no effect
+    on toplevels that are not attached to a parent toplevel.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the dialog object
+        Destroys the xdg_dialog_v1 object. If this object is destroyed
+        before the related xdg_toplevel, the compositor should unapply its
+        effects.
+        """
+
+        ...
+
+    @staticmethod
+    def set_modal() -> None:
+        """
+        mark dialog as modal
+        Hints that the dialog has "modal" behavior. Modal dialogs typically
+        require to be fully addressed by the user (i.e. closed) before resuming
+        interaction with the parent toplevel, and may require a distinct
+        presentation.
+        Clients must implement the logic to filter events in the parent
+        toplevel on their own.
+        Compositors may choose any policy in event delivery to the parent
+        toplevel, from delivering all events unfiltered to using them for
+        internal consumption.
+        """
+
+        ...
+
+    @staticmethod
+    def unset_modal() -> None:
+        """
+        mark dialog as not modal
+        Drops the hint that this dialog has "modal" behavior. See
+        xdg_dialog_v1.set_modal for more details.
         """
 
         ...
@@ -2990,7 +3399,7 @@ class wp_content_type_manager_v1:
     @staticmethod
     def get_surface_content_type(surface: object) -> wp_content_type_v1:
         """
-        create a new toplevel decoration object
+        create a new content type object
         Create a new content type object associated with the given surface.
         Creating a wp_content_type_v1 from a wl_surface which already has one
         attached is a client error: already_constructed.
@@ -3040,12 +3449,14 @@ class wp_content_type_v1:
         """
 
         ...
-class wp_cursor_shape_manager_v1:
+class wp_fifo_manager_v1:
     """
-    cursor shape manager
-    This global offers an alternative, optional way to set cursor images. This
-    new way uses enumerated cursors instead of a wl_surface like
-    wl_pointer.set_cursor does.
+    protocol for fifo constraints
+    When a Wayland compositor considers applying a content update,
+    it must ensure all the update's readiness constraints (fences, etc)
+    are met.
+    This protocol provides a way to use the completion of a display refresh
+    cycle as an additional readiness constraint.
     Warning! The protocol described in this file is currently in the testing
     phase. Backward compatible changes may be added together with the
     corresponding interface version bump. Backward incompatible changes can
@@ -3054,421 +3465,195 @@ class wp_cursor_shape_manager_v1:
     object_id = 0
     version = 1
 
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager
-        Destroy the cursor shape manager.
-        """
-
-        ...
-
-    @staticmethod
-    def get_pointer(pointer: object) -> wp_cursor_shape_device_v1:
-        """
-        manage the cursor shape of a pointer device
-        Obtain a wp_cursor_shape_device_v1 for a wl_pointer object.
-        """
-
-        ...
-
-    @staticmethod
-    def get_tablet_tool_v2(tablet_tool: object) -> wp_cursor_shape_device_v1:
-        """
-        manage the cursor shape of a tablet tool device
-        Obtain a wp_cursor_shape_device_v1 for a zwp_tablet_tool_v2 object.
-        """
-
-        ...
-class wp_cursor_shape_device_v1:
-    """
-    cursor shape for a device
-    This interface allows clients to set the cursor shape.
-    """
-    object_id = 0
-    version = 1
-
-    class shape(Enum):
-        default: int
-        context_menu: int
-        help: int
-        pointer: int
-        progress: int
-        wait: int
-        cell: int
-        crosshair: int
-        text: int
-        vertical_text: int
-        alias: int
-        copy: int
-        move: int
-        no_drop: int
-        not_allowed: int
-        grab: int
-        grabbing: int
-        e_resize: int
-        n_resize: int
-        ne_resize: int
-        nw_resize: int
-        s_resize: int
-        se_resize: int
-        sw_resize: int
-        w_resize: int
-        ew_resize: int
-        ns_resize: int
-        nesw_resize: int
-        nwse_resize: int
-        col_resize: int
-        row_resize: int
-        all_scroll: int
-        zoom_in: int
-        zoom_out: int
-
-
     class error(Enum):
-        invalid_shape: int
+        already_exists: int
 
     @staticmethod
     def destroy() -> None:
         """
-        destroy the cursor shape device
-        Destroy the cursor shape device.
-        The device cursor shape remains unchanged.
+        unbind from the manager interface
+        Informs the server that the client will no longer be using
+        this protocol object. Existing objects created by this object
+        are not affected.
         """
 
         ...
 
     @staticmethod
-    def set_shape(serial: uint, shape: wp_cursor_shape_device_v1.shape) -> None:
+    def get_fifo(surface: object) -> wp_fifo_v1:
         """
-        set device cursor to the shape
-        Sets the device cursor to the specified shape. The compositor will
-        change the cursor image based on the specified shape.
-        The cursor actually changes only if the input device focus is one of
-        the requesting client's surfaces. If any, the previous cursor image
-        (surface or shape) is replaced.
-        The "shape" argument must be a valid enum entry, otherwise the
-        invalid_shape protocol error is raised.
-        This is similar to the wl_pointer.set_cursor and
-        zwp_tablet_tool_v2.set_cursor requests, but this request accepts a
-        shape instead of contents in the form of a surface. Clients can mix
-        set_cursor and set_shape requests.
-        The serial parameter must match the latest wl_pointer.enter or
-        zwp_tablet_tool_v2.proximity_in serial number sent to the client.
-        Otherwise the request will be ignored.
+        request fifo interface for surface
+        Establish a fifo object for a surface that may be used to add
+        display refresh constraints to content updates.
+        Only one such object may exist for a surface and attempting
+        to create more than one will result in an already_exists
+        protocol error. If a surface is acted on by multiple software
+        components, general best practice is that only the component
+        performing wl_surface.attach operations should use this protocol.
         """
 
         ...
-class wp_drm_lease_device_v1:
+class wp_fifo_v1:
     """
-    lease device
-    This protocol is used by Wayland compositors which act as Direct
-    Rendering Manager (DRM) masters to lease DRM resources to Wayland
-    clients.
-    The compositor will advertise one wp_drm_lease_device_v1 global for each
-    DRM node. Some time after a client binds to the wp_drm_lease_device_v1
-    global, the compositor will send a drm_fd event followed by zero, one or
-    more connector events. After all currently available connectors have been
-    sent, the compositor will send a wp_drm_lease_device_v1.done event.
-    When the list of connectors available for lease changes the compositor
-    will send wp_drm_lease_device_v1.connector events for added connectors and
-    wp_drm_lease_connector_v1.withdrawn events for removed connectors,
-    followed by a wp_drm_lease_device_v1.done event.
-    The compositor will indicate when a device is gone by removing the global
-    via a wl_registry.global_remove event. Upon receiving this event, the
-    client should destroy any matching wp_drm_lease_device_v1 object.
-    To destroy a wp_drm_lease_device_v1 object, the client must first issue
-    a release request. Upon receiving this request, the compositor will
-    immediately send a released event and destroy the object. The client must
-    continue to process and discard drm_fd and connector events until it
-    receives the released event. Upon receiving the released event, the
-    client can safely cleanup any client-side resources.
-    Warning! The protocol described in this file is currently in the testing
-    phase. Backward compatible changes may be added together with the
-    corresponding interface version bump. Backward incompatible changes can
-    only be done by creating a new major version of the extension.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def create_lease_request() -> wp_drm_lease_request_v1:
-        """
-        create a lease request object
-        Creates a lease request object.
-        See the documentation for wp_drm_lease_request_v1 for details.
-        """
-
-        ...
-
-    @staticmethod
-    def release() -> None:
-        """
-        release this object
-        Indicates the client no longer wishes to use this object. In response
-        the compositor will immediately send the released event and destroy
-        this object. It can however not guarantee that the client won't receive
-        connector events before the released event. The client must not send any
-        requests after this one, doing so will raise a wl_display error.
-        Existing connectors, lease request and leases will not be affected.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def drm_fd(fd: fd) -> None:
-            """
-            open a non-master fd for this DRM node
-            The compositor will send this event when the wp_drm_lease_device_v1
-            global is bound, although there are no guarantees as to how long this
-            takes - the compositor might need to wait until regaining DRM master.
-            The included fd is a non-master DRM file descriptor opened for this
-            device and the compositor must not authenticate it.
-            The purpose of this event is to give the client the ability to
-            query DRM and discover information which may help them pick the
-            appropriate DRM device or select the appropriate connectors therein.
-            """
-
-            ...
-
-        @staticmethod
-        def connector(id: wp_drm_lease_connector_v1) -> None:
-            """
-            advertise connectors available for leases
-            The compositor will use this event to advertise connectors available for
-            lease by clients. This object may be passed into a lease request to
-            indicate the client would like to lease that connector, see
-            wp_drm_lease_request_v1.request_connector for details. While the
-            compositor will make a best effort to not send disconnected connectors,
-            no guarantees can be made.
-            The compositor must send the drm_fd event before sending connectors.
-            After the drm_fd event it will send all available connectors but may
-            send additional connectors at any time.
-            """
-
-            ...
-
-        @staticmethod
-        def done() -> None:
-            """
-            signals grouping of connectors
-            The compositor will send this event to indicate that it has sent all
-            currently available connectors after the client binds to the global or
-            when it updates the connector list, for example on hotplug, drm master
-            change or when a leased connector becomes available again. It will
-            similarly send this event to group wp_drm_lease_connector_v1.withdrawn
-            events of connectors of this device.
-            """
-
-            ...
-
-        @staticmethod
-        def released() -> None:
-            """
-            the compositor has finished using the device
-            This event is sent in response to the release request and indicates
-            that the compositor is done sending connector events.
-            The compositor will destroy this object immediately after sending the
-            event and it will become invalid. The client should release any
-            resources associated with this device after receiving this event.
-            """
-
-            ...
-class wp_drm_lease_connector_v1:
-    """
-    a leasable DRM connector
-    Represents a DRM connector which is available for lease. These objects are
-    created via wp_drm_lease_device_v1.connector events, and should be passed
-    to lease requests via wp_drm_lease_request_v1.request_connector.
-    Immediately after the wp_drm_lease_connector_v1 object is created the
-    compositor will send a name, a description, a connector_id and a done
-    event. When the description is updated the compositor will send a
-    description event followed by a done event.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy connector
-        The client may send this request to indicate that it will not use this
-        connector. Clients are encouraged to send this after receiving the
-        "withdrawn" event so that the server can release the resources
-        associated with this connector offer. Neither existing lease requests
-        nor leases will be affected.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def name(name: string) -> None:
-            """
-            name
-            The compositor sends this event once the connector is created to
-            indicate the name of this connector. This will not change for the
-            duration of the Wayland session, but is not guaranteed to be consistent
-            between sessions.
-            If the compositor supports wl_output version 4 and this connector
-            corresponds to a wl_output, the compositor should use the same name as
-            for the wl_output.
-            """
-
-            ...
-
-        @staticmethod
-        def description(description: string) -> None:
-            """
-            description
-            The compositor sends this event once the connector is created to provide
-            a human-readable description for this connector, which may be presented
-            to the user. The compositor may send this event multiple times over the
-            lifetime of this object to reflect changes in the description.
-            """
-
-            ...
-
-        @staticmethod
-        def connector_id(connector_id: uint) -> None:
-            """
-            connector_id
-            The compositor sends this event once the connector is created to
-            indicate the DRM object ID which represents the underlying connector
-            that is being offered. Note that the final lease may include additional
-            object IDs, such as CRTCs and planes.
-            """
-
-            ...
-
-        @staticmethod
-        def done() -> None:
-            """
-            all properties have been sent
-            This event is sent after all properties of a connector have been sent.
-            This allows changes to the properties to be seen as atomic even if they
-            happen via multiple events.
-            """
-
-            ...
-
-        @staticmethod
-        def withdrawn() -> None:
-            """
-            lease offer withdrawn
-            Sent to indicate that the compositor will no longer honor requests for
-            DRM leases which include this connector. The client may still issue a
-            lease request including this connector, but the compositor will send
-            wp_drm_lease_v1.finished without issuing a lease fd. Compositors are
-            encouraged to send this event when they lose access to connector, for
-            example when the connector is hot-unplugged, when the connector gets
-            leased to a client or when the compositor loses DRM master.
-            """
-
-            ...
-class wp_drm_lease_request_v1:
-    """
-    DRM lease request
-    A client that wishes to lease DRM resources will attach the list of
-    connectors advertised with wp_drm_lease_device_v1.connector that they
-    wish to lease, then use wp_drm_lease_request_v1.submit to submit the
-    request.
+    fifo interface
+    A fifo object for a surface that may be used to add
+    display refresh constraints to content updates.
     """
     object_id = 0
     version = 1
 
     class error(Enum):
-        wrong_device: int
-        duplicate_connector: int
-        empty_lease: int
+        surface_destroyed: int
 
     @staticmethod
-    def request_connector(connector: object) -> None:
+    def set_barrier() -> None:
         """
-        request a connector for this lease
-        Indicates that the client would like to lease the given connector.
-        This is only used as a suggestion, the compositor may choose to
-        include any resources in the lease it issues, or change the set of
-        leased resources at any time. Compositors are however encouraged to
-        include the requested connector and other resources necessary
-        to drive the connected output in the lease.
-        Requesting a connector that was created from a different lease device
-        than this lease request raises the wrong_device error. Requesting a
-        connector twice will raise the duplicate_connector error.
+        sets the start point for a fifo constraint
+        When the content update containing the "set_barrier" is applied,
+        it sets a "fifo_barrier" condition on the surface associated with
+        the fifo object. The condition is cleared immediately after the
+        following latching deadline for non-tearing presentation.
+        The compositor may clear the condition early if it must do so to
+        ensure client forward progress assumptions.
+        To wait for this condition to clear, use the "wait_barrier" request.
+        "set_barrier" is double-buffered state, see wl_surface.commit.
+        Requesting set_barrier after the fifo object's surface is
+        destroyed will generate a "surface_destroyed" error.
         """
 
         ...
 
     @staticmethod
-    def submit() -> wp_drm_lease_v1:
+    def wait_barrier() -> None:
         """
-        submit the lease request
-        Submits the lease request and creates a new wp_drm_lease_v1 object.
-        After calling submit the compositor will immediately destroy this
-        object, issuing any more requests will cause a wl_display error.
-        The compositor doesn't make any guarantees about the events of the
-        lease object, clients cannot expect an immediate response.
-        Not requesting any connectors before submitting the lease request
-        will raise the empty_lease error.
+        adds a fifo constraint to a content update
+        Indicate that this content update is not ready while a
+        "fifo_barrier" condition is present on the surface.
+        This means that when the content update containing "set_barrier"
+        was made active at a latching deadline, it will be active for
+        at least one refresh cycle. A content update which is allowed to
+        tear might become active after a latching deadline if no content
+        update became active at the deadline.
+        The constraint must be ignored if the surface is a subsurface in
+        synchronized mode. If the surface is not being updated by the
+        compositor (off-screen, occluded) the compositor may ignore the
+        constraint. Clients must use an additional mechanism such as
+        frame callbacks or timestamps to ensure throttling occurs under
+        all conditions.
+        "wait_barrier" is double-buffered state, see wl_surface.commit.
+        Requesting "wait_barrier" after the fifo object's surface is
+        destroyed will generate a "surface_destroyed" error.
         """
 
         ...
-class wp_drm_lease_v1:
-    """
-    a DRM lease
-    A DRM lease object is used to transfer the DRM file descriptor to the
-    client and manage the lifetime of the lease.
-    Some time after the wp_drm_lease_v1 object is created, the compositor
-    will reply with the lease request's result. If the lease request is
-    granted, the compositor will send a lease_fd event. If the lease request
-    is denied, the compositor will send a finished event without a lease_fd
-    event.
-    """
-    object_id = 0
-    version = 1
 
     @staticmethod
     def destroy() -> None:
         """
-        destroys the lease object
-        The client should send this to indicate that it no longer wishes to use
-        this lease. The compositor should use drmModeRevokeLease on the
-        appropriate file descriptor, if necessary.
+        destroy the fifo interface
+        Informs the server that the client will no longer be using
+        this protocol object.
+        Surface state changes previously made by this protocol are
+        unaffected by this object's destruction.
         """
 
         ...
-    class events:
-        @staticmethod
-        def lease_fd(leased_fd: fd) -> None:
-            """
-            shares the DRM file descriptor
-            This event returns a file descriptor suitable for use with DRM-related
-            ioctls. The client should use drmModeGetLease to enumerate the DRM
-            objects which have been leased to them. The compositor guarantees it
-            will not use the leased DRM objects itself until it sends the finished
-            event. If the compositor cannot or will not grant a lease for the
-            requested connectors, it will not send this event, instead sending the
-            finished event.
-            The compositor will send this event at most once during this objects
-            lifetime.
-            """
+class xwayland_shell_v1:
+    """
+    context object for Xwayland shell
+    xwayland_shell_v1 is a singleton global object that
+    provides the ability to create a xwayland_surface_v1 object
+    for a given wl_surface.
+    This interface is intended to be bound by the Xwayland server.
+    A compositor must not allow clients other than Xwayland to
+    bind to this interface. A compositor should hide this global
+    from other clients' wl_registry.
+    A client the compositor does not consider to be an Xwayland
+    server attempting to bind this interface will result in
+    an implementation-defined error.
+    An Xwayland server that has bound this interface must not
+    set the `WL_SURFACE_ID` atom on a window.
+    """
+    object_id = 0
+    version = 1
 
-            ...
+    class error(Enum):
+        role: int
 
-        @staticmethod
-        def finished() -> None:
-            """
-            sent when the lease has been revoked
-            The compositor uses this event to either reject a lease request, or if
-            it previously sent a lease_fd, to notify the client that the lease has
-            been revoked. If the client requires a new lease, they should destroy
-            this object and submit a new lease request. The compositor will send
-            no further events for this object after sending the finish event.
-            Compositors should revoke the lease when any of the leased resources
-            become unavailable, namely when a hot-unplug occurs or when the
-            compositor loses DRM master.
-            """
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the Xwayland shell object
+        Destroy the xwayland_shell_v1 object.
+        The child objects created via this interface are unaffected.
+        """
 
-            ...
+        ...
+
+    @staticmethod
+    def get_xwayland_surface(surface: object) -> xwayland_surface_v1:
+        """
+        assign the xwayland_surface surface role
+        Create an xwayland_surface_v1 interface for a given wl_surface
+        object and gives it the xwayland_surface role.
+        It is illegal to create an xwayland_surface_v1 for a wl_surface
+        which already has an assigned role and this will result in the
+        `role` protocol error.
+        See the documentation of xwayland_surface_v1 for more details
+        about what an xwayland_surface_v1 is and how it is used.
+        """
+
+        ...
+class xwayland_surface_v1:
+    """
+    interface for associating Xwayland windows to wl_surfaces
+    An Xwayland surface is a surface managed by an Xwayland server.
+    It is used for associating surfaces to Xwayland windows.
+    The Xwayland server associated with actions in this interface is
+    determined by the Wayland client making the request.
+    The client must call wl_surface.commit on the corresponding wl_surface
+    for the xwayland_surface_v1 state to take effect.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        already_associated: int
+        invalid_serial: int
+
+    @staticmethod
+    def set_serial(serial_lo: uint, serial_hi: uint) -> None:
+        """
+        associates a Xwayland window to a wl_surface
+        Associates an Xwayland window to a wl_surface.
+        The association state is double-buffered, see wl_surface.commit.
+        The `serial_lo` and `serial_hi` parameters specify a non-zero
+        monotonic serial number which is entirely unique and provided by the
+        Xwayland server equal to the serial value provided by a client message
+        with a message type of the `WL_SURFACE_SERIAL` atom on the X11 window
+        for this surface to be associated to.
+        The serial value in the `WL_SURFACE_SERIAL` client message is specified
+        as having the lo-bits specified in `l[0]` and the hi-bits specified
+        in `l[1]`.
+        If the serial value provided by `serial_lo` and `serial_hi` is not
+        valid, the `invalid_serial` protocol error will be raised.
+        An X11 window may be associated with multiple surfaces throughout its
+        lifespan. (eg. unmapping and remapping a window).
+        For each wl_surface, this state must not be committed more than once,
+        otherwise the `already_associated` protocol error will be raised.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the Xwayland surface object
+        Destroy the xwayland_surface_v1 object.
+        Any already existing associations are unaffected by this action.
+        """
+
+        ...
 class ext_foreign_toplevel_list_v1:
     """
     list toplevels
@@ -3644,310 +3829,353 @@ class ext_foreign_toplevel_handle_v1:
             """
 
             ...
-class ext_idle_notifier_v1:
+class wp_cursor_shape_manager_v1:
     """
-    idle notification manager
-    This interface allows clients to monitor user idle status.
-    After binding to this global, clients can create ext_idle_notification_v1
-    objects to get notified when the user is idle for a given amount of time.
+    cursor shape manager
+    This global offers an alternative, optional way to set cursor images. This
+    new way uses enumerated cursors instead of a wl_surface like
+    wl_pointer.set_cursor does.
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
     """
     object_id = 0
-    version = 1
+    version = 2
 
     @staticmethod
     def destroy() -> None:
         """
         destroy the manager
-        Destroy the manager object. All objects created via this interface
-        remain valid.
+        Destroy the cursor shape manager.
         """
 
         ...
 
     @staticmethod
-    def get_idle_notification(timeout: uint, seat: object) -> ext_idle_notification_v1:
+    def get_pointer(pointer: object) -> wp_cursor_shape_device_v1:
         """
-        create a notification object
-        Create a new idle notification object.
-        The notification object has a minimum timeout duration and is tied to a
-        seat. The client will be notified if the seat is inactive for at least
-        the provided timeout. See ext_idle_notification_v1 for more details.
-        A zero timeout is valid and means the client wants to be notified as
-        soon as possible when the seat is inactive.
+        manage the cursor shape of a pointer device
+        Obtain a wp_cursor_shape_device_v1 for a wl_pointer object.
+        When the pointer capability is removed from the wl_seat, the
+        wp_cursor_shape_device_v1 object becomes inert.
         """
 
         ...
-class ext_idle_notification_v1:
+
+    @staticmethod
+    def get_tablet_tool_v2(tablet_tool: object) -> wp_cursor_shape_device_v1:
+        """
+        manage the cursor shape of a tablet tool device
+        Obtain a wp_cursor_shape_device_v1 for a zwp_tablet_tool_v2 object.
+        When the zwp_tablet_tool_v2 is removed, the wp_cursor_shape_device_v1
+        object becomes inert.
+        """
+
+        ...
+class wp_cursor_shape_device_v1:
     """
-    idle notification
-    This interface is used by the compositor to send idle notification events
-    to clients.
-    Initially the notification object is not idle. The notification object
-    becomes idle when no user activity has happened for at least the timeout
-    duration, starting from the creation of the notification object. User
-    activity may include input events or a presence sensor, but is
-    compositor-specific. If an idle inhibitor is active (e.g. another client
-    has created a zwp_idle_inhibitor_v1 on a visible surface), the compositor
-    must not make the notification object idle.
-    When the notification object becomes idle, an idled event is sent. When
-    user activity starts again, the notification object stops being idle,
-    a resumed event is sent and the timeout is restarted.
+    cursor shape for a device
+    This interface allows clients to set the cursor shape.
     """
     object_id = 0
-    version = 1
+    version = 2
+
+    class shape(Enum):
+        default: int
+        context_menu: int
+        help: int
+        pointer: int
+        progress: int
+        wait: int
+        cell: int
+        crosshair: int
+        text: int
+        vertical_text: int
+        alias: int
+        copy: int
+        move: int
+        no_drop: int
+        not_allowed: int
+        grab: int
+        grabbing: int
+        e_resize: int
+        n_resize: int
+        ne_resize: int
+        nw_resize: int
+        s_resize: int
+        se_resize: int
+        sw_resize: int
+        w_resize: int
+        ew_resize: int
+        ns_resize: int
+        nesw_resize: int
+        nwse_resize: int
+        col_resize: int
+        row_resize: int
+        all_scroll: int
+        zoom_in: int
+        zoom_out: int
+        dnd_ask: int
+        all_resize: int
+
+
+    class error(Enum):
+        invalid_shape: int
 
     @staticmethod
     def destroy() -> None:
         """
-        destroy the notification object
-        Destroy the notification object.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def idled() -> None:
-            """
-            notification object is idle
-            This event is sent when the notification object becomes idle.
-            It's a compositor protocol error to send this event twice without a
-            resumed event in-between.
-            """
-
-            ...
-
-        @staticmethod
-        def resumed() -> None:
-            """
-            notification object is no longer idle
-            This event is sent when the notification object stops being idle.
-            It's a compositor protocol error to send this event twice without an
-            idled event in-between. It's a compositor protocol error to send this
-            event prior to any idled event.
-            """
-
-            ...
-class ext_image_capture_source_v1:
-    """
-    opaque image capture source object
-    The image capture source object is an opaque descriptor for a capturable
-    resource.  This resource may be any sort of entity from which an image
-    may be derived.
-    Note, because ext_image_capture_source_v1 objects are created from multiple
-    independent factory interfaces, the ext_image_capture_source_v1 interface is
-    frozen at version 1.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        delete this object
-        Destroys the image capture source. This request may be sent at any time
-        by the client.
-        """
-
-        ...
-class ext_output_image_capture_source_manager_v1:
-    """
-    image capture source manager for outputs
-    A manager for creating image capture source objects for wl_output objects.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def create_source(output: object) -> ext_image_capture_source_v1:
-        """
-        create source object for output
-        Creates a source object for an output. Images captured from this source
-        will show the same content as the output. Some elements may be omitted,
-        such as cursors and overlays that have been marked as transparent to
-        capturing.
+        destroy the cursor shape device
+        Destroy the cursor shape device.
+        The device cursor shape remains unchanged.
         """
 
         ...
 
     @staticmethod
-    def destroy() -> None:
+    def set_shape(serial: uint, shape: wp_cursor_shape_device_v1.shape) -> None:
         """
-        delete this object
-        Destroys the manager. This request may be sent at any time by the client
-        and objects created by the manager will remain valid after its
-        destruction.
-        """
-
-        ...
-class ext_foreign_toplevel_image_capture_source_manager_v1:
-    """
-    image capture source manager for foreign toplevels
-    A manager for creating image capture source objects for
-    ext_foreign_toplevel_handle_v1 objects.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def create_source(toplevel_handle: object) -> ext_image_capture_source_v1:
-        """
-        create source object for foreign toplevel
-        Creates a source object for a foreign toplevel handle. Images captured
-        from this source will show the same content as the toplevel.
+        set device cursor to the shape
+        Sets the device cursor to the specified shape. The compositor will
+        change the cursor image based on the specified shape.
+        The cursor actually changes only if the input device focus is one of
+        the requesting client's surfaces. If any, the previous cursor image
+        (surface or shape) is replaced.
+        The "shape" argument must be a valid enum entry, otherwise the
+        invalid_shape protocol error is raised.
+        This is similar to the wl_pointer.set_cursor and
+        zwp_tablet_tool_v2.set_cursor requests, but this request accepts a
+        shape instead of contents in the form of a surface. Clients can mix
+        set_cursor and set_shape requests.
+        The serial parameter must match the latest wl_pointer.enter or
+        zwp_tablet_tool_v2.proximity_in serial number sent to the client.
+        Otherwise the request will be ignored.
         """
 
         ...
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        delete this object
-        Destroys the manager. This request may be sent at any time by the client
-        and objects created by the manager will remain valid after its
-        destruction.
-        """
-
-        ...
-class ext_image_copy_capture_manager_v1:
+class wp_color_manager_v1:
     """
-    manager to inform clients and begin capturing
-    This object is a manager which offers requests to start capturing from a
-    source.
+    color manager singleton
+    A singleton global interface used for getting color management extensions
+    for wl_surface and wl_output objects, and for creating client defined
+    image description objects. The extension interfaces allow
+    getting the image description of outputs and setting the image
+    description of surfaces.
+    Compositors should never remove this global.
     """
     object_id = 0
     version = 1
 
     class error(Enum):
-        invalid_option: int
+        unsupported_feature: int
+        surface_exists: int
 
 
-    class options(IntFlag):
-        paint_cursors: int
+    class render_intent(Enum):
+        perceptual: int
+        relative: int
+        saturation: int
+        absolute: int
+        relative_bpc: int
 
-    @staticmethod
-    def create_session(source: object, options: ext_image_copy_capture_manager_v1.options) -> ext_image_copy_capture_session_v1:
-        """
-        capture an image capture source
-        Create a capturing session for an image capture source.
-        If the paint_cursors option is set, cursors shall be composited onto
-        the captured frame. The cursor must not be composited onto the frame
-        if this flag is not set.
-        If the options bitfield is invalid, the invalid_option protocol error
-        is sent.
-        """
 
-        ...
+    class feature(Enum):
+        icc_v2_v4: int
+        parametric: int
+        set_primaries: int
+        set_tf_power: int
+        set_luminances: int
+        set_mastering_display_primaries: int
+        extended_target_volume: int
+        windows_scrgb: int
 
-    @staticmethod
-    def create_pointer_cursor_session(source: object, pointer: object) -> ext_image_copy_capture_cursor_session_v1:
-        """
-        capture the pointer cursor of an image capture source
-        Create a cursor capturing session for the pointer of an image capture
-        source.
-        """
 
-        ...
+    class primaries(Enum):
+        srgb: int
+        pal_m: int
+        pal: int
+        ntsc: int
+        generic_film: int
+        bt2020: int
+        cie1931_xyz: int
+        dci_p3: int
+        display_p3: int
+        adobe_rgb: int
 
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager
-        Destroy the manager object.
-        Other objects created via this interface are unaffected.
-        """
 
-        ...
-class ext_image_copy_capture_session_v1:
-    """
-    image copy capture session
-    This object represents an active image copy capture session.
-    After a capture session is created, buffer constraint events will be
-    emitted from the compositor to tell the client which buffer types and
-    formats are supported for reading from the session. The compositor may
-    re-send buffer constraint events whenever they change.
-    The advertise buffer constraints, the compositor must send in no
-    particular order: zero or more shm_format and dmabuf_format events, zero
-    or one dmabuf_device event, and exactly one buffer_size event. Then the
-    compositor must send a done event.
-    When the client has received all the buffer constraints, it can create a
-    buffer accordingly, attach it to the capture session using the
-    attach_buffer request, set the buffer damage using the damage_buffer
-    request and then send the capture request.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        duplicate_frame: int
-
-    @staticmethod
-    def create_frame() -> ext_image_copy_capture_frame_v1:
-        """
-        create a frame
-        Create a capture frame for this session.
-        At most one frame object can exist for a given session at any time. If
-        a client sends a create_frame request before a previous frame object
-        has been destroyed, the duplicate_frame protocol error is raised.
-        """
-
-        ...
+    class transfer_function(Enum):
+        bt1886: int
+        gamma22: int
+        gamma28: int
+        st240: int
+        ext_linear: int
+        log_100: int
+        log_316: int
+        xvycc: int
+        srgb: int
+        ext_srgb: int
+        st2084_pq: int
+        st428: int
+        hlg: int
 
     @staticmethod
     def destroy() -> None:
         """
-        delete this object
-        Destroys the session. This request can be sent at any time by the
-        client.
-        This request doesn't affect ext_image_copy_capture_frame_v1 objects created by
-        this object.
+        destroy the color manager
+        Destroy the wp_color_manager_v1 object. This does not affect any other
+        objects in any way.
+        """
+
+        ...
+
+    @staticmethod
+    def get_output(output: object) -> wp_color_management_output_v1:
+        """
+        create a color management interface for a wl_output
+        This creates a new wp_color_management_output_v1 object for the
+        given wl_output.
+        See the wp_color_management_output_v1 interface for more details.
+        """
+
+        ...
+
+    @staticmethod
+    def get_surface(surface: object) -> wp_color_management_surface_v1:
+        """
+        create a color management interface for a wl_surface
+        If a wp_color_management_surface_v1 object already exists for the given
+        wl_surface, the protocol error surface_exists is raised.
+        This creates a new color wp_color_management_surface_v1 object for the
+        given wl_surface.
+        See the wp_color_management_surface_v1 interface for more details.
+        """
+
+        ...
+
+    @staticmethod
+    def get_surface_feedback(surface: object) -> wp_color_management_surface_feedback_v1:
+        """
+        create a color management feedback interface
+        This creates a new color wp_color_management_surface_feedback_v1 object
+        for the given wl_surface.
+        See the wp_color_management_surface_feedback_v1 interface for more
+        details.
+        """
+
+        ...
+
+    @staticmethod
+    def create_icc_creator() -> wp_image_description_creator_icc_v1:
+        """
+        make a new ICC-based image description creator object
+        Makes a new ICC-based image description creator object with all
+        properties initially unset. The client can then use the object's
+        interface to define all the required properties for an image description
+        and finally create a wp_image_description_v1 object.
+        This request can be used when the compositor advertises
+        wp_color_manager_v1.feature.icc_v2_v4.
+        Otherwise this request raises the protocol error unsupported_feature.
+        """
+
+        ...
+
+    @staticmethod
+    def create_parametric_creator() -> wp_image_description_creator_params_v1:
+        """
+        make a new parametric image description creator object
+        Makes a new parametric image description creator object with all
+        properties initially unset. The client can then use the object's
+        interface to define all the required properties for an image description
+        and finally create a wp_image_description_v1 object.
+        This request can be used when the compositor advertises
+        wp_color_manager_v1.feature.parametric.
+        Otherwise this request raises the protocol error unsupported_feature.
+        """
+
+        ...
+
+    @staticmethod
+    def create_windows_scrgb() -> wp_image_description_v1:
+        """
+        create Windows-scRGB image description object
+        This creates a pre-defined image description for the so-called
+        Windows-scRGB stimulus encoding. This comes from the Windows 10 handling
+        of its own definition of an scRGB color space for an HDR screen
+        driven in BT.2100/PQ signalling mode.
+        Windows-scRGB uses sRGB (BT.709) color primaries and white point.
+        The transfer characteristic is extended linear.
+        The nominal color channel value range is extended, meaning it includes
+        negative and greater than 1.0 values. Negative values are used to
+        escape the sRGB color gamut boundaries. To make use of the extended
+        range, the client needs to use a pixel format that can represent those
+        values, e.g. floating-point 16 bits per channel.
+        Nominal color value R=G=B=0.0 corresponds to BT.2100/PQ system
+        0 cd/m², and R=G=B=1.0 corresponds to BT.2100/PQ system 80 cd/m².
+        The maximum is R=G=B=125.0 corresponding to 10k cd/m².
+        Windows-scRGB is displayed by Windows 10 by converting it to
+        BT.2100/PQ, maintaining the CIE 1931 chromaticity and mapping the
+        luminance as above. No adjustment is made to the signal to account
+        for the viewing conditions.
+        The reference white level of Windows-scRGB is unknown. If a
+        reference white level must be assumed for compositor processing, it
+        should be R=G=B=2.5375 corresponding to 203 cd/m² of Report ITU-R
+        BT.2408-7.
+        The target color volume of Windows-scRGB is unknown. The color gamut
+        may be anything between sRGB and BT.2100.
+        Note: EGL_EXT_gl_colorspace_scrgb_linear definition differs from
+        Windows-scRGB by using R=G=B=1.0 as the reference white level, while
+        Windows-scRGB reference white level is unknown or varies. However,
+        it seems probable that Windows implements both
+        EGL_EXT_gl_colorspace_scrgb_linear and Vulkan
+        VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT as Windows-scRGB.
+        This request can be used when the compositor advertises
+        wp_color_manager_v1.feature.windows_scrgb.
+        Otherwise this request raises the protocol error unsupported_feature.
+        The resulting image description object does not allow get_information
+        request. The wp_image_description_v1.ready event shall be sent.
         """
 
         ...
     class events:
         @staticmethod
-        def buffer_size(width: uint, height: uint) -> None:
+        def supported_intent(render_intent: wp_color_manager_v1.render_intent) -> None:
             """
-            image capture source dimensions
-            Provides the dimensions of the source image in buffer pixel coordinates.
-            The client must attach buffers that match this size.
-            """
-
-            ...
-
-        @staticmethod
-        def shm_format(format: ext_image_copy_capture_session_v1.wl_shm.format) -> None:
-            """
-            shm buffer format
-            Provides the format that must be used for shared-memory buffers.
-            This event may be emitted multiple times, in which case the client may
-            choose any given format.
+            supported rendering intent
+            When this object is created, it shall immediately send this event once
+            for each rendering intent the compositor supports.
             """
 
             ...
 
         @staticmethod
-        def dmabuf_device(device: array) -> None:
+        def supported_feature(feature: wp_color_manager_v1.feature) -> None:
             """
-            dma-buf device
-            This event advertises the device buffers must be allocated on for
-            dma-buf buffers.
-            In general the device is a DRM node. The DRM node type (primary vs.
-            render) is unspecified. Clients must not rely on the compositor sending
-            a particular node type. Clients cannot check two devices for equality
-            by comparing the dev_t value.
+            supported features
+            When this object is created, it shall immediately send this event once
+            for each compositor supported feature listed in the enumeration.
             """
 
             ...
 
         @staticmethod
-        def dmabuf_format(format: uint, modifiers: array) -> None:
+        def supported_tf_named(tf: wp_color_manager_v1.transfer_function) -> None:
             """
-            dma-buf format
-            Provides the format that must be used for dma-buf buffers.
-            The client may choose any of the modifiers advertised in the array of
-            64-bit unsigned integers.
-            This event may be emitted multiple times, in which case the client may
-            choose any given format.
+            supported named transfer characteristic
+            When this object is created, it shall immediately send this event once
+            for each named transfer function the compositor supports with the
+            parametric image description creator.
+            """
+
+            ...
+
+        @staticmethod
+        def supported_primaries_named(primaries: wp_color_manager_v1.primaries) -> None:
+            """
+            supported named primaries
+            When this object is created, it shall immediately send this event once
+            for each named set of primaries the compositor supports with the
+            parametric image description creator.
             """
 
             ...
@@ -3955,262 +4183,1509 @@ class ext_image_copy_capture_session_v1:
         @staticmethod
         def done() -> None:
             """
-            all constraints have been sent
-            This event is sent once when all buffer constraint events have been
+            all features have been sent
+            This event is sent when all supported rendering intents, features,
+            transfer functions and named primaries have been sent.
+            """
+
+            ...
+class wp_color_management_output_v1:
+    """
+    output color properties
+    A wp_color_management_output_v1 describes the color properties of an
+    output.
+    The wp_color_management_output_v1 is associated with the wl_output global
+    underlying the wl_output object. Therefore the client destroying the
+    wl_output object has no impact, but the compositor removing the output
+    global makes the wp_color_management_output_v1 object inert.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the color management output
+        Destroy the color wp_color_management_output_v1 object. This does not
+        affect any remaining protocol objects.
+        """
+
+        ...
+
+    @staticmethod
+    def get_image_description() -> wp_image_description_v1:
+        """
+        get the image description of the output
+        This creates a new wp_image_description_v1 object for the current image
+        description of the output. There always is exactly one image description
+        active for an output so the client should destroy the image description
+        created by earlier invocations of this request. This request is usually
+        sent as a reaction to the image_description_changed event or when
+        creating a wp_color_management_output_v1 object.
+        The image description of an output represents the color encoding the
+        output expects. There might be performance and power advantages, as well
+        as improved color reproduction, if a content update matches the image
+        description of the output it is being shown on. If a content update is
+        shown on any other output than the one it matches the image description
+        of, then the color reproduction on those outputs might be considerably
+        worse.
+        The created wp_image_description_v1 object preserves the image
+        description of the output from the time the object was created.
+        The resulting image description object allows get_information request.
+        If this protocol object is inert, the resulting image description object
+        shall immediately deliver the wp_image_description_v1.failed event with
+        the no_output cause.
+        If the interface version is inadequate for the output's image
+        description, meaning that the client does not support all the events
+        needed to deliver the crucial information, the resulting image
+        description object shall immediately deliver the
+        wp_image_description_v1.failed event with the low_version cause.
+        Otherwise the object shall immediately deliver the ready event.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def image_description_changed() -> None:
+            """
+            image description changed
+            This event is sent whenever the image description of the output changed,
+            followed by one wl_output.done event common to output events across all
+            extensions.
+            If the client wants to use the updated image description, it needs to do
+            get_image_description again, because image description objects are
+            immutable.
+            """
+
+            ...
+class wp_color_management_surface_v1:
+    """
+    color management extension to a surface
+    A wp_color_management_surface_v1 allows the client to set the color
+    space and HDR properties of a surface.
+    If the wl_surface associated with the wp_color_management_surface_v1 is
+    destroyed, the wp_color_management_surface_v1 object becomes inert.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        render_intent: int
+        image_description: int
+        inert: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the color management interface for a surface
+        Destroy the wp_color_management_surface_v1 object and do the same as
+        unset_image_description.
+        """
+
+        ...
+
+    @staticmethod
+    def set_image_description(image_description: object, render_intent: wp_color_management_surface_v1.wp_color_manager_v1.render_intent) -> None:
+        """
+        set the surface image description
+        If this protocol object is inert, the protocol error inert is raised.
+        Set the image description of the underlying surface. The image
+        description and rendering intent are double-buffered state, see
+        wl_surface.commit.
+        It is the client's responsibility to understand the image description
+        it sets on a surface, and to provide content that matches that image
+        description. Compositors might convert images to match their own or any
+        other image descriptions.
+        Image descriptions which are not ready (see wp_image_description_v1)
+        are forbidden in this request, and in such case the protocol error
+        image_description is raised.
+        All image descriptions which are ready (see wp_image_description_v1)
+        are allowed and must always be accepted by the compositor.
+        A rendering intent provides the client's preference on how content
+        colors should be mapped to each output. The render_intent value must
+        be one advertised by the compositor with
+        wp_color_manager_v1.render_intent event, otherwise the protocol error
+        render_intent is raised.
+        When an image description is set on a surface, the Transfer
+        Characteristics of the image description defines the valid range of
+        the nominal (real-valued) color channel values. The processing of
+        out-of-range color channel values is undefined, but compositors are
+        recommended to clamp the values to the valid range when possible.
+        By default, a surface does not have an associated image description
+        nor a rendering intent. The handling of color on such surfaces is
+        compositor implementation defined. Compositors should handle such
+        surfaces as sRGB, but may handle them differently if they have specific
+        requirements.
+        Setting the image description has copy semantics; after this request,
+        the image description can be immediately destroyed without affecting
+        the pending state of the surface.
+        """
+
+        ...
+
+    @staticmethod
+    def unset_image_description() -> None:
+        """
+        remove the surface image description
+        If this protocol object is inert, the protocol error inert is raised.
+        This request removes any image description from the surface. See
+        set_image_description for how a compositor handles a surface without
+        an image description. This is double-buffered state, see
+        wl_surface.commit.
+        """
+
+        ...
+class wp_color_management_surface_feedback_v1:
+    """
+    color management extension to a surface
+    A wp_color_management_surface_feedback_v1 allows the client to get the
+    preferred image description of a surface.
+    If the wl_surface associated with this object is destroyed, the
+    wp_color_management_surface_feedback_v1 object becomes inert.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        inert: int
+        unsupported_feature: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the color management interface for a surface
+        Destroy the wp_color_management_surface_feedback_v1 object.
+        """
+
+        ...
+
+    @staticmethod
+    def get_preferred() -> wp_image_description_v1:
+        """
+        get the preferred image description
+        If this protocol object is inert, the protocol error inert is raised.
+        The preferred image description represents the compositor's preferred
+        color encoding for this wl_surface at the current time. There might be
+        performance and power advantages, as well as improved color
+        reproduction, if the image description of a content update matches the
+        preferred image description.
+        This creates a new wp_image_description_v1 object for the currently
+        preferred image description for the wl_surface. The client should
+        stop using and destroy the image descriptions created by earlier
+        invocations of this request for the associated wl_surface.
+        This request is usually sent as a reaction to the preferred_changed
+        event or when creating a wp_color_management_surface_feedback_v1 object
+        if the client is capable of adapting to image descriptions.
+        The created wp_image_description_v1 object preserves the preferred image
+        description of the wl_surface from the time the object was created.
+        The resulting image description object allows get_information request.
+        If the image description is parametric, the client should set it on its
+        wl_surface only if the image description is an exact match with the
+        client content. Particularly if everything else matches, but the target
+        color volume is greater than what the client needs, the client should
+        create its own parameric image description with its exact parameters.
+        If the interface version is inadequate for the preferred image
+        description, meaning that the client does not support all the
+        events needed to deliver the crucial information, the resulting image
+        description object shall immediately deliver the
+        wp_image_description_v1.failed event with the low_version cause,
+        otherwise the object shall immediately deliver the ready event.
+        """
+
+        ...
+
+    @staticmethod
+    def get_preferred_parametric() -> wp_image_description_v1:
+        """
+        get the preferred image description
+        The same description as for get_preferred applies, except the returned
+        image description is guaranteed to be parametric. This is meant for
+        clients that can only deal with parametric image descriptions.
+        If the compositor doesn't support parametric image descriptions, the
+        unsupported_feature error is emitted.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def preferred_changed(identity: uint) -> None:
+            """
+            the preferred image description changed
+            The preferred image description is the one which likely has the most
+            performance and/or quality benefits for the compositor if used by the
+            client for its wl_surface contents. This event is sent whenever the
+            compositor changes the wl_surface's preferred image description.
+            This event sends the identity of the new preferred state as the argument,
+            so clients who are aware of the image description already can reuse it.
+            Otherwise, if the client client wants to know what the preferred image
+            description is, it shall use the get_preferred request.
+            The preferred image description is not automatically used for anything.
+            It is only a hint, and clients may set any valid image description with
+            set_image_description, but there might be performance and color accuracy
+            improvements by providing the wl_surface contents in the preferred
+            image description. Therefore clients that can, should render according
+            to the preferred image description
+            """
+
+            ...
+class wp_image_description_creator_icc_v1:
+    """
+    holder of image description ICC information
+    This type of object is used for collecting all the information required
+    to create a wp_image_description_v1 object from an ICC file. A complete
+    set of required parameters consists of these properties:
+    - ICC file
+    Each required property must be set exactly once if the client is to create
+    an image description. The set requests verify that a property was not
+    already set. The create request verifies that all required properties are
+    set. There may be several alternative requests for setting each property,
+    and in that case the client must choose one of them.
+    Once all properties have been set, the create request must be used to
+    create the image description object, destroying the creator in the
+    process.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        incomplete_set: int
+        already_set: int
+        bad_fd: int
+        bad_size: int
+        out_of_file: int
+
+    @staticmethod
+    def create() -> wp_image_description_v1:
+        """
+        Create the image description object from ICC data
+        Create an image description object based on the ICC information
+        previously set on this object. A compositor must parse the ICC data in
+        some undefined but finite amount of time.
+        The completeness of the parameter set is verified. If the set is not
+        complete, the protocol error incomplete_set is raised. For the
+        definition of a complete set, see the description of this interface.
+        If the particular combination of the information is not supported
+        by the compositor, the resulting image description object shall
+        immediately deliver the wp_image_description_v1.failed event with the
+        'unsupported' cause. If a valid image description was created from the
+        information, the wp_image_description_v1.ready event will eventually
+        be sent instead.
+        This request destroys the wp_image_description_creator_icc_v1 object.
+        The resulting image description object does not allow get_information
+        request.
+        """
+
+        ...
+
+    @staticmethod
+    def set_icc_file(icc_profile: fd, offset: uint, length: uint) -> None:
+        """
+        set the ICC profile file
+        Sets the ICC profile file to be used as the basis of the image
+        description.
+        The data shall be found through the given fd at the given offset, having
+        the given length. The fd must be seekable and readable. Violating these
+        requirements raises the bad_fd protocol error.
+        If reading the data fails due to an error independent of the client, the
+        compositor shall send the wp_image_description_v1.failed event on the
+        created wp_image_description_v1 with the 'operating_system' cause.
+        The maximum size of the ICC profile is 32 MB. If length is greater than
+        that or zero, the protocol error bad_size is raised. If offset + length
+        exceeds the file size, the protocol error out_of_file is raised.
+        A compositor may read the file at any time starting from this request
+        and only until whichever happens first:
+        - If create request was issued, the wp_image_description_v1 object
+        delivers either failed or ready event; or
+        - if create request was not issued, this
+        wp_image_description_creator_icc_v1 object is destroyed.
+        A compositor shall not modify the contents of the file, and the fd may
+        be sealed for writes and size changes. The client must ensure to its
+        best ability that the data does not change while the compositor is
+        reading it.
+        The data must represent a valid ICC profile. The ICC profile version
+        must be 2 or 4, it must be a 3 channel profile and the class must be
+        Display or ColorSpace. Violating these requirements will not result in a
+        protocol error, but will eventually send the
+        wp_image_description_v1.failed event on the created
+        wp_image_description_v1 with the 'unsupported' cause.
+        See the International Color Consortium specification ICC.1:2022 for more
+        details about ICC profiles.
+        If ICC file has already been set on this object, the protocol error
+        already_set is raised.
+        """
+
+        ...
+class wp_image_description_creator_params_v1:
+    """
+    holder of image description parameters
+    This type of object is used for collecting all the parameters required
+    to create a wp_image_description_v1 object. A complete set of required
+    parameters consists of these properties:
+    - transfer characteristic function (tf)
+    - chromaticities of primaries and white point (primary color volume)
+    The following properties are optional and have a well-defined default
+    if not explicitly set:
+    - primary color volume luminance range
+    - reference white luminance level
+    - mastering display primaries and white point (target color volume)
+    - mastering luminance range
+    The following properties are optional and will be ignored
+    if not explicitly set:
+    - maximum content light level
+    - maximum frame-average light level
+    Each required property must be set exactly once if the client is to create
+    an image description. The set requests verify that a property was not
+    already set. The create request verifies that all required properties are
+    set. There may be several alternative requests for setting each property,
+    and in that case the client must choose one of them.
+    Once all properties have been set, the create request must be used to
+    create the image description object, destroying the creator in the
+    process.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        incomplete_set: int
+        already_set: int
+        unsupported_feature: int
+        invalid_tf: int
+        invalid_primaries_named: int
+        invalid_luminance: int
+
+    @staticmethod
+    def create() -> wp_image_description_v1:
+        """
+        Create the image description object using params
+        Create an image description object based on the parameters previously
+        set on this object.
+        The completeness of the parameter set is verified. If the set is not
+        complete, the protocol error incomplete_set is raised. For the
+        definition of a complete set, see the description of this interface.
+        The protocol error invalid_luminance is raised if any of the following
+        requirements is not met:
+        - When max_cll is set, it must be greater than min L and less or equal
+        to max L of the mastering luminance range.
+        - When max_fall is set, it must be greater than min L and less or equal
+        to max L of the mastering luminance range.
+        - When both max_cll and max_fall are set, max_fall must be less or equal
+        to max_cll.
+        If the particular combination of the parameter set is not supported
+        by the compositor, the resulting image description object shall
+        immediately deliver the wp_image_description_v1.failed event with the
+        'unsupported' cause. If a valid image description was created from the
+        parameter set, the wp_image_description_v1.ready event will eventually
+        be sent instead.
+        This request destroys the wp_image_description_creator_params_v1
+        object.
+        The resulting image description object does not allow get_information
+        request.
+        """
+
+        ...
+
+    @staticmethod
+    def set_tf_named(tf: wp_image_description_creator_params_v1.wp_color_manager_v1.transfer_function) -> None:
+        """
+        named transfer characteristic
+        Sets the transfer characteristic using explicitly enumerated named
+        functions.
+        When the resulting image description is attached to an image, the
+        content should be encoded and decoded according to the industry standard
+        practices for the transfer characteristic.
+        Only names advertised with wp_color_manager_v1 event supported_tf_named
+        are allowed. Other values shall raise the protocol error invalid_tf.
+        If transfer characteristic has already been set on this object, the
+        protocol error already_set is raised.
+        """
+
+        ...
+
+    @staticmethod
+    def set_tf_power(eexp: uint) -> None:
+        """
+        transfer characteristic as a power curve
+        Sets the color component transfer characteristic to a power curve with
+        the given exponent. Negative values are handled by mirroring the
+        positive half of the curve through the origin. The valid domain and
+        range of the curve are all finite real numbers. This curve represents
+        the conversion from electrical to optical color channel values.
+        When the resulting image description is attached to an image, the
+        content should be encoded with the inverse of the power curve.
+        The curve exponent shall be multiplied by 10000 to get the argument eexp
+        value to carry the precision of 4 decimals.
+        The curve exponent must be at least 1.0 and at most 10.0. Otherwise the
+        protocol error invalid_tf is raised.
+        If transfer characteristic has already been set on this object, the
+        protocol error already_set is raised.
+        This request can be used when the compositor advertises
+        wp_color_manager_v1.feature.set_tf_power. Otherwise this request raises
+        the protocol error unsupported_feature.
+        """
+
+        ...
+
+    @staticmethod
+    def set_primaries_named(primaries: wp_image_description_creator_params_v1.wp_color_manager_v1.primaries) -> None:
+        """
+        named primaries
+        Sets the color primaries and white point using explicitly named sets.
+        This describes the primary color volume which is the basis for color
+        value encoding.
+        Only names advertised with wp_color_manager_v1 event
+        supported_primaries_named are allowed. Other values shall raise the
+        protocol error invalid_primaries_named.
+        If primaries have already been set on this object, the protocol error
+        already_set is raised.
+        """
+
+        ...
+
+    @staticmethod
+    def set_primaries(r_x: int, r_y: int, g_x: int, g_y: int, b_x: int, b_y: int, w_x: int, w_y: int) -> None:
+        """
+        primaries as chromaticity coordinates
+        Sets the color primaries and white point using CIE 1931 xy chromaticity
+        coordinates. This describes the primary color volume which is the basis
+        for color value encoding.
+        Each coordinate value is multiplied by 1 million to get the argument
+        value to carry precision of 6 decimals.
+        If primaries have already been set on this object, the protocol error
+        already_set is raised.
+        This request can be used if the compositor advertises
+        wp_color_manager_v1.feature.set_primaries. Otherwise this request raises
+        the protocol error unsupported_feature.
+        """
+
+        ...
+
+    @staticmethod
+    def set_luminances(min_lum: uint, max_lum: uint, reference_lum: uint) -> None:
+        """
+        primary color volume luminance range and reference white
+        Sets the primary color volume luminance range and the reference white
+        luminance level. These values include the minimum display emission
+        and ambient flare luminances, assumed to be optically additive and have
+        the chromaticity of the primary color volume white point.
+        The default luminances from
+        https://www.color.org/chardata/rgb/srgb.xalter are
+        - primary color volume minimum: 0.2 cd/m²
+        - primary color volume maximum: 80 cd/m²
+        - reference white: 80 cd/m²
+        Setting a named transfer characteristic can imply other default
+        luminances.
+        The default luminances get overwritten when this request is used.
+        With transfer_function.st2084_pq the given 'max_lum' value is ignored,
+        and 'max_lum' is taken as 'min_lum' + 10000 cd/m².
+        'min_lum' and 'max_lum' specify the minimum and maximum luminances of
+        the primary color volume as reproduced by the targeted display.
+        'reference_lum' specifies the luminance of the reference white as
+        reproduced by the targeted display, and reflects the targeted viewing
+        environment.
+        Compositors should make sure that all content is anchored, meaning that
+        an input signal level of 'reference_lum' on one image description and
+        another input signal level of 'reference_lum' on another image
+        description should produce the same output level, even though the
+        'reference_lum' on both image representations can be different.
+        'reference_lum' may be higher than 'max_lum'. In that case reaching
+        the reference white output level in image content requires the
+        'extended_target_volume' feature support.
+        If 'max_lum' or 'reference_lum' are less than or equal to 'min_lum',
+        the protocol error invalid_luminance is raised.
+        The minimum luminance is multiplied by 10000 to get the argument
+        'min_lum' value and carries precision of 4 decimals. The maximum
+        luminance and reference white luminance values are unscaled.
+        If the primary color volume luminance range and the reference white
+        luminance level have already been set on this object, the protocol error
+        already_set is raised.
+        This request can be used if the compositor advertises
+        wp_color_manager_v1.feature.set_luminances. Otherwise this request
+        raises the protocol error unsupported_feature.
+        """
+
+        ...
+
+    @staticmethod
+    def set_mastering_display_primaries(r_x: int, r_y: int, g_x: int, g_y: int, b_x: int, b_y: int, w_x: int, w_y: int) -> None:
+        """
+        mastering display primaries as chromaticity coordinates
+        Provides the color primaries and white point of the mastering display
+        using CIE 1931 xy chromaticity coordinates. This is compatible with the
+        SMPTE ST 2086 definition of HDR static metadata.
+        The mastering display primaries and mastering display luminances define
+        the target color volume.
+        If mastering display primaries are not explicitly set, the target color
+        volume is assumed to have the same primaries as the primary color volume.
+        The target color volume is defined by all tristimulus values between 0.0
+        and 1.0 (inclusive) of the color space defined by the given mastering
+        display primaries and white point. The colorimetry is identical between
+        the container color space and the mastering display color space,
+        including that no chromatic adaptation is applied even if the white
+        points differ.
+        The target color volume can exceed the primary color volume to allow for
+        a greater color volume with an existing color space definition (for
+        example scRGB). It can be smaller than the primary color volume to
+        minimize gamut and tone mapping distances for big color spaces (HDR
+        metadata).
+        To make use of the entire target color volume a suitable pixel format
+        has to be chosen (e.g. floating point to exceed the primary color
+        volume, or abusing limited quantization range as with xvYCC).
+        Each coordinate value is multiplied by 1 million to get the argument
+        value to carry precision of 6 decimals.
+        If mastering display primaries have already been set on this object, the
+        protocol error already_set is raised.
+        This request can be used if the compositor advertises
+        wp_color_manager_v1.feature.set_mastering_display_primaries. Otherwise
+        this request raises the protocol error unsupported_feature. The
+        advertisement implies support only for target color volumes fully
+        contained within the primary color volume.
+        If a compositor additionally supports target color volume exceeding the
+        primary color volume, it must advertise
+        wp_color_manager_v1.feature.extended_target_volume. If a client uses
+        target color volume exceeding the primary color volume and the
+        compositor does not support it, the result is implementation defined.
+        Compositors are recommended to detect this case and fail the image
+        description gracefully, but it may as well result in color artifacts.
+        """
+
+        ...
+
+    @staticmethod
+    def set_mastering_luminance(min_lum: uint, max_lum: uint) -> None:
+        """
+        display mastering luminance range
+        Sets the luminance range that was used during the content mastering
+        process as the minimum and maximum absolute luminance L. These values
+        include the minimum display emission and ambient flare luminances,
+        assumed to be optically additive and have the chromaticity of the
+        primary color volume white point. This should be
+        compatible with the SMPTE ST 2086 definition of HDR static metadata.
+        The mastering display primaries and mastering display luminances define
+        the target color volume.
+        If mastering luminances are not explicitly set, the target color volume
+        is assumed to have the same min and max luminances as the primary color
+        volume.
+        If max L is less than or equal to min L, the protocol error
+        invalid_luminance is raised.
+        Min L value is multiplied by 10000 to get the argument min_lum value
+        and carry precision of 4 decimals. Max L value is unscaled for max_lum.
+        This request can be used if the compositor advertises
+        wp_color_manager_v1.feature.set_mastering_display_primaries. Otherwise
+        this request raises the protocol error unsupported_feature. The
+        advertisement implies support only for target color volumes fully
+        contained within the primary color volume.
+        If a compositor additionally supports target color volume exceeding the
+        primary color volume, it must advertise
+        wp_color_manager_v1.feature.extended_target_volume. If a client uses
+        target color volume exceeding the primary color volume and the
+        compositor does not support it, the result is implementation defined.
+        Compositors are recommended to detect this case and fail the image
+        description gracefully, but it may as well result in color artifacts.
+        """
+
+        ...
+
+    @staticmethod
+    def set_max_cll(max_cll: uint) -> None:
+        """
+        maximum content light level
+        Sets the maximum content light level (max_cll) as defined by CTA-861-H.
+        max_cll is undefined by default.
+        """
+
+        ...
+
+    @staticmethod
+    def set_max_fall(max_fall: uint) -> None:
+        """
+        maximum frame-average light level
+        Sets the maximum frame-average light level (max_fall) as defined by
+        CTA-861-H.
+        max_fall is undefined by default.
+        """
+
+        ...
+class wp_image_description_v1:
+    """
+    Colorimetric image description
+    An image description carries information about the color encoding used on
+    a surface when attached to a wl_surface via
+    wp_color_management_surface_v1.set_image_description. A compositor can use
+    this information to decode pixel values into colorimetrically meaningful
+    quantities.
+    Note, that the wp_image_description_v1 object is not ready to be used
+    immediately after creation. The object eventually delivers either the
+    'ready' or the 'failed' event, specified in all requests creating it. The
+    object is deemed "ready" after receiving the 'ready' event.
+    An object which is not ready is illegal to use, it can only be destroyed.
+    Any other request in this interface shall result in the 'not_ready'
+    protocol error. Attempts to use an object which is not ready through other
+    interfaces shall raise protocol errors defined there.
+    Once created and regardless of how it was created, a
+    wp_image_description_v1 object always refers to one fixed image
+    description. It cannot change after creation.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        not_ready: int
+        no_information: int
+
+
+    class cause(Enum):
+        low_version: int
+        unsupported: int
+        operating_system: int
+        no_output: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the image description
+        Destroy this object. It is safe to destroy an object which is not ready.
+        Destroying a wp_image_description_v1 object has no side-effects, not
+        even if a wp_color_management_surface_v1.set_image_description has not
+        yet been followed by a wl_surface.commit.
+        """
+
+        ...
+
+    @staticmethod
+    def get_information() -> wp_image_description_info_v1:
+        """
+        get information about the image description
+        Creates a wp_image_description_info_v1 object which delivers the
+        information that makes up the image description.
+        Not all image description protocol objects allow get_information
+        request. Whether it is allowed or not is defined by the request that
+        created the object. If get_information is not allowed, the protocol
+        error no_information is raised.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def failed(cause: wp_image_description_v1.cause, msg: string) -> None:
+            """
+            graceful error on creating the image description
+            If creating a wp_image_description_v1 object fails for a reason that is
+            not defined as a protocol error, this event is sent.
+            The requests that create image description objects define whether and
+            when this can occur. Only such creation requests can trigger this event.
+            This event cannot be triggered after the image description was
+            successfully formed.
+            Once this event has been sent, the wp_image_description_v1 object will
+            never become ready and it can only be destroyed.
+            """
+
+            ...
+
+        @staticmethod
+        def ready(identity: uint) -> None:
+            """
+            indication that the object is ready to be used
+            Once this event has been sent, the wp_image_description_v1 object is
+            deemed "ready". Ready objects can be used to send requests and can be
+            used through other interfaces.
+            Every ready wp_image_description_v1 protocol object refers to an
+            underlying image description record in the compositor. Multiple protocol
+            objects may end up referring to the same record. Clients may identify
+            these "copies" by comparing their id numbers: if the numbers from two
+            protocol objects are identical, the protocol objects refer to the same
+            image description record. Two different image description records
+            cannot have the same id number simultaneously. The id number does not
+            change during the lifetime of the image description record.
+            The id number is valid only as long as the protocol object is alive. If
+            all protocol objects referring to the same image description record are
+            destroyed, the id number may be recycled for a different image
+            description record.
+            Image description id number is not a protocol object id. Zero is
+            reserved as an invalid id number. It shall not be possible for a client
+            to refer to an image description by its id number in protocol. The id
+            numbers might not be portable between Wayland connections. A compositor
+            shall not send an invalid id number.
+            This identity allows clients to de-duplicate image description records
+            and avoid get_information request if they already have the image
+            description information.
+            """
+
+            ...
+class wp_image_description_info_v1:
+    """
+    Colorimetric image description information
+    Sends all matching events describing an image description object exactly
+    once and finally sends the 'done' event.
+    This means
+    - if the image description is parametric, it must send
+    - primaries
+    - named_primaries, if applicable
+    - at least one of tf_power and tf_named, as applicable
+    - luminances
+    - target_primaries
+    - target_luminance
+    - if the image description is parametric, it may send, if applicable,
+    - target_max_cll
+    - target_max_fall
+    - if the image description contains an ICC profile, it must send the
+    icc_file event
+    Once a wp_image_description_info_v1 object has delivered a 'done' event it
+    is automatically destroyed.
+    Every wp_image_description_info_v1 created from the same
+    wp_image_description_v1 shall always return the exact same data.
+    """
+    object_id = 0
+    version = 1
+
+    class events:
+        @staticmethod
+        def done() -> None:
+            """
+            end of information
+            Signals the end of information events and destroys the object.
+            """
+
+            ...
+
+        @staticmethod
+        def icc_file(icc: fd, icc_size: uint) -> None:
+            """
+            ICC profile matching the image description
+            The icc argument provides a file descriptor to the client which may be
+            memory-mapped to provide the ICC profile matching the image description.
+            The fd is read-only, and if mapped then it must be mapped with
+            MAP_PRIVATE by the client.
+            The ICC profile version and other details are determined by the
+            compositor. There is no provision for a client to ask for a specific
+            kind of a profile.
+            """
+
+            ...
+
+        @staticmethod
+        def primaries(r_x: int, r_y: int, g_x: int, g_y: int, b_x: int, b_y: int, w_x: int, w_y: int) -> None:
+            """
+            primaries as chromaticity coordinates
+            Delivers the primary color volume primaries and white point using CIE
+            1931 xy chromaticity coordinates.
+            Each coordinate value is multiplied by 1 million to get the argument
+            value to carry precision of 6 decimals.
+            """
+
+            ...
+
+        @staticmethod
+        def primaries_named(primaries: wp_image_description_info_v1.wp_color_manager_v1.primaries) -> None:
+            """
+            named primaries
+            Delivers the primary color volume primaries and white point using an
+            explicitly enumerated named set.
+            """
+
+            ...
+
+        @staticmethod
+        def tf_power(eexp: uint) -> None:
+            """
+            transfer characteristic as a power curve
+            The color component transfer characteristic of this image description is
+            a pure power curve. This event provides the exponent of the power
+            function. This curve represents the conversion from electrical to
+            optical pixel or color values.
+            The curve exponent has been multiplied by 10000 to get the argument eexp
+            value to carry the precision of 4 decimals.
+            """
+
+            ...
+
+        @staticmethod
+        def tf_named(tf: wp_image_description_info_v1.wp_color_manager_v1.transfer_function) -> None:
+            """
+            named transfer characteristic
+            Delivers the transfer characteristic using an explicitly enumerated
+            named function.
+            """
+
+            ...
+
+        @staticmethod
+        def luminances(min_lum: uint, max_lum: uint, reference_lum: uint) -> None:
+            """
+            primary color volume luminance range and reference white
+            Delivers the primary color volume luminance range and the reference
+            white luminance level. These values include the minimum display emission
+            and ambient flare luminances, assumed to be optically additive and have
+            the chromaticity of the primary color volume white point.
+            The minimum luminance is multiplied by 10000 to get the argument
+            'min_lum' value and carries precision of 4 decimals. The maximum
+            luminance and reference white luminance values are unscaled.
+            """
+
+            ...
+
+        @staticmethod
+        def target_primaries(r_x: int, r_y: int, g_x: int, g_y: int, b_x: int, b_y: int, w_x: int, w_y: int) -> None:
+            """
+            target primaries as chromaticity coordinates
+            Provides the color primaries and white point of the target color volume
+            using CIE 1931 xy chromaticity coordinates. This is compatible with the
+            SMPTE ST 2086 definition of HDR static metadata for mastering displays.
+            While primary color volume is about how color is encoded, the target
+            color volume is the actually displayable color volume. If target color
+            volume is equal to the primary color volume, then this event is not
             sent.
-            The compositor must always end a batch of buffer constraint events with
-            this event, regardless of whether it sends the initial constraints or
-            an update.
+            Each coordinate value is multiplied by 1 million to get the argument
+            value to carry precision of 6 decimals.
             """
 
             ...
 
         @staticmethod
-        def stopped() -> None:
+        def target_luminance(min_lum: uint, max_lum: uint) -> None:
             """
-            session is no longer available
-            This event indicates that the capture session has stopped and is no
-            longer available. This can happen in a number of cases, e.g. when the
-            underlying source is destroyed, if the user decides to end the image
-            capture, or if an unrecoverable runtime error has occurred.
-            The client should destroy the session after receiving this event.
+            target luminance range
+            Provides the luminance range that the image description is targeting as
+            the minimum and maximum absolute luminance L. These values include the
+            minimum display emission and ambient flare luminances, assumed to be
+            optically additive and have the chromaticity of the primary color
+            volume white point. This should be compatible with the SMPTE ST 2086
+            definition of HDR static metadata.
+            This luminance range is only theoretical and may not correspond to the
+            luminance of light emitted on an actual display.
+            Min L value is multiplied by 10000 to get the argument min_lum value and
+            carry precision of 4 decimals. Max L value is unscaled for max_lum.
             """
 
             ...
-class ext_image_copy_capture_frame_v1:
+
+        @staticmethod
+        def target_max_cll(max_cll: uint) -> None:
+            """
+            target maximum content light level
+            Provides the targeted max_cll of the image description. max_cll is
+            defined by CTA-861-H.
+            This luminance is only theoretical and may not correspond to the
+            luminance of light emitted on an actual display.
+            """
+
+            ...
+
+        @staticmethod
+        def target_max_fall(max_fall: uint) -> None:
+            """
+            target maximum frame-average light level
+            Provides the targeted max_fall of the image description. max_fall is
+            defined by CTA-861-H.
+            This luminance is only theoretical and may not correspond to the
+            luminance of light emitted on an actual display.
+            """
+
+            ...
+class xdg_activation_v1:
     """
-    image capture frame
-    This object represents an image capture frame.
-    The client should attach a buffer, damage the buffer, and then send a
-    capture request.
-    If the capture is successful, the compositor must send the frame metadata
-    (transform, damage, presentation_time in any order) followed by the ready
-    event.
-    If the capture fails, the compositor must send the failed event.
+    interface for activating surfaces
+    A global interface used for informing the compositor about applications
+    being activated or started, or for applications to request to be
+    activated.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_activation object
+        Notify the compositor that the xdg_activation object will no longer be
+        used.
+        The child objects created via this interface are unaffected and should
+        be destroyed separately.
+        """
+
+        ...
+
+    @staticmethod
+    def get_activation_token() -> xdg_activation_token_v1:
+        """
+        requests a token
+        Creates an xdg_activation_token_v1 object that will provide
+        the initiating client with a unique token for this activation. This
+        token should be offered to the clients to be activated.
+        """
+
+        ...
+
+    @staticmethod
+    def activate(token: string, surface: object) -> None:
+        """
+        notify new interaction being available
+        Requests surface activation. It's up to the compositor to display
+        this information as desired, for example by placing the surface above
+        the rest.
+        The compositor may know who requested this by checking the activation
+        token and might decide not to follow through with the activation if it's
+        considered unwanted.
+        Compositors can ignore unknown activation tokens when an invalid
+        token is passed.
+        """
+
+        ...
+class xdg_activation_token_v1:
+    """
+    an exported activation handle
+    An object for setting up a token and receiving a token handle that can
+    be passed as an activation token to another client.
+    The object is created using the xdg_activation_v1.get_activation_token
+    request. This object should then be populated with the app_id, surface
+    and serial information and committed. The compositor shall then issue a
+    done event with the token. In case the request's parameters are invalid,
+    the compositor will provide an invalid token.
     """
     object_id = 0
     version = 1
 
     class error(Enum):
-        no_buffer: int
-        invalid_buffer_damage: int
-        already_captured: int
+        already_used: int
 
+    @staticmethod
+    def set_serial(serial: uint, seat: object) -> None:
+        """
+        specifies the seat and serial of the activating event
+        Provides information about the seat and serial event that requested the
+        token.
+        The serial can come from an input or focus event. For instance, if a
+        click triggers the launch of a third-party client, the launcher client
+        should send a set_serial request with the serial and seat from the
+        wl_pointer.button event.
+        Some compositors might refuse to activate toplevels when the token
+        doesn't have a valid and recent enough event serial.
+        Must be sent before commit. This information is optional.
+        """
 
-    class failure_reason(Enum):
-        unknown: int
-        buffer_constraints: int
-        stopped: int
+        ...
+
+    @staticmethod
+    def set_app_id(app_id: string) -> None:
+        """
+        specifies the application being activated
+        The requesting client can specify an app_id to associate the token
+        being created with it.
+        Must be sent before commit. This information is optional.
+        """
+
+        ...
+
+    @staticmethod
+    def set_surface(surface: object) -> None:
+        """
+        specifies the surface requesting activation
+        This request sets the surface requesting the activation. Note, this is
+        different from the surface that will be activated.
+        Some compositors might refuse to activate toplevels when the token
+        doesn't have a requesting surface.
+        Must be sent before commit. This information is optional.
+        """
+
+        ...
+
+    @staticmethod
+    def commit() -> None:
+        """
+        issues the token request
+        Requests an activation token based on the different parameters that
+        have been offered through set_serial, set_surface and set_app_id.
+        """
+
+        ...
 
     @staticmethod
     def destroy() -> None:
         """
-        destroy this object
-        Destroys the session. This request can be sent at any time by the
-        client.
-        """
-
-        ...
-
-    @staticmethod
-    def attach_buffer(buffer: object) -> None:
-        """
-        attach buffer to session
-        Attach a buffer to the session.
-        The wl_buffer.release request is unused.
-        The new buffer replaces any previously attached buffer.
-        This request must not be sent after capture, or else the
-        already_captured protocol error is raised.
-        """
-
-        ...
-
-    @staticmethod
-    def damage_buffer(x: int, y: int, width: int, height: int) -> None:
-        """
-        damage buffer
-        Apply damage to the buffer which is to be captured next. This request
-        may be sent multiple times to describe a region.
-        The client indicates the accumulated damage since this wl_buffer was
-        last captured. During capture, the compositor will update the buffer
-        with at least the union of the region passed by the client and the
-        region advertised by ext_image_copy_capture_frame_v1.damage.
-        When a wl_buffer is captured for the first time, or when the client
-        doesn't track damage, the client must damage the whole buffer.
-        This is for optimisation purposes. The compositor may use this
-        information to reduce copying.
-        These coordinates originate from the upper left corner of the buffer.
-        If x or y are strictly negative, or if width or height are negative or
-        zero, the invalid_buffer_damage protocol error is raised.
-        This request must not be sent after capture, or else the
-        already_captured protocol error is raised.
-        """
-
-        ...
-
-    @staticmethod
-    def capture() -> None:
-        """
-        capture a frame
-        Capture a frame.
-        Unless this is the first successful captured frame performed in this
-        session, the compositor may wait an indefinite amount of time for the
-        source content to change before performing the copy.
-        This request may only be sent once, or else the already_captured
-        protocol error is raised. A buffer must be attached before this request
-        is sent, or else the no_buffer protocol error is raised.
+        destroy the xdg_activation_token_v1 object
+        Notify the compositor that the xdg_activation_token_v1 object will no
+        longer be used. The received token stays valid.
         """
 
         ...
     class events:
         @staticmethod
-        def transform(transform: ext_image_copy_capture_frame_v1.wl_output.transform) -> None:
+        def done(token: string) -> None:
             """
-            buffer transform
-            This event is sent before the ready event and holds the transform that
-            the compositor has applied to the buffer contents.
-            """
-
-            ...
-
-        @staticmethod
-        def damage(x: int, y: int, width: int, height: int) -> None:
-            """
-            buffer damaged region
-            This event is sent before the ready event. It may be generated multiple
-            times to describe a region.
-            The first captured frame in a session will always carry full damage.
-            Subsequent frames' damaged regions describe which parts of the buffer
-            have changed since the last ready event.
-            These coordinates originate in the upper left corner of the buffer.
+            the exported activation token
+            The 'done' event contains the unique token of this activation request
+            and notifies that the provider is done.
             """
 
             ...
-
-        @staticmethod
-        def presentation_time(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
-            """
-            presentation time of the frame
-            This event indicates the time at which the frame is presented to the
-            output in system monotonic time. This event is sent before the ready
-            event.
-            The timestamp is expressed as tv_sec_hi, tv_sec_lo, tv_nsec triples,
-            each component being an unsigned 32-bit value. Whole seconds are in
-            tv_sec which is a 64-bit value combined from tv_sec_hi and tv_sec_lo,
-            and the additional fractional part in tv_nsec as nanoseconds. Hence,
-            for valid timestamps tv_nsec must be in [0, 999999999].
-            """
-
-            ...
-
-        @staticmethod
-        def ready() -> None:
-            """
-            frame is available for reading
-            Called as soon as the frame is copied, indicating it is available
-            for reading.
-            The buffer may be re-used by the client after this event.
-            After receiving this event, the client must destroy the object.
-            """
-
-            ...
-
-        @staticmethod
-        def failed(reason: ext_image_copy_capture_frame_v1.failure_reason) -> None:
-            """
-            capture failed
-            This event indicates that the attempted frame copy has failed.
-            After receiving this event, the client must destroy the object.
-            """
-
-            ...
-class ext_image_copy_capture_cursor_session_v1:
+class wp_fractional_scale_manager_v1:
     """
-    cursor capture session
-    This object represents a cursor capture session. It extends the base
-    capture session with cursor-specific metadata.
+    fractional surface scale information
+    A global interface for requesting surfaces to use fractional scales.
     """
     object_id = 0
     version = 1
 
     class error(Enum):
-        duplicate_session: int
+        fractional_scale_exists: int
 
     @staticmethod
     def destroy() -> None:
         """
-        delete this object
-        Destroys the session. This request can be sent at any time by the
-        client.
-        This request doesn't affect ext_image_copy_capture_frame_v1 objects created by
-        this object.
+        unbind the fractional surface scale interface
+        Informs the server that the client will not be using this protocol
+        object anymore. This does not affect any other objects,
+        wp_fractional_scale_v1 objects included.
         """
 
         ...
 
     @staticmethod
-    def get_capture_session() -> ext_image_copy_capture_session_v1:
+    def get_fractional_scale(surface: object) -> wp_fractional_scale_v1:
         """
-        get image copy captuerer session
-        Gets the image copy capture session for this cursor session.
-        The session will produce frames of the cursor image. The compositor may
-        pause the session when the cursor leaves the captured area.
-        This request must not be sent more than once, or else the
-        duplicate_session protocol error is raised.
+        extend surface interface for scale information
+        Create an add-on object for the the wl_surface to let the compositor
+        request fractional scales. If the given wl_surface already has a
+        wp_fractional_scale_v1 object associated, the fractional_scale_exists
+        protocol error is raised.
+        """
+
+        ...
+class wp_fractional_scale_v1:
+    """
+    fractional scale interface to a wl_surface
+    An additional interface to a wl_surface object which allows the compositor
+    to inform the client of the preferred scale.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        remove surface scale information for surface
+        Destroy the fractional scale object. When this object is destroyed,
+        preferred_scale events will no longer be sent.
         """
 
         ...
     class events:
         @staticmethod
-        def enter() -> None:
+        def preferred_scale(scale: uint) -> None:
             """
-            cursor entered captured area
-            Sent when a cursor enters the captured area. It shall be generated
-            before the "position" and "hotspot" events when and only when a cursor
-            enters the area.
-            The cursor enters the captured area when the cursor image intersects
-            with the captured area. Note, this is different from e.g.
-            wl_pointer.enter.
+            notify of new preferred scale
+            Notification of a new preferred scale for this surface that the
+            compositor suggests that the client should use.
+            The sent scale is the numerator of a fraction with a denominator of 120.
+            """
+
+            ...
+class ext_workspace_manager_v1:
+    """
+    list and control workspaces
+    Workspaces, also called virtual desktops, are groups of surfaces. A
+    compositor with a concept of workspaces may only show some such groups of
+    surfaces (those of 'active' workspaces) at a time. 'Activating' a
+    workspace is a request for the compositor to display that workspace's
+    surfaces as normal, whereas the compositor may hide or otherwise
+    de-emphasise surfaces that are associated only with 'inactive' workspaces.
+    Workspaces are grouped by which sets of outputs they correspond to, and
+    may contain surfaces only from those outputs. In this way, it is possible
+    for each output to have its own set of workspaces, or for all outputs (or
+    any other arbitrary grouping) to share workspaces. Compositors may
+    optionally conceptually arrange each group of workspaces in an
+    N-dimensional grid.
+    The purpose of this protocol is to enable the creation of taskbars and
+    docks by providing them with a list of workspaces and their properties,
+    and allowing them to activate and deactivate workspaces.
+    After a client binds the ext_workspace_manager_v1, each workspace will be
+    sent via the workspace event.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def commit() -> None:
+        """
+        all requests about the workspaces have been sent
+        The client must send this request after it has finished sending other
+        requests. The compositor must process a series of requests preceding a
+        commit request atomically.
+        This allows changes to the workspace properties to be seen as atomic,
+        even if they happen via multiple events, and even if they involve
+        multiple ext_workspace_handle_v1 objects, for example, deactivating one
+        workspace and activating another.
+        """
+
+        ...
+
+    @staticmethod
+    def stop() -> None:
+        """
+        stop sending events
+        Indicates the client no longer wishes to receive events for new
+        workspace groups. However the compositor may emit further workspace
+        events, until the finished event is emitted. The compositor is expected
+        to send the finished event eventually once the stop request has been processed.
+        The client must not send any requests after this one, doing so will raise a wl_display
+        invalid_object error.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def workspace_group(workspace_group: ext_workspace_group_handle_v1) -> None:
+            """
+            a workspace group has been created
+            This event is emitted whenever a new workspace group has been created.
+            All initial details of the workspace group (outputs) will be
+            sent immediately after this event via the corresponding events in
+            ext_workspace_group_handle_v1 and ext_workspace_handle_v1.
             """
 
             ...
 
         @staticmethod
-        def leave() -> None:
+        def workspace(workspace: ext_workspace_handle_v1) -> None:
             """
-            cursor left captured area
-            Sent when a cursor leaves the captured area. No "position" or "hotspot"
-            event is generated for the cursor until the cursor enters the captured
-            area again.
-            """
-
-            ...
-
-        @staticmethod
-        def position(x: int, y: int) -> None:
-            """
-            position changed
-            Cursors outside the image capture source do not get captured and no
-            event will be generated for them.
-            The given position is the position of the cursor's hotspot and it is
-            relative to the main buffer's top left corner in transformed buffer
-            pixel coordinates. The coordinates may be negative or greater than the
-            main buffer size.
+            workspace has been created
+            This event is emitted whenever a new workspace has been created.
+            All initial details of the workspace (name, coordinates, state) will
+            be sent immediately after this event via the corresponding events in
+            ext_workspace_handle_v1.
+            Workspaces start off unassigned to any workspace group.
             """
 
             ...
 
         @staticmethod
-        def hotspot(x: int, y: int) -> None:
+        def done() -> None:
             """
-            hotspot changed
-            The hotspot describes the offset between the cursor image and the
-            position of the input device.
-            The given coordinates are the hotspot's offset from the origin in
-            buffer coordinates.
-            Clients should not apply the hotspot immediately: the hotspot becomes
-            effective when the next ext_image_copy_capture_frame_v1.ready event is received.
-            Compositors may delay this event until the client captures a new frame.
+            all information about the workspaces and workspace groups has been sent
+            This event is sent after all changes in all workspaces and workspace groups have been
+            sent.
+            This allows changes to one or more ext_workspace_group_handle_v1
+            properties and ext_workspace_handle_v1 properties
+            to be seen as atomic, even if they happen via multiple events.
+            In particular, an output moving from one workspace group to
+            another sends an output_enter event and an output_leave event to the two
+            ext_workspace_group_handle_v1 objects in question. The compositor sends
+            the done event only after updating the output information in both
+            workspace groups.
+            """
+
+            ...
+
+        @staticmethod
+        def finished() -> None:
+            """
+            the compositor has finished with the workspace_manager
+            This event indicates that the compositor is done sending events to the
+            ext_workspace_manager_v1. The server will destroy the object
+            immediately after sending this request.
+            """
+
+            ...
+class ext_workspace_group_handle_v1:
+    """
+    a workspace group assigned to a set of outputs
+    A ext_workspace_group_handle_v1 object represents a workspace group
+    that is assigned a set of outputs and contains a number of workspaces.
+    The set of outputs assigned to the workspace group is conveyed to the client via
+    output_enter and output_leave events, and its workspaces are conveyed with
+    workspace events.
+    For example, a compositor which has a set of workspaces for each output may
+    advertise a workspace group (and its workspaces) per output, whereas a compositor
+    where a workspace spans all outputs may advertise a single workspace group for all
+    outputs.
+    """
+    object_id = 0
+    version = 1
+
+    class group_capabilities(IntFlag):
+        create_workspace: int
+
+    @staticmethod
+    def create_workspace(workspace: string) -> None:
+        """
+        create a new workspace
+        Request that the compositor create a new workspace with the given name
+        and assign it to this group.
+        There is no guarantee that the compositor will create a new workspace,
+        or that the created workspace will have the provided name.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the ext_workspace_group_handle_v1 object
+        Destroys the ext_workspace_group_handle_v1 object.
+        This request should be send either when the client does not want to
+        use the workspace group object any more or after the removed event to finalize
+        the destruction of the object.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def capabilities(capabilities: ext_workspace_group_handle_v1.group_capabilities) -> None:
+            """
+            compositor capabilities
+            This event advertises the capabilities supported by the compositor. If
+            a capability isn't supported, clients should hide or disable the UI
+            elements that expose this functionality. For instance, if the
+            compositor doesn't advertise support for creating workspaces, a button
+            triggering the create_workspace request should not be displayed.
+            The compositor will ignore requests it doesn't support. For instance,
+            a compositor which doesn't advertise support for creating workspaces will ignore
+            create_workspace requests.
+            Compositors must send this event once after creation of an
+            ext_workspace_group_handle_v1. When the capabilities change, compositors
+            must send this event again.
+            """
+
+            ...
+
+        @staticmethod
+        def output_enter(output: object) -> None:
+            """
+            output assigned to workspace group
+            This event is emitted whenever an output is assigned to the workspace
+            group or a new `wl_output` object is bound by the client, which was already
+            assigned to this workspace_group.
+            """
+
+            ...
+
+        @staticmethod
+        def output_leave(output: object) -> None:
+            """
+            output removed from workspace group
+            This event is emitted whenever an output is removed from the workspace
+            group.
+            """
+
+            ...
+
+        @staticmethod
+        def workspace_enter(workspace: object) -> None:
+            """
+            workspace added to workspace group
+            This event is emitted whenever a workspace is assigned to this group.
+            A workspace may only ever be assigned to a single group at a single point
+            in time, but can be re-assigned during it's lifetime.
+            """
+
+            ...
+
+        @staticmethod
+        def workspace_leave(workspace: object) -> None:
+            """
+            workspace removed from workspace group
+            This event is emitted whenever a workspace is removed from this group.
+            """
+
+            ...
+
+        @staticmethod
+        def removed() -> None:
+            """
+            this workspace group has been removed
+            This event is send when the group associated with the ext_workspace_group_handle_v1
+            has been removed. After sending this request the compositor will immediately consider
+            the object inert. Any requests will be ignored except the destroy request.
+            It is guaranteed there won't be any more events referencing this
+            ext_workspace_group_handle_v1.
+            The compositor must remove all workspaces belonging to a workspace group
+            via a workspace_leave event before removing the workspace group.
+            """
+
+            ...
+class ext_workspace_handle_v1:
+    """
+    a workspace handing a group of surfaces
+    A ext_workspace_handle_v1 object represents a workspace that handles a
+    group of surfaces.
+    Each workspace has:
+    - a name, conveyed to the client with the name event
+    - potentially an id conveyed with the id event
+    - a list of states, conveyed to the client with the state event
+    - and optionally a set of coordinates, conveyed to the client with the
+    coordinates event
+    The client may request that the compositor activate or deactivate the workspace.
+    Each workspace can belong to only a single workspace group.
+    Depepending on the compositor policy, there might be workspaces with
+    the same name in different workspace groups, but these workspaces are still
+    separate (e.g. one of them might be active while the other is not).
+    """
+    object_id = 0
+    version = 1
+
+    class state(IntFlag):
+        active: int
+        urgent: int
+        hidden: int
+
+
+    class workspace_capabilities(IntFlag):
+        activate: int
+        deactivate: int
+        remove: int
+        assign: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the ext_workspace_handle_v1 object
+        Destroys the ext_workspace_handle_v1 object.
+        This request should be made either when the client does not want to
+        use the workspace object any more or after the remove event to finalize
+        the destruction of the object.
+        """
+
+        ...
+
+    @staticmethod
+    def activate() -> None:
+        """
+        activate the workspace
+        Request that this workspace be activated.
+        There is no guarantee the workspace will be actually activated, and
+        behaviour may be compositor-dependent. For example, activating a
+        workspace may or may not deactivate all other workspaces in the same
+        group.
+        """
+
+        ...
+
+    @staticmethod
+    def deactivate() -> None:
+        """
+        deactivate the workspace
+        Request that this workspace be deactivated.
+        There is no guarantee the workspace will be actually deactivated.
+        """
+
+        ...
+
+    @staticmethod
+    def assign(workspace_group: object) -> None:
+        """
+        assign workspace to group
+        Requests that this workspace is assigned to the given workspace group.
+        There is no guarantee the workspace will be assigned.
+        """
+
+        ...
+
+    @staticmethod
+    def remove() -> None:
+        """
+        remove the workspace
+        Request that this workspace be removed.
+        There is no guarantee the workspace will be actually removed.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def id(id: string) -> None:
+            """
+            workspace id
+            If this event is emitted, it will be send immediately after the
+            ext_workspace_handle_v1 is created or when an id is assigned to
+            a workspace (at most once during it's lifetime).
+            An id will never change during the lifetime of the `ext_workspace_handle_v1`
+            and is guaranteed to be unique during it's lifetime.
+            Ids are not human-readable and shouldn't be displayed, use `name` for that purpose.
+            Compositors are expected to only send ids for workspaces likely stable across multiple
+            sessions and can be used by clients to store preferences for workspaces. Workspaces without
+            ids should be considered temporary and any data associated with them should be deleted once
+            the respective object is lost.
+            """
+
+            ...
+
+        @staticmethod
+        def name(name: string) -> None:
+            """
+            workspace name changed
+            This event is emitted immediately after the ext_workspace_handle_v1 is
+            created and whenever the name of the workspace changes.
+            A name is meant to be human-readable and can be displayed to a user.
+            Unlike the id it is neither stable nor unique.
+            """
+
+            ...
+
+        @staticmethod
+        def coordinates(coordinates: array) -> None:
+            """
+            workspace coordinates changed
+            This event is used to organize workspaces into an N-dimensional grid
+            within a workspace group, and if supported, is emitted immediately after
+            the ext_workspace_handle_v1 is created and whenever the coordinates of
+            the workspace change. Compositors may not send this event if they do not
+            conceptually arrange workspaces in this way. If compositors simply
+            number workspaces, without any geometric interpretation, they may send
+            1D coordinates, which clients should not interpret as implying any
+            geometry. Sending an empty array means that the compositor no longer
+            orders the workspace geometrically.
+            Coordinates have an arbitrary number of dimensions N with an uint32
+            position along each dimension. By convention if N > 1, the first
+            dimension is X, the second Y, the third Z, and so on. The compositor may
+            chose to utilize these events for a more novel workspace layout
+            convention, however. No guarantee is made about the grid being filled or
+            bounded; there may be a workspace at coordinate 1 and another at
+            coordinate 1000 and none in between. Within a workspace group, however,
+            workspaces must have unique coordinates of equal dimensionality.
+            """
+
+            ...
+
+        @staticmethod
+        def state(state: ext_workspace_handle_v1.state) -> None:
+            """
+            the state of the workspace changed
+            This event is emitted immediately after the ext_workspace_handle_v1 is
+            created and each time the workspace state changes, either because of a
+            compositor action or because of a request in this protocol.
+            Missing states convey the opposite meaning, e.g. an unset active bit
+            means the workspace is currently inactive.
+            """
+
+            ...
+
+        @staticmethod
+        def capabilities(capabilities: ext_workspace_handle_v1.workspace_capabilities) -> None:
+            """
+            compositor capabilities
+            This event advertises the capabilities supported by the compositor. If
+            a capability isn't supported, clients should hide or disable the UI
+            elements that expose this functionality. For instance, if the
+            compositor doesn't advertise support for removing workspaces, a button
+            triggering the remove request should not be displayed.
+            The compositor will ignore requests it doesn't support. For instance,
+            a compositor which doesn't advertise support for remove will ignore
+            remove requests.
+            Compositors must send this event once after creation of an
+            ext_workspace_handle_v1 . When the capabilities change, compositors
+            must send this event again.
+            """
+
+            ...
+
+        @staticmethod
+        def removed() -> None:
+            """
+            this workspace has been removed
+            This event is send when the workspace associated with the ext_workspace_handle_v1
+            has been removed. After sending this request, the compositor will immediately consider
+            the object inert. Any requests will be ignored except the destroy request.
+            It is guaranteed there won't be any more events referencing this
+            ext_workspace_handle_v1.
+            The compositor must only remove a workspaces not currently belonging to any
+            workspace_group.
             """
 
             ...
@@ -4477,142 +5952,6 @@ class ext_session_lock_surface_v1:
             """
 
             ...
-class ext_transient_seat_manager_v1:
-    """
-    transient seat manager
-    The transient seat manager creates short-lived seats.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def create() -> ext_transient_seat_v1:
-        """
-        create a transient seat
-        Create a new seat that is removed when the client side transient seat
-        object is destroyed.
-        The actual seat may be removed sooner, in which case the transient seat
-        object shall become inert.
-        """
-
-        ...
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager
-        Destroy the manager.
-        All objects created by the manager will remain valid until they are
-        destroyed themselves.
-        """
-
-        ...
-class ext_transient_seat_v1:
-    """
-    transient seat handle
-    When the transient seat handle is destroyed, the seat itself will also be
-    destroyed.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy transient seat
-        When the transient seat object is destroyed by the client, the
-        associated seat created by the compositor is also destroyed.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def ready(global_name: uint) -> None:
-            """
-            transient seat is ready
-            This event advertises the global name for the wl_seat to be used with
-            wl_registry_bind.
-            It is sent exactly once, immediately after the transient seat is created
-            and the new "wl_seat" global is advertised, if and only if the creation
-            of the transient seat was allowed.
-            """
-
-            ...
-
-        @staticmethod
-        def denied() -> None:
-            """
-            transient seat creation denied
-            The event informs the client that the compositor denied its request to
-            create a transient seat.
-            It is sent exactly once, immediately after the transient seat object is
-            created, if and only if the creation of the transient seat was denied.
-            After receiving this event, the client should destroy the object.
-            """
-
-            ...
-class wp_fractional_scale_manager_v1:
-    """
-    fractional surface scale information
-    A global interface for requesting surfaces to use fractional scales.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        fractional_scale_exists: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        unbind the fractional surface scale interface
-        Informs the server that the client will not be using this protocol
-        object anymore. This does not affect any other objects,
-        wp_fractional_scale_v1 objects included.
-        """
-
-        ...
-
-    @staticmethod
-    def get_fractional_scale(surface: object) -> wp_fractional_scale_v1:
-        """
-        extend surface interface for scale information
-        Create an add-on object for the the wl_surface to let the compositor
-        request fractional scales. If the given wl_surface already has a
-        wp_fractional_scale_v1 object associated, the fractional_scale_exists
-        protocol error is raised.
-        """
-
-        ...
-class wp_fractional_scale_v1:
-    """
-    fractional scale interface to a wl_surface
-    An additional interface to a wl_surface object which allows the compositor
-    to inform the client of the preferred scale.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        remove surface scale information for surface
-        Destroy the fractional scale object. When this object is destroyed,
-        preferred_scale events will no longer be sent.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def preferred_scale(scale: uint) -> None:
-            """
-            notify of new preferred scale
-            Notification of a new preferred scale for this surface that the
-            compositor suggests that the client should use.
-            The sent scale is the numerator of a fraction with a denominator of 120.
-            """
-
-            ...
 class wp_linux_drm_syncobj_manager_v1:
     """
     global for providing explicit synchronization
@@ -4797,600 +6136,6 @@ class wp_linux_drm_syncobj_surface_v1:
         """
 
         ...
-class wp_security_context_manager_v1:
-    """
-    client security context manager
-    This interface allows a client to register a new Wayland connection to
-    the compositor and attach a security context to it.
-    This is intended to be used by sandboxes. Sandbox engines attach a
-    security context to all connections coming from inside the sandbox. The
-    compositor can then restrict the features that the sandboxed connections
-    can use.
-    Compositors should forbid nesting multiple security contexts by not
-    exposing wp_security_context_manager_v1 global to clients with a security
-    context attached, or by sending the nested protocol error. Nested
-    security contexts are dangerous because they can potentially allow
-    privilege escalation of a sandboxed client.
-    Warning! The protocol described in this file is currently in the testing
-    phase. Backward compatible changes may be added together with the
-    corresponding interface version bump. Backward incompatible changes can
-    only be done by creating a new major version of the extension.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        invalid_listen_fd: int
-        nested: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager object
-        Destroy the manager. This doesn't destroy objects created with the
-        manager.
-        """
-
-        ...
-
-    @staticmethod
-    def create_listener(listen_fd: fd, close_fd: fd) -> wp_security_context_v1:
-        """
-        create a new security context
-        Creates a new security context with a socket listening FD.
-        The compositor will accept new client connections on listen_fd.
-        listen_fd must be ready to accept new connections when this request is
-        sent by the client. In other words, the client must call bind(2) and
-        listen(2) before sending the FD.
-        close_fd is a FD closed by the client when the compositor should stop
-        accepting new connections on listen_fd.
-        The compositor must continue to accept connections on listen_fd when
-        the Wayland client which created the security context disconnects.
-        After sending this request, closing listen_fd and close_fd remains the
-        only valid operation on them.
-        """
-
-        ...
-class wp_security_context_v1:
-    """
-    client security context
-    The security context allows a client to register a new client and attach
-    security context metadata to the connections.
-    When both are set, the combination of the application ID and the sandbox
-    engine must uniquely identify an application. The same application ID
-    will be used across instances (e.g. if the application is restarted, or
-    if the application is started multiple times).
-    When both are set, the combination of the instance ID and the sandbox
-    engine must uniquely identify a running instance of an application.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        already_used: int
-        already_set: int
-        invalid_metadata: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the security context object
-        Destroy the security context object.
-        """
-
-        ...
-
-    @staticmethod
-    def set_sandbox_engine(name: string) -> None:
-        """
-        set the sandbox engine
-        Attach a unique sandbox engine name to the security context. The name
-        should follow the reverse-DNS style (e.g. "org.flatpak").
-        A list of well-known engines is maintained at:
-        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
-        It is a protocol error to call this request twice. The already_set
-        error is sent in this case.
-        """
-
-        ...
-
-    @staticmethod
-    def set_app_id(app_id: string) -> None:
-        """
-        set the application ID
-        Attach an application ID to the security context.
-        The application ID is an opaque, sandbox-specific identifier for an
-        application. See the well-known engines document for more details:
-        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
-        The compositor may use the application ID to group clients belonging to
-        the same security context application.
-        Whether this request is optional or not depends on the sandbox engine used.
-        It is a protocol error to call this request twice. The already_set
-        error is sent in this case.
-        """
-
-        ...
-
-    @staticmethod
-    def set_instance_id(instance_id: string) -> None:
-        """
-        set the instance ID
-        Attach an instance ID to the security context.
-        The instance ID is an opaque, sandbox-specific identifier for a running
-        instance of an application. See the well-known engines document for
-        more details:
-        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
-        Whether this request is optional or not depends on the sandbox engine used.
-        It is a protocol error to call this request twice. The already_set
-        error is sent in this case.
-        """
-
-        ...
-
-    @staticmethod
-    def commit() -> None:
-        """
-        register the security context
-        Atomically register the new client and attach the security context
-        metadata.
-        If the provided metadata is inconsistent or does not match with out of
-        band metadata (see
-        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md),
-        the invalid_metadata error may be sent eventually.
-        It's a protocol error to send any request other than "destroy" after
-        this request. In this case, the already_used error is sent.
-        """
-
-        ...
-class wp_single_pixel_buffer_manager_v1:
-    """
-    global factory for single-pixel buffers
-    The wp_single_pixel_buffer_manager_v1 interface is a factory for
-    single-pixel buffers.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the manager
-        Destroy the wp_single_pixel_buffer_manager_v1 object.
-        The child objects created via this interface are unaffected.
-        """
-
-        ...
-
-    @staticmethod
-    def create_u32_rgba_buffer(r: uint, g: uint, b: uint, a: uint) -> wl_buffer:
-        """
-        create a 1×1 buffer from 32-bit RGBA values
-        Create a single-pixel buffer from four 32-bit RGBA values.
-        Unless specified in another protocol extension, the RGBA values use
-        pre-multiplied alpha.
-        The width and height of the buffer are 1.
-        """
-
-        ...
-class wp_tearing_control_manager_v1:
-    """
-    protocol for tearing control
-    For some use cases like games or drawing tablets it can make sense to
-    reduce latency by accepting tearing with the use of asynchronous page
-    flips. This global is a factory interface, allowing clients to inform
-    which type of presentation the content of their surfaces is suitable for.
-    Graphics APIs like EGL or Vulkan, that manage the buffer queue and commits
-    of a wl_surface themselves, are likely to be using this extension
-    internally. If a client is using such an API for a wl_surface, it should
-    not directly use this extension on that surface, to avoid raising a
-    tearing_control_exists protocol error.
-    Warning! The protocol described in this file is currently in the testing
-    phase. Backward compatible changes may be added together with the
-    corresponding interface version bump. Backward incompatible changes can
-    only be done by creating a new major version of the extension.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        tearing_control_exists: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy tearing control factory object
-        Destroy this tearing control factory object. Other objects, including
-        wp_tearing_control_v1 objects created by this factory, are not affected
-        by this request.
-        """
-
-        ...
-
-    @staticmethod
-    def get_tearing_control(surface: object) -> wp_tearing_control_v1:
-        """
-        extend surface interface for tearing control
-        Instantiate an interface extension for the given wl_surface to request
-        asynchronous page flips for presentation.
-        If the given wl_surface already has a wp_tearing_control_v1 object
-        associated, the tearing_control_exists protocol error is raised.
-        """
-
-        ...
-class wp_tearing_control_v1:
-    """
-    per-surface tearing control interface
-    An additional interface to a wl_surface object, which allows the client
-    to hint to the compositor if the content on the surface is suitable for
-    presentation with tearing.
-    The default presentation hint is vsync. See presentation_hint for more
-    details.
-    If the associated wl_surface is destroyed, this object becomes inert and
-    should be destroyed.
-    """
-    object_id = 0
-    version = 1
-
-    class presentation_hint(Enum):
-        vsync: int
-        async_: int
-
-    @staticmethod
-    def set_presentation_hint(hint: wp_tearing_control_v1.presentation_hint) -> None:
-        """
-        set presentation hint
-        Set the presentation hint for the associated wl_surface. This state is
-        double-buffered, see wl_surface.commit.
-        The compositor is free to dynamically respect or ignore this hint based
-        on various conditions like hardware capabilities, surface state and
-        user preferences.
-        """
-
-        ...
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy tearing control object
-        Destroy this surface tearing object and revert the presentation hint to
-        vsync. The change will be applied on the next wl_surface.commit.
-        """
-
-        ...
-class xdg_activation_v1:
-    """
-    interface for activating surfaces
-    A global interface used for informing the compositor about applications
-    being activated or started, or for applications to request to be
-    activated.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_activation object
-        Notify the compositor that the xdg_activation object will no longer be
-        used.
-        The child objects created via this interface are unaffected and should
-        be destroyed separately.
-        """
-
-        ...
-
-    @staticmethod
-    def get_activation_token() -> xdg_activation_token_v1:
-        """
-        requests a token
-        Creates an xdg_activation_token_v1 object that will provide
-        the initiating client with a unique token for this activation. This
-        token should be offered to the clients to be activated.
-        """
-
-        ...
-
-    @staticmethod
-    def activate(token: string, surface: object) -> None:
-        """
-        notify new interaction being available
-        Requests surface activation. It's up to the compositor to display
-        this information as desired, for example by placing the surface above
-        the rest.
-        The compositor may know who requested this by checking the activation
-        token and might decide not to follow through with the activation if it's
-        considered unwanted.
-        Compositors can ignore unknown activation tokens when an invalid
-        token is passed.
-        """
-
-        ...
-class xdg_activation_token_v1:
-    """
-    an exported activation handle
-    An object for setting up a token and receiving a token handle that can
-    be passed as an activation token to another client.
-    The object is created using the xdg_activation_v1.get_activation_token
-    request. This object should then be populated with the app_id, surface
-    and serial information and committed. The compositor shall then issue a
-    done event with the token. In case the request's parameters are invalid,
-    the compositor will provide an invalid token.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        already_used: int
-
-    @staticmethod
-    def set_serial(serial: uint, seat: object) -> None:
-        """
-        specifies the seat and serial of the activating event
-        Provides information about the seat and serial event that requested the
-        token.
-        The serial can come from an input or focus event. For instance, if a
-        click triggers the launch of a third-party client, the launcher client
-        should send a set_serial request with the serial and seat from the
-        wl_pointer.button event.
-        Some compositors might refuse to activate toplevels when the token
-        doesn't have a valid and recent enough event serial.
-        Must be sent before commit. This information is optional.
-        """
-
-        ...
-
-    @staticmethod
-    def set_app_id(app_id: string) -> None:
-        """
-        specifies the application being activated
-        The requesting client can specify an app_id to associate the token
-        being created with it.
-        Must be sent before commit. This information is optional.
-        """
-
-        ...
-
-    @staticmethod
-    def set_surface(surface: object) -> None:
-        """
-        specifies the surface requesting activation
-        This request sets the surface requesting the activation. Note, this is
-        different from the surface that will be activated.
-        Some compositors might refuse to activate toplevels when the token
-        doesn't have a requesting surface.
-        Must be sent before commit. This information is optional.
-        """
-
-        ...
-
-    @staticmethod
-    def commit() -> None:
-        """
-        issues the token request
-        Requests an activation token based on the different parameters that
-        have been offered through set_serial, set_surface and set_app_id.
-        """
-
-        ...
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_activation_token_v1 object
-        Notify the compositor that the xdg_activation_token_v1 object will no
-        longer be used. The received token stays valid.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def done(token: string) -> None:
-            """
-            the exported activation token
-            The 'done' event contains the unique token of this activation request
-            and notifies that the provider is done.
-            """
-
-            ...
-class xdg_wm_dialog_v1:
-    """
-    create dialogs related to other toplevels
-    The xdg_wm_dialog_v1 interface is exposed as a global object allowing
-    to register surfaces with a xdg_toplevel role as "dialogs" relative to
-    another toplevel.
-    The compositor may let this relation influence how the surface is
-    placed, displayed or interacted with.
-    Warning! The protocol described in this file is currently in the testing
-    phase. Backward compatible changes may be added together with the
-    corresponding interface version bump. Backward incompatible changes can
-    only be done by creating a new major version of the extension.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        already_used: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the dialog manager object
-        Destroys the xdg_wm_dialog_v1 object. This does not affect
-        the xdg_dialog_v1 objects generated through it.
-        """
-
-        ...
-
-    @staticmethod
-    def get_xdg_dialog(toplevel: object) -> xdg_dialog_v1:
-        """
-        create a dialog object
-        Creates a xdg_dialog_v1 object for the given toplevel. See the interface
-        description for more details.
-        Compositors must raise an already_used error if clients attempt to
-        create multiple xdg_dialog_v1 objects for the same xdg_toplevel.
-        """
-
-        ...
-class xdg_dialog_v1:
-    """
-    dialog object
-    A xdg_dialog_v1 object is an ancillary object tied to a xdg_toplevel. Its
-    purpose is hinting the compositor that the toplevel is a "dialog" (e.g. a
-    temporary window) relative to another toplevel (see
-    xdg_toplevel.set_parent). If the xdg_toplevel is destroyed, the xdg_dialog_v1
-    becomes inert.
-    Through this object, the client may provide additional hints about
-    the purpose of the secondary toplevel. This interface has no effect
-    on toplevels that are not attached to a parent toplevel.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the dialog object
-        Destroys the xdg_dialog_v1 object. If this object is destroyed
-        before the related xdg_toplevel, the compositor should unapply its
-        effects.
-        """
-
-        ...
-
-    @staticmethod
-    def set_modal() -> None:
-        """
-        mark dialog as modal
-        Hints that the dialog has "modal" behavior. Modal dialogs typically
-        require to be fully addressed by the user (i.e. closed) before resuming
-        interaction with the parent toplevel, and may require a distinct
-        presentation.
-        Clients must implement the logic to filter events in the parent
-        toplevel on their own.
-        Compositors may choose any policy in event delivery to the parent
-        toplevel, from delivering all events unfiltered to using them for
-        internal consumption.
-        """
-
-        ...
-
-    @staticmethod
-    def unset_modal() -> None:
-        """
-        mark dialog as not modal
-        Drops the hint that this dialog has "modal" behavior. See
-        xdg_dialog_v1.set_modal for more details.
-        """
-
-        ...
-class xdg_toplevel_drag_manager_v1:
-    """
-    Move a window during a drag
-    This protocol enhances normal drag and drop with the ability to move a
-    window at the same time. This allows having detachable parts of a window
-    that when dragged out of it become a new window and can be dragged over
-    an existing window to be reattached.
-    A typical workflow would be when the user starts dragging on top of a
-    detachable part of a window, the client would create a wl_data_source and
-    a xdg_toplevel_drag_v1 object and start the drag as normal via
-    wl_data_device.start_drag. Once the client determines that the detachable
-    window contents should be detached from the originating window, it creates
-    a new xdg_toplevel with these contents and issues a
-    xdg_toplevel_drag_v1.attach request before mapping it. From now on the new
-    window is moved by the compositor during the drag as if the client called
-    xdg_toplevel.move.
-    Dragging an existing window is similar. The client creates a
-    xdg_toplevel_drag_v1 object and attaches the existing toplevel before
-    starting the drag.
-    Clients use the existing drag and drop mechanism to detect when a window
-    can be docked or undocked. If the client wants to snap a window into a
-    parent window it should delete or unmap the dragged top-level. If the
-    contents should be detached again it attaches a new toplevel as described
-    above. If a drag operation is cancelled without being dropped, clients
-    should revert to the previous state, deleting any newly created windows
-    as appropriate. When a drag operation ends as indicated by
-    wl_data_source.dnd_drop_performed the dragged toplevel window's final
-    position is determined as if a xdg_toplevel_move operation ended.
-    Warning! The protocol described in this file is currently in the testing
-    phase. Backward compatible changes may be added together with the
-    corresponding interface version bump. Backward incompatible changes can
-    only be done by creating a new major version of the extension.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        invalid_source: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_toplevel_drag_manager_v1 object
-        Destroy this xdg_toplevel_drag_manager_v1 object. Other objects,
-        including xdg_toplevel_drag_v1 objects created by this factory, are not
-        affected by this request.
-        """
-
-        ...
-
-    @staticmethod
-    def get_xdg_toplevel_drag(data_source: object) -> xdg_toplevel_drag_v1:
-        """
-        get an xdg_toplevel_drag for a wl_data_source
-        Create an xdg_toplevel_drag for a drag and drop operation that is going
-        to be started with data_source.
-        This request can only be made on sources used in drag-and-drop, so it
-        must be performed before wl_data_device.start_drag. Attempting to use
-        the source other than for drag-and-drop such as in
-        wl_data_device.set_selection will raise an invalid_source error.
-        Destroying data_source while a toplevel is attached to the
-        xdg_toplevel_drag is undefined.
-        """
-
-        ...
-class xdg_toplevel_drag_v1:
-    """
-    Object representing a toplevel move during a drag
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        toplevel_attached: int
-        ongoing_drag: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy an xdg_toplevel_drag_v1 object
-        Destroy this xdg_toplevel_drag_v1 object. This request must only be
-        called after the underlying wl_data_source drag has ended, as indicated
-        by the dnd_drop_performed or cancelled events. In any other case an
-        ongoing_drag error is raised.
-        """
-
-        ...
-
-    @staticmethod
-    def attach(toplevel: object, x_offset: int, y_offset: int) -> None:
-        """
-        Move a toplevel with the drag operation
-        Request that the window will be moved with the cursor during the drag
-        operation. The offset is a hint to the compositor how the toplevel
-        should be positioned relative to the cursor hotspot in surface local
-        coordinates. For example it might only be used when an unmapped window
-        is attached. The attached window does not participate in the selection
-        of the drag target.
-        If the toplevel is unmapped while it is attached, it is automatically
-        detached from the drag. In this case this request has to be called again
-        if the window should be attached after it is remapped.
-        This request can be called multiple times but issuing it while a
-        toplevel with an active role is attached raises a toplevel_attached
-        error.
-        """
-
-        ...
 class xdg_toplevel_icon_manager_v1:
     """
     interface to manage toplevel icons
@@ -5538,95 +6283,296 @@ class xdg_toplevel_icon_v1:
         The wl_buffer must be kept alive for as long as the xdg_toplevel_icon
         it is associated with is not destroyed, otherwise a 'no_buffer' error
         is raised. The buffer contents must not be modified after it was
-        assigned to the icon.
+        assigned to the icon. As a result, the region of the wl_shm_pool's
+        backing storage used for the wl_buffer must not be modified after this
+        request is sent. The wl_buffer.release event is unused.
         If this request is made after the icon has been assigned to a toplevel
         via 'set_icon', a 'immutable' error must be raised.
         """
 
         ...
-class xwayland_shell_v1:
+class ext_idle_notifier_v1:
     """
-    context object for Xwayland shell
-    xwayland_shell_v1 is a singleton global object that
-    provides the ability to create a xwayland_surface_v1 object
-    for a given wl_surface.
-    This interface is intended to be bound by the Xwayland server.
-    A compositor must not allow clients other than Xwayland to
-    bind to this interface. A compositor should hide this global
-    from other clients' wl_registry.
-    A client the compositor does not consider to be an Xwayland
-    server attempting to bind this interface will result in
-    an implementation-defined error.
-    An Xwayland server that has bound this interface must not
-    set the `WL_SURFACE_ID` atom on a window.
+    idle notification manager
+    This interface allows clients to monitor user idle status.
+    After binding to this global, clients can create ext_idle_notification_v1
+    objects to get notified when the user is idle for a given amount of time.
+    """
+    object_id = 0
+    version = 2
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        Destroy the manager object. All objects created via this interface
+        remain valid.
+        """
+
+        ...
+
+    @staticmethod
+    def get_idle_notification(timeout: uint, seat: object) -> ext_idle_notification_v1:
+        """
+        create a notification object
+        Create a new idle notification object.
+        The notification object has a minimum timeout duration and is tied to a
+        seat. The client will be notified if the seat is inactive for at least
+        the provided timeout. See ext_idle_notification_v1 for more details.
+        A zero timeout is valid and means the client wants to be notified as
+        soon as possible when the seat is inactive.
+        """
+
+        ...
+
+    @staticmethod
+    def get_input_idle_notification(timeout: uint, seat: object) -> ext_idle_notification_v1:
+        """
+        create a notification object
+        Create a new idle notification object to track input from the
+        user, such as keyboard and mouse movement. Because this object is
+        meant to track user input alone, it ignores idle inhibitors.
+        The notification object has a minimum timeout duration and is tied to a
+        seat. The client will be notified if the seat is inactive for at least
+        the provided timeout. See ext_idle_notification_v1 for more details.
+        A zero timeout is valid and means the client wants to be notified as
+        soon as possible when the seat is inactive.
+        """
+
+        ...
+class ext_idle_notification_v1:
+    """
+    idle notification
+    This interface is used by the compositor to send idle notification events
+    to clients.
+    Initially the notification object is not idle. The notification object
+    becomes idle when no user activity has happened for at least the timeout
+    duration, starting from the creation of the notification object. User
+    activity may include input events or a presence sensor, but is
+    compositor-specific.
+    How this notification responds to idle inhibitors depends on how
+    it was constructed. If constructed from the
+    get_idle_notification request, then if an idle inhibitor is
+    active (e.g. another client has created a zwp_idle_inhibitor_v1
+    on a visible surface), the compositor must not make the
+    notification object idle. However, if constructed from the
+    get_input_idle_notification request, then idle inhibitors are
+    ignored, and only input from the user, e.g. from a keyboard or
+    mouse, counts as activity.
+    When the notification object becomes idle, an idled event is sent. When
+    user activity starts again, the notification object stops being idle,
+    a resumed event is sent and the timeout is restarted.
+    """
+    object_id = 0
+    version = 2
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the notification object
+        Destroy the notification object.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def idled() -> None:
+            """
+            notification object is idle
+            This event is sent when the notification object becomes idle.
+            It's a compositor protocol error to send this event twice without a
+            resumed event in-between.
+            """
+
+            ...
+
+        @staticmethod
+        def resumed() -> None:
+            """
+            notification object is no longer idle
+            This event is sent when the notification object stops being idle.
+            It's a compositor protocol error to send this event twice without an
+            idled event in-between. It's a compositor protocol error to send this
+            event prior to any idled event.
+            """
+
+            ...
+class ext_data_control_manager_v1:
+    """
+    manager to control data devices
+    This interface is a manager that allows creating per-seat data device
+    controls.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def create_data_source() -> ext_data_control_source_v1:
+        """
+        create a new data source
+        Create a new data source.
+        """
+
+        ...
+
+    @staticmethod
+    def get_data_device(seat: object) -> ext_data_control_device_v1:
+        """
+        get a data device for a seat
+        Create a data device that can be used to manage a seat's selection.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        All objects created by the manager will still remain valid, until their
+        appropriate destroy request has been called.
+        """
+
+        ...
+class ext_data_control_device_v1:
+    """
+    manage a data device for a seat
+    This interface allows a client to manage a seat's selection.
+    When the seat is destroyed, this object becomes inert.
     """
     object_id = 0
     version = 1
 
     class error(Enum):
-        role: int
+        used_source: int
+
+    @staticmethod
+    def set_selection(source: object) -> None:
+        """
+        copy data to the selection
+        This request asks the compositor to set the selection to the data from
+        the source on behalf of the client.
+        The given source may not be used in any further set_selection or
+        set_primary_selection requests. Attempting to use a previously used
+        source triggers the used_source protocol error.
+        To unset the selection, set the source to NULL.
+        """
+
+        ...
 
     @staticmethod
     def destroy() -> None:
         """
-        destroy the Xwayland shell object
-        Destroy the xwayland_shell_v1 object.
-        The child objects created via this interface are unaffected.
+        destroy this data device
+        Destroys the data device object.
         """
 
         ...
 
     @staticmethod
-    def get_xwayland_surface(surface: object) -> xwayland_surface_v1:
+    def set_primary_selection(source: object) -> None:
         """
-        assign the xwayland_surface surface role
-        Create an xwayland_surface_v1 interface for a given wl_surface
-        object and gives it the xwayland_surface role.
-        It is illegal to create an xwayland_surface_v1 for a wl_surface
-        which already has an assigned role and this will result in the
-        `role` protocol error.
-        See the documentation of xwayland_surface_v1 for more details
-        about what an xwayland_surface_v1 is and how it is used.
+        copy data to the primary selection
+        This request asks the compositor to set the primary selection to the
+        data from the source on behalf of the client.
+        The given source may not be used in any further set_selection or
+        set_primary_selection requests. Attempting to use a previously used
+        source triggers the used_source protocol error.
+        To unset the primary selection, set the source to NULL.
+        The compositor will ignore this request if it does not support primary
+        selection.
         """
 
         ...
-class xwayland_surface_v1:
+    class events:
+        @staticmethod
+        def data_offer(id: ext_data_control_offer_v1) -> None:
+            """
+            introduce a new ext_data_control_offer
+            The data_offer event introduces a new ext_data_control_offer object,
+            which will subsequently be used in either the
+            ext_data_control_device.selection event (for the regular clipboard
+            selections) or the ext_data_control_device.primary_selection event (for
+            the primary clipboard selections). Immediately following the
+            ext_data_control_device.data_offer event, the new data_offer object
+            will send out ext_data_control_offer.offer events to describe the MIME
+            types it offers.
+            """
+
+            ...
+
+        @staticmethod
+        def selection(id: object) -> None:
+            """
+            advertise new selection
+            The selection event is sent out to notify the client of a new
+            ext_data_control_offer for the selection for this device. The
+            ext_data_control_device.data_offer and the ext_data_control_offer.offer
+            events are sent out immediately before this event to introduce the data
+            offer object. The selection event is sent to a client when a new
+            selection is set. The ext_data_control_offer is valid until a new
+            ext_data_control_offer or NULL is received. The client must destroy the
+            previous selection ext_data_control_offer, if any, upon receiving this
+            event. Regardless, the previous selection will be ignored once a new
+            selection ext_data_control_offer is received.
+            The first selection event is sent upon binding the
+            ext_data_control_device object.
+            """
+
+            ...
+
+        @staticmethod
+        def finished() -> None:
+            """
+            this data control is no longer valid
+            This data control object is no longer valid and should be destroyed by
+            the client.
+            """
+
+            ...
+
+        @staticmethod
+        def primary_selection(id: object) -> None:
+            """
+            advertise new primary selection
+            The primary_selection event is sent out to notify the client of a new
+            ext_data_control_offer for the primary selection for this device. The
+            ext_data_control_device.data_offer and the ext_data_control_offer.offer
+            events are sent out immediately before this event to introduce the data
+            offer object. The primary_selection event is sent to a client when a
+            new primary selection is set. The ext_data_control_offer is valid until
+            a new ext_data_control_offer or NULL is received. The client must
+            destroy the previous primary selection ext_data_control_offer, if any,
+            upon receiving this event. Regardless, the previous primary selection
+            will be ignored once a new primary selection ext_data_control_offer is
+            received.
+            If the compositor supports primary selection, the first
+            primary_selection event is sent upon binding the
+            ext_data_control_device object.
+            """
+
+            ...
+class ext_data_control_source_v1:
     """
-    interface for associating Xwayland windows to wl_surfaces
-    An Xwayland surface is a surface managed by an Xwayland server.
-    It is used for associating surfaces to Xwayland windows.
-    The Xwayland server associated with actions in this interface is
-    determined by the Wayland client making the request.
-    The client must call wl_surface.commit on the corresponding wl_surface
-    for the xwayland_surface_v1 state to take effect.
+    offer to transfer data
+    The ext_data_control_source object is the source side of a
+    ext_data_control_offer. It is created by the source client in a data
+    transfer and provides a way to describe the offered data and a way to
+    respond to requests to transfer the data.
     """
     object_id = 0
     version = 1
 
     class error(Enum):
-        already_associated: int
-        invalid_serial: int
+        invalid_offer: int
 
     @staticmethod
-    def set_serial(serial_lo: uint, serial_hi: uint) -> None:
+    def offer(mime_type: string) -> None:
         """
-        associates a Xwayland window to a wl_surface
-        Associates an Xwayland window to a wl_surface.
-        The association state is double-buffered, see wl_surface.commit.
-        The `serial_lo` and `serial_hi` parameters specify a non-zero
-        monotonic serial number which is entirely unique and provided by the
-        Xwayland server equal to the serial value provided by a client message
-        with a message type of the `WL_SURFACE_SERIAL` atom on the X11 window
-        for this surface to be associated to.
-        The serial value in the `WL_SURFACE_SERIAL` client message is specified
-        as having the lo-bits specified in `l[0]` and the hi-bits specified
-        in `l[1]`.
-        If the serial value provided by `serial_lo` and `serial_hi` is not
-        valid, the `invalid_serial` protocol error will be raised.
-        An X11 window may be associated with multiple surfaces throughout its
-        lifespan. (eg. unmapping and remapping a window).
-        For each wl_surface, this state must not be committed more than once,
-        otherwise the `already_associated` protocol error will be raised.
+        add an offered MIME type
+        This request adds a MIME type to the set of MIME types advertised to
+        targets. Can be called several times to offer multiple types.
+        Calling this after ext_data_control_device.set_selection is a protocol
+        error.
         """
 
         ...
@@ -5634,20 +6580,1292 @@ class xwayland_surface_v1:
     @staticmethod
     def destroy() -> None:
         """
-        destroy the Xwayland surface object
-        Destroy the xwayland_surface_v1 object.
-        Any already existing associations are unaffected by this action.
+        destroy this source
+        Destroys the data source object.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def send(mime_type: string, fd: fd) -> None:
+            """
+            send the data
+            Request for data from the client. Send the data as the specified MIME
+            type over the passed file descriptor, then close it.
+            """
+
+            ...
+
+        @staticmethod
+        def cancelled() -> None:
+            """
+            selection was cancelled
+            This data source is no longer valid. The data source has been replaced
+            by another data source.
+            The client should clean up and destroy this data source.
+            """
+
+            ...
+class ext_data_control_offer_v1:
+    """
+    offer to transfer data
+    A ext_data_control_offer represents a piece of data offered for transfer
+    by another client (the source client). The offer describes the different
+    MIME types that the data can be converted to and provides the mechanism
+    for transferring the data directly from the source client.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def receive(mime_type: string, fd: fd) -> None:
+        """
+        request that the data is transferred
+        To transfer the offered data, the client issues this request and
+        indicates the MIME type it wants to receive. The transfer happens
+        through the passed file descriptor (typically created with the pipe
+        system call). The source client writes the data in the MIME type
+        representation requested and then closes the file descriptor.
+        The receiving client reads from the read end of the pipe until EOF and
+        then closes its end, at which point the transfer is complete.
+        This request may happen multiple times for different MIME types.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy this offer
+        Destroys the data offer object.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def offer(mime_type: string) -> None:
+            """
+            advertise offered MIME type
+            Sent immediately after creating the ext_data_control_offer object.
+            One event per offered MIME type.
+            """
+
+            ...
+class ext_image_copy_capture_manager_v1:
+    """
+    manager to inform clients and begin capturing
+    This object is a manager which offers requests to start capturing from a
+    source.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        invalid_option: int
+
+
+    class options(IntFlag):
+        paint_cursors: int
+
+    @staticmethod
+    def create_session(source: object, options: ext_image_copy_capture_manager_v1.options) -> ext_image_copy_capture_session_v1:
+        """
+        capture an image capture source
+        Create a capturing session for an image capture source.
+        If the paint_cursors option is set, cursors shall be composited onto
+        the captured frame. The cursor must not be composited onto the frame
+        if this flag is not set.
+        If the options bitfield is invalid, the invalid_option protocol error
+        is sent.
+        """
+
+        ...
+
+    @staticmethod
+    def create_pointer_cursor_session(source: object, pointer: object) -> ext_image_copy_capture_cursor_session_v1:
+        """
+        capture the pointer cursor of an image capture source
+        Create a cursor capturing session for the pointer of an image capture
+        source.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        Destroy the manager object.
+        Other objects created via this interface are unaffected.
+        """
+
+        ...
+class ext_image_copy_capture_session_v1:
+    """
+    image copy capture session
+    This object represents an active image copy capture session.
+    After a capture session is created, buffer constraint events will be
+    emitted from the compositor to tell the client which buffer types and
+    formats are supported for reading from the session. The compositor may
+    re-send buffer constraint events whenever they change.
+    To advertise buffer constraints, the compositor must send in no
+    particular order: zero or more shm_format and dmabuf_format events, zero
+    or one dmabuf_device event, and exactly one buffer_size event. Then the
+    compositor must send a done event.
+    When the client has received all the buffer constraints, it can create a
+    buffer accordingly, attach it to the capture session using the
+    attach_buffer request, set the buffer damage using the damage_buffer
+    request and then send the capture request.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        duplicate_frame: int
+
+    @staticmethod
+    def create_frame() -> ext_image_copy_capture_frame_v1:
+        """
+        create a frame
+        Create a capture frame for this session.
+        At most one frame object can exist for a given session at any time. If
+        a client sends a create_frame request before a previous frame object
+        has been destroyed, the duplicate_frame protocol error is raised.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        Destroys the session. This request can be sent at any time by the
+        client.
+        This request doesn't affect ext_image_copy_capture_frame_v1 objects created by
+        this object.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def buffer_size(width: uint, height: uint) -> None:
+            """
+            image capture source dimensions
+            Provides the dimensions of the source image in buffer pixel coordinates.
+            The client must attach buffers that match this size.
+            """
+
+            ...
+
+        @staticmethod
+        def shm_format(format: ext_image_copy_capture_session_v1.wl_shm.format) -> None:
+            """
+            shm buffer format
+            Provides the format that must be used for shared-memory buffers.
+            This event may be emitted multiple times, in which case the client may
+            choose any given format.
+            """
+
+            ...
+
+        @staticmethod
+        def dmabuf_device(device: array) -> None:
+            """
+            dma-buf device
+            This event advertises the device buffers must be allocated on for
+            dma-buf buffers.
+            In general the device is a DRM node. The DRM node type (primary vs.
+            render) is unspecified. Clients must not rely on the compositor sending
+            a particular node type. Clients cannot check two devices for equality
+            by comparing the dev_t value.
+            """
+
+            ...
+
+        @staticmethod
+        def dmabuf_format(format: uint, modifiers: array) -> None:
+            """
+            dma-buf format
+            Provides the format that must be used for dma-buf buffers.
+            The client may choose any of the modifiers advertised in the array of
+            64-bit unsigned integers.
+            This event may be emitted multiple times, in which case the client may
+            choose any given format.
+            """
+
+            ...
+
+        @staticmethod
+        def done() -> None:
+            """
+            all constraints have been sent
+            This event is sent once when all buffer constraint events have been
+            sent.
+            The compositor must always end a batch of buffer constraint events with
+            this event, regardless of whether it sends the initial constraints or
+            an update.
+            """
+
+            ...
+
+        @staticmethod
+        def stopped() -> None:
+            """
+            session is no longer available
+            This event indicates that the capture session has stopped and is no
+            longer available. This can happen in a number of cases, e.g. when the
+            underlying source is destroyed, if the user decides to end the image
+            capture, or if an unrecoverable runtime error has occurred.
+            The client should destroy the session after receiving this event.
+            """
+
+            ...
+class ext_image_copy_capture_frame_v1:
+    """
+    image capture frame
+    This object represents an image capture frame.
+    The client should attach a buffer, damage the buffer, and then send a
+    capture request.
+    If the capture is successful, the compositor must send the frame metadata
+    (transform, damage, presentation_time in any order) followed by the ready
+    event.
+    If the capture fails, the compositor must send the failed event.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        no_buffer: int
+        invalid_buffer_damage: int
+        already_captured: int
+
+
+    class failure_reason(Enum):
+        unknown: int
+        buffer_constraints: int
+        stopped: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy this object
+        Destroys the frame. This request can be sent at any time by the
+        client.
+        """
+
+        ...
+
+    @staticmethod
+    def attach_buffer(buffer: object) -> None:
+        """
+        attach buffer to session
+        Attach a buffer to the session.
+        The wl_buffer.release request is unused.
+        The new buffer replaces any previously attached buffer.
+        This request must not be sent after capture, or else the
+        already_captured protocol error is raised.
+        """
+
+        ...
+
+    @staticmethod
+    def damage_buffer(x: int, y: int, width: int, height: int) -> None:
+        """
+        damage buffer
+        Apply damage to the buffer which is to be captured next. This request
+        may be sent multiple times to describe a region.
+        The client indicates the accumulated damage since this wl_buffer was
+        last captured. During capture, the compositor will update the buffer
+        with at least the union of the region passed by the client and the
+        region advertised by ext_image_copy_capture_frame_v1.damage.
+        When a wl_buffer is captured for the first time, or when the client
+        doesn't track damage, the client must damage the whole buffer.
+        This is for optimisation purposes. The compositor may use this
+        information to reduce copying.
+        These coordinates originate from the upper left corner of the buffer.
+        If x or y are strictly negative, or if width or height are negative or
+        zero, the invalid_buffer_damage protocol error is raised.
+        This request must not be sent after capture, or else the
+        already_captured protocol error is raised.
+        """
+
+        ...
+
+    @staticmethod
+    def capture() -> None:
+        """
+        capture a frame
+        Capture a frame.
+        Unless this is the first successful captured frame performed in this
+        session, the compositor may wait an indefinite amount of time for the
+        source content to change before performing the copy.
+        This request may only be sent once, or else the already_captured
+        protocol error is raised. A buffer must be attached before this request
+        is sent, or else the no_buffer protocol error is raised.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def transform(transform: ext_image_copy_capture_frame_v1.wl_output.transform) -> None:
+            """
+            buffer transform
+            This event is sent before the ready event and holds the transform that
+            the compositor has applied to the buffer contents.
+            """
+
+            ...
+
+        @staticmethod
+        def damage(x: int, y: int, width: int, height: int) -> None:
+            """
+            buffer damaged region
+            This event is sent before the ready event. It may be generated multiple
+            times to describe a region.
+            The first captured frame in a session will always carry full damage.
+            Subsequent frames' damaged regions describe which parts of the buffer
+            have changed since the last ready event.
+            These coordinates originate in the upper left corner of the buffer.
+            """
+
+            ...
+
+        @staticmethod
+        def presentation_time(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
+            """
+            presentation time of the frame
+            This event indicates the time at which the frame is presented to the
+            output in system monotonic time. This event is sent before the ready
+            event.
+            The timestamp is expressed as tv_sec_hi, tv_sec_lo, tv_nsec triples,
+            each component being an unsigned 32-bit value. Whole seconds are in
+            tv_sec which is a 64-bit value combined from tv_sec_hi and tv_sec_lo,
+            and the additional fractional part in tv_nsec as nanoseconds. Hence,
+            for valid timestamps tv_nsec must be in [0, 999999999].
+            """
+
+            ...
+
+        @staticmethod
+        def ready() -> None:
+            """
+            frame is available for reading
+            Called as soon as the frame is copied, indicating it is available
+            for reading.
+            The buffer may be re-used by the client after this event.
+            After receiving this event, the client must destroy the object.
+            """
+
+            ...
+
+        @staticmethod
+        def failed(reason: ext_image_copy_capture_frame_v1.failure_reason) -> None:
+            """
+            capture failed
+            This event indicates that the attempted frame copy has failed.
+            After receiving this event, the client must destroy the object.
+            """
+
+            ...
+class ext_image_copy_capture_cursor_session_v1:
+    """
+    cursor capture session
+    This object represents a cursor capture session. It extends the base
+    capture session with cursor-specific metadata.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        duplicate_session: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object
+        Destroys the session. This request can be sent at any time by the
+        client.
+        This request doesn't affect ext_image_copy_capture_frame_v1 objects created by
+        this object.
+        """
+
+        ...
+
+    @staticmethod
+    def get_capture_session() -> ext_image_copy_capture_session_v1:
+        """
+        get image copy capturer session
+        Gets the image copy capture session for this cursor session.
+        The session will produce frames of the cursor image. The compositor may
+        pause the session when the cursor leaves the captured area.
+        This request must not be sent more than once, or else the
+        duplicate_session protocol error is raised.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def enter() -> None:
+            """
+            cursor entered captured area
+            Sent when a cursor enters the captured area. It shall be generated
+            before the "position" and "hotspot" events when and only when a cursor
+            enters the area.
+            The cursor enters the captured area when the cursor image intersects
+            with the captured area. Note, this is different from e.g.
+            wl_pointer.enter.
+            """
+
+            ...
+
+        @staticmethod
+        def leave() -> None:
+            """
+            cursor left captured area
+            Sent when a cursor leaves the captured area. No "position" or "hotspot"
+            event is generated for the cursor until the cursor enters the captured
+            area again.
+            """
+
+            ...
+
+        @staticmethod
+        def position(x: int, y: int) -> None:
+            """
+            position changed
+            Cursors outside the image capture source do not get captured and no
+            event will be generated for them.
+            The given position is the position of the cursor's hotspot and it is
+            relative to the main buffer's top left corner in transformed buffer
+            pixel coordinates. The coordinates may be negative or greater than the
+            main buffer size.
+            """
+
+            ...
+
+        @staticmethod
+        def hotspot(x: int, y: int) -> None:
+            """
+            hotspot changed
+            The hotspot describes the offset between the cursor image and the
+            position of the input device.
+            The given coordinates are the hotspot's offset from the origin in
+            buffer coordinates.
+            Clients should not apply the hotspot immediately: the hotspot becomes
+            effective when the next ext_image_copy_capture_frame_v1.ready event is received.
+            Compositors may delay this event until the client captures a new frame.
+            """
+
+            ...
+class wp_alpha_modifier_v1:
+    """
+    surface alpha modifier manager
+    This interface allows a client to set a factor for the alpha values on a
+    surface, which can be used to offload such operations to the compositor,
+    which can in turn for example offload them to KMS.
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        already_constructed: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the alpha modifier manager object
+        Destroy the alpha modifier manager. This doesn't destroy objects
+        created with the manager.
+        """
+
+        ...
+
+    @staticmethod
+    def get_surface(surface: object) -> wp_alpha_modifier_surface_v1:
+        """
+        create a new alpha modifier surface object
+        Create a new alpha modifier surface object associated with the
+        given wl_surface. If there is already such an object associated with
+        the wl_surface, the already_constructed error will be raised.
+        """
+
+        ...
+class wp_alpha_modifier_surface_v1:
+    """
+    alpha modifier object for a surface
+    This interface allows the client to set a factor for the alpha values on
+    a surface, which can be used to offload such operations to the compositor.
+    The default factor is UINT32_MAX.
+    This object has to be destroyed before the associated wl_surface. Once the
+    wl_surface is destroyed, all request on this object will raise the
+    no_surface error.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        no_surface: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the alpha modifier object
+        This destroys the object, and is equivalent to set_multiplier with
+        a value of UINT32_MAX, with the same double-buffered semantics as
+        set_multiplier.
+        """
+
+        ...
+
+    @staticmethod
+    def set_multiplier(factor: uint) -> None:
+        """
+        specify the alpha multiplier
+        Sets the alpha multiplier for the surface. The alpha multiplier is
+        double-buffered state, see wl_surface.commit for details.
+        This factor is applied in the compositor's blending space, as an
+        additional step after the processing of per-pixel alpha values for the
+        wl_surface. The exact meaning of the factor is thus undefined, unless
+        the blending space is specified in a different extension.
+        This multiplier is applied even if the buffer attached to the
+        wl_surface doesn't have an alpha channel; in that case an alpha value
+        of one is used instead.
+        Zero means completely transparent, UINT32_MAX means completely opaque.
+        """
+
+        ...
+class wp_security_context_manager_v1:
+    """
+    client security context manager
+    This interface allows a client to register a new Wayland connection to
+    the compositor and attach a security context to it.
+    This is intended to be used by sandboxes. Sandbox engines attach a
+    security context to all connections coming from inside the sandbox. The
+    compositor can then restrict the features that the sandboxed connections
+    can use.
+    Compositors should forbid nesting multiple security contexts by not
+    exposing wp_security_context_manager_v1 global to clients with a security
+    context attached, or by sending the nested protocol error. Nested
+    security contexts are dangerous because they can potentially allow
+    privilege escalation of a sandboxed client.
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        invalid_listen_fd: int
+        nested: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager object
+        Destroy the manager. This doesn't destroy objects created with the
+        manager.
+        """
+
+        ...
+
+    @staticmethod
+    def create_listener(listen_fd: fd, close_fd: fd) -> wp_security_context_v1:
+        """
+        create a new security context
+        Creates a new security context with a socket listening FD.
+        The compositor will accept new client connections on listen_fd.
+        listen_fd must be ready to accept new connections when this request is
+        sent by the client. In other words, the client must call bind(2) and
+        listen(2) before sending the FD.
+        close_fd is a FD that will signal hangup when the compositor should stop
+        accepting new connections on listen_fd.
+        The compositor must continue to accept connections on listen_fd when
+        the Wayland client which created the security context disconnects.
+        After sending this request, closing listen_fd and close_fd remains the
+        only valid operation on them.
+        """
+
+        ...
+class wp_security_context_v1:
+    """
+    client security context
+    The security context allows a client to register a new client and attach
+    security context metadata to the connections.
+    When both are set, the combination of the application ID and the sandbox
+    engine must uniquely identify an application. The same application ID
+    will be used across instances (e.g. if the application is restarted, or
+    if the application is started multiple times).
+    When both are set, the combination of the instance ID and the sandbox
+    engine must uniquely identify a running instance of an application.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        already_used: int
+        already_set: int
+        invalid_metadata: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the security context object
+        Destroy the security context object.
+        """
+
+        ...
+
+    @staticmethod
+    def set_sandbox_engine(name: string) -> None:
+        """
+        set the sandbox engine
+        Attach a unique sandbox engine name to the security context. The name
+        should follow the reverse-DNS style (e.g. "org.flatpak").
+        A list of well-known engines is maintained at:
+        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
+        It is a protocol error to call this request twice. The already_set
+        error is sent in this case.
+        """
+
+        ...
+
+    @staticmethod
+    def set_app_id(app_id: string) -> None:
+        """
+        set the application ID
+        Attach an application ID to the security context.
+        The application ID is an opaque, sandbox-specific identifier for an
+        application. See the well-known engines document for more details:
+        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
+        The compositor may use the application ID to group clients belonging to
+        the same security context application.
+        Whether this request is optional or not depends on the sandbox engine used.
+        It is a protocol error to call this request twice. The already_set
+        error is sent in this case.
+        """
+
+        ...
+
+    @staticmethod
+    def set_instance_id(instance_id: string) -> None:
+        """
+        set the instance ID
+        Attach an instance ID to the security context.
+        The instance ID is an opaque, sandbox-specific identifier for a running
+        instance of an application. See the well-known engines document for
+        more details:
+        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md
+        Whether this request is optional or not depends on the sandbox engine used.
+        It is a protocol error to call this request twice. The already_set
+        error is sent in this case.
+        """
+
+        ...
+
+    @staticmethod
+    def commit() -> None:
+        """
+        register the security context
+        Atomically register the new client and attach the security context
+        metadata.
+        If the provided metadata is inconsistent or does not match with out of
+        band metadata (see
+        https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/security-context/engines.md),
+        the invalid_metadata error may be sent eventually.
+        It's a protocol error to send any request other than "destroy" after
+        this request. In this case, the already_used error is sent.
+        """
+
+        ...
+class wp_tearing_control_manager_v1:
+    """
+    protocol for tearing control
+    For some use cases like games or drawing tablets it can make sense to
+    reduce latency by accepting tearing with the use of asynchronous page
+    flips. This global is a factory interface, allowing clients to inform
+    which type of presentation the content of their surfaces is suitable for.
+    Graphics APIs like EGL or Vulkan, that manage the buffer queue and commits
+    of a wl_surface themselves, are likely to be using this extension
+    internally. If a client is using such an API for a wl_surface, it should
+    not directly use this extension on that surface, to avoid raising a
+    tearing_control_exists protocol error.
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        tearing_control_exists: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy tearing control factory object
+        Destroy this tearing control factory object. Other objects, including
+        wp_tearing_control_v1 objects created by this factory, are not affected
+        by this request.
+        """
+
+        ...
+
+    @staticmethod
+    def get_tearing_control(surface: object) -> wp_tearing_control_v1:
+        """
+        extend surface interface for tearing control
+        Instantiate an interface extension for the given wl_surface to request
+        asynchronous page flips for presentation.
+        If the given wl_surface already has a wp_tearing_control_v1 object
+        associated, the tearing_control_exists protocol error is raised.
+        """
+
+        ...
+class wp_tearing_control_v1:
+    """
+    per-surface tearing control interface
+    An additional interface to a wl_surface object, which allows the client
+    to hint to the compositor if the content on the surface is suitable for
+    presentation with tearing.
+    The default presentation hint is vsync. See presentation_hint for more
+    details.
+    If the associated wl_surface is destroyed, this object becomes inert and
+    should be destroyed.
+    """
+    object_id = 0
+    version = 1
+
+    class presentation_hint(Enum):
+        vsync: int
+        async_: int
+
+    @staticmethod
+    def set_presentation_hint(hint: wp_tearing_control_v1.presentation_hint) -> None:
+        """
+        set presentation hint
+        Set the presentation hint for the associated wl_surface. This state is
+        double-buffered, see wl_surface.commit.
+        The compositor is free to dynamically respect or ignore this hint based
+        on various conditions like hardware capabilities, surface state and
+        user preferences.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy tearing control object
+        Destroy this surface tearing object and revert the presentation hint to
+        vsync. The change will be applied on the next wl_surface.commit.
+        """
+
+        ...
+class wp_drm_lease_device_v1:
+    """
+    lease device
+    This protocol is used by Wayland compositors which act as Direct
+    Rendering Manager (DRM) masters to lease DRM resources to Wayland
+    clients.
+    The compositor will advertise one wp_drm_lease_device_v1 global for each
+    DRM node. Some time after a client binds to the wp_drm_lease_device_v1
+    global, the compositor will send a drm_fd event followed by zero, one or
+    more connector events. After all currently available connectors have been
+    sent, the compositor will send a wp_drm_lease_device_v1.done event.
+    When the list of connectors available for lease changes the compositor
+    will send wp_drm_lease_device_v1.connector events for added connectors and
+    wp_drm_lease_connector_v1.withdrawn events for removed connectors,
+    followed by a wp_drm_lease_device_v1.done event.
+    The compositor will indicate when a device is gone by removing the global
+    via a wl_registry.global_remove event. Upon receiving this event, the
+    client should destroy any matching wp_drm_lease_device_v1 object.
+    To destroy a wp_drm_lease_device_v1 object, the client must first issue
+    a release request. Upon receiving this request, the compositor will
+    immediately send a released event and destroy the object. The client must
+    continue to process and discard drm_fd and connector events until it
+    receives the released event. Upon receiving the released event, the
+    client can safely cleanup any client-side resources.
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def create_lease_request() -> wp_drm_lease_request_v1:
+        """
+        create a lease request object
+        Creates a lease request object.
+        See the documentation for wp_drm_lease_request_v1 for details.
+        """
+
+        ...
+
+    @staticmethod
+    def release() -> None:
+        """
+        release this object
+        Indicates the client no longer wishes to use this object. In response
+        the compositor will immediately send the released event and destroy
+        this object. It can however not guarantee that the client won't receive
+        connector events before the released event. The client must not send any
+        requests after this one, doing so will raise a wl_display error.
+        Existing connectors, lease request and leases will not be affected.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def drm_fd(fd: fd) -> None:
+            """
+            open a non-master fd for this DRM node
+            The compositor will send this event when the wp_drm_lease_device_v1
+            global is bound, although there are no guarantees as to how long this
+            takes - the compositor might need to wait until regaining DRM master.
+            The included fd is a non-master DRM file descriptor opened for this
+            device and the compositor must not authenticate it.
+            The purpose of this event is to give the client the ability to
+            query DRM and discover information which may help them pick the
+            appropriate DRM device or select the appropriate connectors therein.
+            """
+
+            ...
+
+        @staticmethod
+        def connector(id: wp_drm_lease_connector_v1) -> None:
+            """
+            advertise connectors available for leases
+            The compositor will use this event to advertise connectors available for
+            lease by clients. This object may be passed into a lease request to
+            indicate the client would like to lease that connector, see
+            wp_drm_lease_request_v1.request_connector for details. While the
+            compositor will make a best effort to not send disconnected connectors,
+            no guarantees can be made.
+            The compositor must send the drm_fd event before sending connectors.
+            After the drm_fd event it will send all available connectors but may
+            send additional connectors at any time.
+            """
+
+            ...
+
+        @staticmethod
+        def done() -> None:
+            """
+            signals grouping of connectors
+            The compositor will send this event to indicate that it has sent all
+            currently available connectors after the client binds to the global or
+            when it updates the connector list, for example on hotplug, drm master
+            change or when a leased connector becomes available again. It will
+            similarly send this event to group wp_drm_lease_connector_v1.withdrawn
+            events of connectors of this device.
+            """
+
+            ...
+
+        @staticmethod
+        def released() -> None:
+            """
+            the compositor has finished using the device
+            This event is sent in response to the release request and indicates
+            that the compositor is done sending connector events.
+            The compositor will destroy this object immediately after sending the
+            event and it will become invalid. The client should release any
+            resources associated with this device after receiving this event.
+            """
+
+            ...
+class wp_drm_lease_connector_v1:
+    """
+    a leasable DRM connector
+    Represents a DRM connector which is available for lease. These objects are
+    created via wp_drm_lease_device_v1.connector events, and should be passed
+    to lease requests via wp_drm_lease_request_v1.request_connector.
+    Immediately after the wp_drm_lease_connector_v1 object is created the
+    compositor will send a name, a description, a connector_id and a done
+    event. When the description is updated the compositor will send a
+    description event followed by a done event.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy connector
+        The client may send this request to indicate that it will not use this
+        connector. Clients are encouraged to send this after receiving the
+        "withdrawn" event so that the server can release the resources
+        associated with this connector offer. Neither existing lease requests
+        nor leases will be affected.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def name(name: string) -> None:
+            """
+            name
+            The compositor sends this event once the connector is created to
+            indicate the name of this connector. This will not change for the
+            duration of the Wayland session, but is not guaranteed to be consistent
+            between sessions.
+            If the compositor supports wl_output version 4 and this connector
+            corresponds to a wl_output, the compositor should use the same name as
+            for the wl_output.
+            """
+
+            ...
+
+        @staticmethod
+        def description(description: string) -> None:
+            """
+            description
+            The compositor sends this event once the connector is created to provide
+            a human-readable description for this connector, which may be presented
+            to the user. The compositor may send this event multiple times over the
+            lifetime of this object to reflect changes in the description.
+            """
+
+            ...
+
+        @staticmethod
+        def connector_id(connector_id: uint) -> None:
+            """
+            connector_id
+            The compositor sends this event once the connector is created to
+            indicate the DRM object ID which represents the underlying connector
+            that is being offered. Note that the final lease may include additional
+            object IDs, such as CRTCs and planes.
+            """
+
+            ...
+
+        @staticmethod
+        def done() -> None:
+            """
+            all properties have been sent
+            This event is sent after all properties of a connector have been sent.
+            This allows changes to the properties to be seen as atomic even if they
+            happen via multiple events.
+            """
+
+            ...
+
+        @staticmethod
+        def withdrawn() -> None:
+            """
+            lease offer withdrawn
+            Sent to indicate that the compositor will no longer honor requests for
+            DRM leases which include this connector. The client may still issue a
+            lease request including this connector, but the compositor will send
+            wp_drm_lease_v1.finished without issuing a lease fd. Compositors are
+            encouraged to send this event when they lose access to connector, for
+            example when the connector is hot-unplugged, when the connector gets
+            leased to a client or when the compositor loses DRM master.
+            If a client holds a lease for the connector, the status of the lease
+            remains the same. The client should destroy the object after receiving
+            this event.
+            """
+
+            ...
+class wp_drm_lease_request_v1:
+    """
+    DRM lease request
+    A client that wishes to lease DRM resources will attach the list of
+    connectors advertised with wp_drm_lease_device_v1.connector that they
+    wish to lease, then use wp_drm_lease_request_v1.submit to submit the
+    request.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        wrong_device: int
+        duplicate_connector: int
+        empty_lease: int
+
+    @staticmethod
+    def request_connector(connector: object) -> None:
+        """
+        request a connector for this lease
+        Indicates that the client would like to lease the given connector.
+        This is only used as a suggestion, the compositor may choose to
+        include any resources in the lease it issues, or change the set of
+        leased resources at any time. Compositors are however encouraged to
+        include the requested connector and other resources necessary
+        to drive the connected output in the lease.
+        Requesting a connector that was created from a different lease device
+        than this lease request raises the wrong_device error. Requesting a
+        connector twice will raise the duplicate_connector error.
+        """
+
+        ...
+
+    @staticmethod
+    def submit() -> wp_drm_lease_v1:
+        """
+        submit the lease request
+        Submits the lease request and creates a new wp_drm_lease_v1 object.
+        After calling submit the compositor will immediately destroy this
+        object, issuing any more requests will cause a wl_display error.
+        The compositor doesn't make any guarantees about the events of the
+        lease object, clients cannot expect an immediate response.
+        Not requesting any connectors before submitting the lease request
+        will raise the empty_lease error.
+        """
+
+        ...
+class wp_drm_lease_v1:
+    """
+    a DRM lease
+    A DRM lease object is used to transfer the DRM file descriptor to the
+    client and manage the lifetime of the lease.
+    Some time after the wp_drm_lease_v1 object is created, the compositor
+    will reply with the lease request's result. If the lease request is
+    granted, the compositor will send a lease_fd event. If the lease request
+    is denied, the compositor will send a finished event without a lease_fd
+    event.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroys the lease object
+        The client should send this to indicate that it no longer wishes to use
+        this lease. The compositor should use drmModeRevokeLease on the
+        appropriate file descriptor, if necessary.
+        Upon destruction, the compositor should advertise the connector for
+        leasing again by sending the connector event through the
+        wp_drm_lease_device_v1 interface.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def lease_fd(leased_fd: fd) -> None:
+            """
+            shares the DRM file descriptor
+            This event returns a file descriptor suitable for use with DRM-related
+            ioctls. The client should use drmModeGetLease to enumerate the DRM
+            objects which have been leased to them. The compositor guarantees it
+            will not use the leased DRM objects itself until it sends the finished
+            event. If the compositor cannot or will not grant a lease for the
+            requested connectors, it will not send this event, instead sending the
+            finished event.
+            The compositor will send this event at most once during this objects
+            lifetime.
+            """
+
+            ...
+
+        @staticmethod
+        def finished() -> None:
+            """
+            sent when the lease has been revoked
+            The compositor uses this event to either reject a lease request, or if
+            it previously sent a lease_fd, to notify the client that the lease has
+            been revoked. If the client requires a new lease, they should destroy
+            this object and submit a new lease request. The compositor will send
+            no further events for this object after sending the finish event.
+            Compositors should revoke the lease when any of the leased resources
+            become unavailable, namely when a hot-unplug occurs or when the
+            compositor loses DRM master. Compositors may advertise the connector
+            for leasing again, if the resource is available, by sending the
+            connector event through the wp_drm_lease_device_v1 interface.
+            """
+
+            ...
+class xdg_system_bell_v1:
+    """
+    system bell
+    This global interface enables clients to ring the system bell.
+    Warning! The protocol described in this file is currently in the testing
+    phase. Backward compatible changes may be added together with the
+    corresponding interface version bump. Backward incompatible changes can
+    only be done by creating a new major version of the extension.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the system bell object
+        Notify that the object will no longer be used.
+        """
+
+        ...
+
+    @staticmethod
+    def ring(surface: object) -> None:
+        """
+        ring the system bell
+        This requests rings the system bell on behalf of a client. How ringing
+        the bell is implemented is up to the compositor. It may be an audible
+        sound, a visual feedback of some kind, or any other thing including
+        nothing.
+        The passed surface should correspond to a toplevel like surface role,
+        or be null, meaning the client doesn't have a particular toplevel it
+        wants to associate the bell ringing with. See the xdg-shell protocol
+        extension for a toplevel like surface role.
+        """
+
+        ...
+class wp_viewporter:
+    """
+    surface cropping and scaling
+    The global interface exposing surface cropping and scaling
+    capabilities is used to instantiate an interface extension for a
+    wl_surface object. This extended interface will then allow
+    cropping and scaling the surface contents, effectively
+    disconnecting the direct relationship between the buffer and the
+    surface size.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        viewport_exists: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        unbind from the cropping and scaling interface
+        Informs the server that the client will not be using this
+        protocol object anymore. This does not affect any other objects,
+        wp_viewport objects included.
+        """
+
+        ...
+
+    @staticmethod
+    def get_viewport(surface: object) -> wp_viewport:
+        """
+        extend surface interface for crop and scale
+        Instantiate an interface extension for the given wl_surface to
+        crop and scale its content. If the given wl_surface already has
+        a wp_viewport object associated, the viewport_exists
+        protocol error is raised.
+        """
+
+        ...
+class wp_viewport:
+    """
+    crop and scale interface to a wl_surface
+    An additional interface to a wl_surface object, which allows the
+    client to specify the cropping and scaling of the surface
+    contents.
+    This interface works with two concepts: the source rectangle (src_x,
+    src_y, src_width, src_height), and the destination size (dst_width,
+    dst_height). The contents of the source rectangle are scaled to the
+    destination size, and content outside the source rectangle is ignored.
+    This state is double-buffered, see wl_surface.commit.
+    The two parts of crop and scale state are independent: the source
+    rectangle, and the destination size. Initially both are unset, that
+    is, no scaling is applied. The whole of the current wl_buffer is
+    used as the source, and the surface size is as defined in
+    wl_surface.attach.
+    If the destination size is set, it causes the surface size to become
+    dst_width, dst_height. The source (rectangle) is scaled to exactly
+    this size. This overrides whatever the attached wl_buffer size is,
+    unless the wl_buffer is NULL. If the wl_buffer is NULL, the surface
+    has no content and therefore no size. Otherwise, the size is always
+    at least 1x1 in surface local coordinates.
+    If the source rectangle is set, it defines what area of the wl_buffer is
+    taken as the source. If the source rectangle is set and the destination
+    size is not set, then src_width and src_height must be integers, and the
+    surface size becomes the source rectangle size. This results in cropping
+    without scaling. If src_width or src_height are not integers and
+    destination size is not set, the bad_size protocol error is raised when
+    the surface state is applied.
+    The coordinate transformations from buffer pixel coordinates up to
+    the surface-local coordinates happen in the following order:
+    1. buffer_transform (wl_surface.set_buffer_transform)
+    2. buffer_scale (wl_surface.set_buffer_scale)
+    3. crop and scale (wp_viewport.set*)
+    This means, that the source rectangle coordinates of crop and scale
+    are given in the coordinates after the buffer transform and scale,
+    i.e. in the coordinates that would be the surface-local coordinates
+    if the crop and scale was not applied.
+    If src_x or src_y are negative, the bad_value protocol error is raised.
+    Otherwise, if the source rectangle is partially or completely outside of
+    the non-NULL wl_buffer, then the out_of_buffer protocol error is raised
+    when the surface state is applied. A NULL wl_buffer does not raise the
+    out_of_buffer error.
+    If the wl_surface associated with the wp_viewport is destroyed,
+    all wp_viewport requests except 'destroy' raise the protocol error
+    no_surface.
+    If the wp_viewport object is destroyed, the crop and scale
+    state is removed from the wl_surface. The change will be applied
+    on the next wl_surface.commit.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        bad_value: int
+        bad_size: int
+        out_of_buffer: int
+        no_surface: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        remove scaling and cropping from the surface
+        The associated wl_surface's crop and scale state is removed.
+        The change is applied on the next wl_surface.commit.
+        """
+
+        ...
+
+    @staticmethod
+    def set_source(x: fixed, y: fixed, width: fixed, height: fixed) -> None:
+        """
+        set the source rectangle for cropping
+        Set the source rectangle of the associated wl_surface. See
+        wp_viewport for the description, and relation to the wl_buffer
+        size.
+        If all of x, y, width and height are -1.0, the source rectangle is
+        unset instead. Any other set of values where width or height are zero
+        or negative, or x or y are negative, raise the bad_value protocol
+        error.
+        The crop and scale state is double-buffered, see wl_surface.commit.
+        """
+
+        ...
+
+    @staticmethod
+    def set_destination(width: int, height: int) -> None:
+        """
+        set the surface size for scaling
+        Set the destination size of the associated wl_surface. See
+        wp_viewport for the description, and relation to the wl_buffer
+        size.
+        If width is -1 and height is -1, the destination size is unset
+        instead. Any other pair of values for width and height that
+        contains zero or negative values raises the bad_value protocol
+        error.
+        The crop and scale state is double-buffered, see wl_surface.commit.
         """
 
         ...
 class zwp_linux_dmabuf_v1:
     """
     factory for creating dmabuf-based wl_buffers
-    Following the interfaces from:
-    https://www.khronos.org/registry/egl/extensions/EXT/EGL_EXT_image_dma_buf_import.txt
-    https://www.khronos.org/registry/EGL/extensions/EXT/EGL_EXT_image_dma_buf_import_modifiers.txt
-    and the Linux DRM sub-system's AddFb2 ioctl.
     This interface offers ways to create generic dmabuf-based wl_buffers.
+    For more information about dmabuf, see:
+    https://www.kernel.org/doc/html/next/userspace-api/dma-buf-alloc-exchange.html
     Clients can use the get_surface_feedback request to get dmabuf feedback
     for a particular surface. If the client wants to retrieve feedback not
     tied to a surface, they can use the get_default_feedback request.
@@ -5802,7 +8020,9 @@ class zwp_linux_buffer_params_v1:
     You must use consecutive plane indices ('plane_idx' argument for 'add')
     from zero to the number of planes used by the drm_fourcc format code.
     All planes required by the format must be given exactly once, but can
-    be given in any order. Each plane index can be set only once.
+    be given in any order. Each plane index can only be set once; subsequent
+    calls with a plane index which has already been set will result in a
+    plane_set error being generated.
     """
     object_id = 0
     version = 5
@@ -6145,163 +8365,6 @@ class zwp_linux_dmabuf_feedback_v1:
             """
 
             ...
-class wp_presentation:
-    """
-    timed presentation related wl_surface requests
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        invalid_timestamp: int
-        invalid_flag: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        unbind from the presentation interface
-        Informs the server that the client will no longer be using
-        this protocol object. Existing objects created by this object
-        are not affected.
-        """
-
-        ...
-
-    @staticmethod
-    def feedback(surface: object) -> wp_presentation_feedback:
-        """
-        request presentation feedback information
-        Request presentation feedback for the current content submission
-        on the given surface. This creates a new presentation_feedback
-        object, which will deliver the feedback information once. If
-        multiple presentation_feedback objects are created for the same
-        submission, they will all deliver the same information.
-        For details on what information is returned, see the
-        presentation_feedback interface.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def clock_id(clk_id: uint) -> None:
-            """
-            clock ID for timestamps
-            This event tells the client in which clock domain the
-            compositor interprets the timestamps used by the presentation
-            extension. This clock is called the presentation clock.
-            The compositor sends this event when the client binds to the
-            presentation interface. The presentation clock does not change
-            during the lifetime of the client connection.
-            The clock identifier is platform dependent. On POSIX platforms, the
-            identifier value is one of the clockid_t values accepted by
-            clock_gettime(). clock_gettime() is defined by POSIX.1-2001.
-            Timestamps in this clock domain are expressed as tv_sec_hi,
-            tv_sec_lo, tv_nsec triples, each component being an unsigned
-            32-bit value. Whole seconds are in tv_sec which is a 64-bit
-            value combined from tv_sec_hi and tv_sec_lo, and the
-            additional fractional part in tv_nsec as nanoseconds. Hence,
-            for valid timestamps tv_nsec must be in [0, 999999999].
-            Note that clock_id applies only to the presentation clock,
-            and implies nothing about e.g. the timestamps used in the
-            Wayland core protocol input events.
-            Compositors should prefer a clock which does not jump and is
-            not slewed e.g. by NTP. The absolute value of the clock is
-            irrelevant. Precision of one millisecond or better is
-            recommended. Clients must be able to query the current clock
-            value directly, not by asking the compositor.
-            """
-
-            ...
-class wp_presentation_feedback:
-    """
-    presentation time feedback event
-    A presentation_feedback object returns an indication that a
-    wl_surface content update has become visible to the user.
-    One object corresponds to one content update submission
-    (wl_surface.commit). There are two possible outcomes: the
-    content update is presented to the user, and a presentation
-    timestamp delivered; or, the user did not see the content
-    update because it was superseded or its surface destroyed,
-    and the content update is discarded.
-    Once a presentation_feedback object has delivered a 'presented'
-    or 'discarded' event it is automatically destroyed.
-    """
-    object_id = 0
-    version = 1
-
-    class kind(IntFlag):
-        vsync: int
-        hw_clock: int
-        hw_completion: int
-        zero_copy: int
-
-    class events:
-        @staticmethod
-        def sync_output(output: object) -> None:
-            """
-            presentation synchronized to this output
-            As presentation can be synchronized to only one output at a
-            time, this event tells which output it was. This event is only
-            sent prior to the presented event.
-            As clients may bind to the same global wl_output multiple
-            times, this event is sent for each bound instance that matches
-            the synchronized output. If a client has not bound to the
-            right wl_output global at all, this event is not sent.
-            """
-
-            ...
-
-        @staticmethod
-        def presented(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint, refresh: uint, seq_hi: uint, seq_lo: uint, flags: wp_presentation_feedback.kind) -> None:
-            """
-            the content update was displayed
-            The associated content update was displayed to the user at the
-            indicated time (tv_sec_hi/lo, tv_nsec). For the interpretation of
-            the timestamp, see presentation.clock_id event.
-            The timestamp corresponds to the time when the content update
-            turned into light the first time on the surface's main output.
-            Compositors may approximate this from the framebuffer flip
-            completion events from the system, and the latency of the
-            physical display path if known.
-            This event is preceded by all related sync_output events
-            telling which output's refresh cycle the feedback corresponds
-            to, i.e. the main output for the surface. Compositors are
-            recommended to choose the output containing the largest part
-            of the wl_surface, or keeping the output they previously
-            chose. Having a stable presentation output association helps
-            clients predict future output refreshes (vblank).
-            The 'refresh' argument gives the compositor's prediction of how
-            many nanoseconds after tv_sec, tv_nsec the very next output
-            refresh may occur. This is to further aid clients in
-            predicting future refreshes, i.e., estimating the timestamps
-            targeting the next few vblanks. If such prediction cannot
-            usefully be done, the argument is zero.
-            If the output does not have a constant refresh rate, explicit
-            video mode switches excluded, then the refresh argument must
-            be zero.
-            The 64-bit value combined from seq_hi and seq_lo is the value
-            of the output's vertical retrace counter when the content
-            update was first scanned out to the display. This value must
-            be compatible with the definition of MSC in
-            GLX_OML_sync_control specification. Note, that if the display
-            path has a non-zero latency, the time instant specified by
-            this counter may differ from the timestamp's.
-            If the output does not have a concept of vertical retrace or a
-            refresh cycle, or the output device is self-refreshing without
-            a way to query the refresh count, then the arguments seq_hi
-            and seq_lo must be zero.
-            """
-
-            ...
-
-        @staticmethod
-        def discarded() -> None:
-            """
-            the content update was not displayed
-            The content update was never displayed to the user.
-            """
-
-            ...
 class zwp_tablet_manager_v2:
     """
     controller object for graphic tablet devices
@@ -6310,7 +8373,7 @@ class zwp_tablet_manager_v2:
     actual tablets, use wp_tablet_manager.get_tablet_seat.
     """
     object_id = 0
-    version = 1
+    version = 2
 
     @staticmethod
     def get_tablet_seat(seat: object) -> zwp_tablet_seat_v2:
@@ -6339,7 +8402,7 @@ class zwp_tablet_seat_v2:
     wp_tablet_seat.tablet_added and wp_tablet_seat.tool_added events.
     """
     object_id = 0
-    version = 1
+    version = 2
 
     @staticmethod
     def destroy() -> None:
@@ -6413,7 +8476,7 @@ class zwp_tablet_tool_v2:
     considered part of the same hardware state change.
     """
     object_id = 0
-    version = 1
+    version = 2
 
     class type(Enum):
         pen: int
@@ -6772,7 +8835,14 @@ class zwp_tablet_v2:
     terminated by a wp_tablet.done event.
     """
     object_id = 0
-    version = 1
+    version = 2
+
+    class bustype(Enum):
+        usb: int
+        bluetooth: int
+        virtual: int
+        serial: int
+        i2c: int
 
     @staticmethod
     def destroy() -> None:
@@ -6798,9 +8868,13 @@ class zwp_tablet_v2:
         @staticmethod
         def id(vid: uint, pid: uint) -> None:
             """
-            tablet device USB vendor/product id
-            The USB vendor and product IDs for the tablet device.
-            If the device has no USB vendor/product ID, this event is not sent.
+            tablet device vendor/product id
+            The vendor and product IDs for the tablet device.
+            The interpretation of the id depends on the wp_tablet.bustype.
+            Prior to version v2 of this protocol, the id was implied to be a USB
+            vendor and product ID. If no wp_tablet.bustype is sent, the ID
+            is to be interpreted as USB vendor and product ID.
+            If the device has no vendor/product ID, this event is not sent.
             This can happen for virtual devices or non-USB devices, for instance.
             This event is sent in the initial burst of events before the
             wp_tablet.done event.
@@ -6850,6 +8924,20 @@ class zwp_tablet_v2:
             """
 
             ...
+
+        @staticmethod
+        def bustype(bustype: zwp_tablet_v2.bustype) -> None:
+            """
+            tablet device bus type
+            The bustype argument is one of the BUS_ defines in the Linux kernel's
+            linux/input.h
+            If the device has no known bustype or the bustype cannot be
+            queried, this event is not sent.
+            This event is sent in the initial burst of events before the
+            wp_tablet.done event.
+            """
+
+            ...
 class zwp_tablet_pad_ring_v2:
     """
     pad ring
@@ -6859,7 +8947,7 @@ class zwp_tablet_pad_ring_v2:
     event.
     """
     object_id = 0
-    version = 1
+    version = 2
 
     class source(Enum):
         finger: int
@@ -6968,7 +9056,7 @@ class zwp_tablet_pad_strip_v2:
     event.
     """
     object_id = 0
-    version = 1
+    version = 2
 
     class source(Enum):
         finger: int
@@ -7093,7 +9181,7 @@ class zwp_tablet_pad_group_v2:
     compositor. See the wp_tablet_pad_group.mode_switch event for more details.
     """
     object_id = 0
-    version = 1
+    version = 2
 
     @staticmethod
     def destroy() -> None:
@@ -7182,7 +9270,7 @@ class zwp_tablet_pad_group_v2:
             """
             mode switch event
             Notification that the mode was switched.
-            A mode applies to all buttons, rings and strips in a group
+            A mode applies to all buttons, rings, strips and dials in a group
             simultaneously, but a client is not required to assign different actions
             for each mode. For example, a client may have mode-specific button
             mappings but map the ring to vertical scrolling in all modes. Mode
@@ -7199,17 +9287,29 @@ class zwp_tablet_pad_group_v2:
             If a button action in the new mode differs from the action in the
             previous mode, the client should immediately issue a
             wp_tablet_pad.set_feedback request for each changed button.
-            If a ring or strip action in the new mode differs from the action
+            If a ring, strip or dial action in the new mode differs from the action
             in the previous mode, the client should immediately issue a
-            wp_tablet_ring.set_feedback or wp_tablet_strip.set_feedback request
-            for each changed ring or strip.
+            wp_tablet_ring.set_feedback, wp_tablet_strip.set_feedback or
+            wp_tablet_dial.set_feedback request for each changed ring, strip or dial.
+            """
+
+            ...
+
+        @staticmethod
+        def dial(dial: zwp_tablet_pad_dial_v2) -> None:
+            """
+            dial announced
+            Sent on wp_tablet_pad initialization to announce available dials.
+            One event is sent for each dial available on this pad group.
+            This event is sent in the initial burst of events before the
+            wp_tablet_pad_group.done event.
             """
 
             ...
 class zwp_tablet_pad_v2:
     """
-    a set of buttons, rings and strips
-    A pad device is a set of buttons, rings and strips
+    a set of buttons, rings, strips and dials
+    A pad device is a set of buttons, rings, strips and dials
     usually physically present on the tablet device itself. Some
     exceptions exist where the pad device is physically detached, e.g. the
     Wacom ExpressKey Remote.
@@ -7220,7 +9320,7 @@ class zwp_tablet_pad_v2:
     wp_tablet_seat.pad_added event before any actual events from this pad.
     This initial event sequence is terminated by a wp_tablet_pad.done
     event.
-    All pad features (buttons, rings and strips) are logically divided into
+    All pad features (buttons, rings, strips and dials) are logically divided into
     groups and all pads have at least one group. The available groups are
     notified through the wp_tablet_pad.group event; the compositor will
     emit one event per group before emitting wp_tablet_pad.done.
@@ -7229,7 +9329,7 @@ class zwp_tablet_pad_v2:
     although different groups may have different active modes.
     """
     object_id = 0
-    version = 1
+    version = 2
 
     class button_state(Enum):
         released: int
@@ -7365,144 +9465,241 @@ class zwp_tablet_pad_v2:
             """
 
             ...
-class wp_viewporter:
+class zwp_tablet_pad_dial_v2:
     """
-    surface cropping and scaling
-    The global interface exposing surface cropping and scaling
-    capabilities is used to instantiate an interface extension for a
-    wl_surface object. This extended interface will then allow
-    cropping and scaling the surface contents, effectively
-    disconnecting the direct relationship between the buffer and the
-    surface size.
+    pad dial
+    A rotary control, e.g. a dial or a wheel.
+    Events on a dial are logically grouped by the wl_tablet_pad_dial.frame
+    event.
     """
     object_id = 0
-    version = 1
+    version = 2
 
-    class error(Enum):
-        viewport_exists: int
+    @staticmethod
+    def set_feedback(description: string, serial: uint) -> None:
+        """
+        set compositor feedback
+        Requests the compositor to use the provided feedback string
+        associated with this dial. This request should be issued immediately
+        after a wp_tablet_pad_group.mode_switch event from the corresponding
+        group is received, or whenever the dial is mapped to a different
+        action. See wp_tablet_pad_group.mode_switch for more details.
+        Clients are encouraged to provide context-aware descriptions for
+        the actions associated with the dial, and compositors may use this
+        information to offer visual feedback about the button layout
+        (eg. on-screen displays).
+        The provided string 'description' is a UTF-8 encoded string to be
+        associated with this ring, and is considered user-visible; general
+        internationalization rules apply.
+        The serial argument will be that of the last
+        wp_tablet_pad_group.mode_switch event received for the group of this
+        dial. Requests providing other serials than the most recent one will be
+        ignored.
+        """
+
+        ...
 
     @staticmethod
     def destroy() -> None:
         """
-        unbind from the cropping and scaling interface
-        Informs the server that the client will not be using this
-        protocol object anymore. This does not affect any other objects,
-        wp_viewport objects included.
+        destroy the dial object
+        This destroys the client's resource for this dial object.
         """
 
         ...
+    class events:
+        @staticmethod
+        def delta(value120: int) -> None:
+            """
+            delta movement
+            Sent whenever the position on a dial changes.
+            This event carries the wheel delta as multiples or fractions
+            of 120 with each multiple of 120 representing one logical wheel detent.
+            For example, an axis_value120 of 30 is one quarter of
+            a logical wheel step in the positive direction, a value120 of
+            -240 are two logical wheel steps in the negative direction within the
+            same hardware event. See the wl_pointer.axis_value120 for more details.
+            The value120 must not be zero.
+            """
 
-    @staticmethod
-    def get_viewport(surface: object) -> wp_viewport:
-        """
-        extend surface interface for crop and scale
-        Instantiate an interface extension for the given wl_surface to
-        crop and scale its content. If the given wl_surface already has
-        a wp_viewport object associated, the viewport_exists
-        protocol error is raised.
-        """
+            ...
 
-        ...
-class wp_viewport:
+        @staticmethod
+        def frame(time: uint) -> None:
+            """
+            end of a dial event sequence
+            Indicates the end of a set of events that represent one logical
+            hardware dial event. A client is expected to accumulate the data
+            in all events within the frame before proceeding.
+            All wp_tablet_pad_dial events before a wp_tablet_pad_dial.frame event belong
+            logically together.
+            A wp_tablet_pad_dial.frame event is sent for every logical event
+            group, even if the group only contains a single wp_tablet_pad_dial
+            event. Specifically, a client may get a sequence: delta, frame,
+            delta, frame, etc.
+            """
+
+            ...
+class wp_presentation:
     """
-    crop and scale interface to a wl_surface
-    An additional interface to a wl_surface object, which allows the
-    client to specify the cropping and scaling of the surface
-    contents.
-    This interface works with two concepts: the source rectangle (src_x,
-    src_y, src_width, src_height), and the destination size (dst_width,
-    dst_height). The contents of the source rectangle are scaled to the
-    destination size, and content outside the source rectangle is ignored.
-    This state is double-buffered, see wl_surface.commit.
-    The two parts of crop and scale state are independent: the source
-    rectangle, and the destination size. Initially both are unset, that
-    is, no scaling is applied. The whole of the current wl_buffer is
-    used as the source, and the surface size is as defined in
-    wl_surface.attach.
-    If the destination size is set, it causes the surface size to become
-    dst_width, dst_height. The source (rectangle) is scaled to exactly
-    this size. This overrides whatever the attached wl_buffer size is,
-    unless the wl_buffer is NULL. If the wl_buffer is NULL, the surface
-    has no content and therefore no size. Otherwise, the size is always
-    at least 1x1 in surface local coordinates.
-    If the source rectangle is set, it defines what area of the wl_buffer is
-    taken as the source. If the source rectangle is set and the destination
-    size is not set, then src_width and src_height must be integers, and the
-    surface size becomes the source rectangle size. This results in cropping
-    without scaling. If src_width or src_height are not integers and
-    destination size is not set, the bad_size protocol error is raised when
-    the surface state is applied.
-    The coordinate transformations from buffer pixel coordinates up to
-    the surface-local coordinates happen in the following order:
-    1. buffer_transform (wl_surface.set_buffer_transform)
-    2. buffer_scale (wl_surface.set_buffer_scale)
-    3. crop and scale (wp_viewport.set*)
-    This means, that the source rectangle coordinates of crop and scale
-    are given in the coordinates after the buffer transform and scale,
-    i.e. in the coordinates that would be the surface-local coordinates
-    if the crop and scale was not applied.
-    If src_x or src_y are negative, the bad_value protocol error is raised.
-    Otherwise, if the source rectangle is partially or completely outside of
-    the non-NULL wl_buffer, then the out_of_buffer protocol error is raised
-    when the surface state is applied. A NULL wl_buffer does not raise the
-    out_of_buffer error.
-    If the wl_surface associated with the wp_viewport is destroyed,
-    all wp_viewport requests except 'destroy' raise the protocol error
-    no_surface.
-    If the wp_viewport object is destroyed, the crop and scale
-    state is removed from the wl_surface. The change will be applied
-    on the next wl_surface.commit.
+    timed presentation related wl_surface requests
     """
     object_id = 0
-    version = 1
+    version = 2
 
     class error(Enum):
-        bad_value: int
-        bad_size: int
-        out_of_buffer: int
-        no_surface: int
+        invalid_timestamp: int
+        invalid_flag: int
 
     @staticmethod
     def destroy() -> None:
         """
-        remove scaling and cropping from the surface
-        The associated wl_surface's crop and scale state is removed.
-        The change is applied on the next wl_surface.commit.
+        unbind from the presentation interface
+        Informs the server that the client will no longer be using
+        this protocol object. Existing objects created by this object
+        are not affected.
         """
 
         ...
 
     @staticmethod
-    def set_source(x: fixed, y: fixed, width: fixed, height: fixed) -> None:
+    def feedback(surface: object) -> wp_presentation_feedback:
         """
-        set the source rectangle for cropping
-        Set the source rectangle of the associated wl_surface. See
-        wp_viewport for the description, and relation to the wl_buffer
-        size.
-        If all of x, y, width and height are -1.0, the source rectangle is
-        unset instead. Any other set of values where width or height are zero
-        or negative, or x or y are negative, raise the bad_value protocol
-        error.
-        The crop and scale state is double-buffered, see wl_surface.commit.
-        """
-
-        ...
-
-    @staticmethod
-    def set_destination(width: int, height: int) -> None:
-        """
-        set the surface size for scaling
-        Set the destination size of the associated wl_surface. See
-        wp_viewport for the description, and relation to the wl_buffer
-        size.
-        If width is -1 and height is -1, the destination size is unset
-        instead. Any other pair of values for width and height that
-        contains zero or negative values raises the bad_value protocol
-        error.
-        The crop and scale state is double-buffered, see wl_surface.commit.
+        request presentation feedback information
+        Request presentation feedback for the current content submission
+        on the given surface. This creates a new presentation_feedback
+        object, which will deliver the feedback information once. If
+        multiple presentation_feedback objects are created for the same
+        submission, they will all deliver the same information.
+        For details on what information is returned, see the
+        presentation_feedback interface.
         """
 
         ...
+    class events:
+        @staticmethod
+        def clock_id(clk_id: uint) -> None:
+            """
+            clock ID for timestamps
+            This event tells the client in which clock domain the
+            compositor interprets the timestamps used by the presentation
+            extension. This clock is called the presentation clock.
+            The compositor sends this event when the client binds to the
+            presentation interface. The presentation clock does not change
+            during the lifetime of the client connection.
+            The clock identifier is platform dependent. On POSIX platforms, the
+            identifier value is one of the clockid_t values accepted by
+            clock_gettime(). clock_gettime() is defined by POSIX.1-2001.
+            Timestamps in this clock domain are expressed as tv_sec_hi,
+            tv_sec_lo, tv_nsec triples, each component being an unsigned
+            32-bit value. Whole seconds are in tv_sec which is a 64-bit
+            value combined from tv_sec_hi and tv_sec_lo, and the
+            additional fractional part in tv_nsec as nanoseconds. Hence,
+            for valid timestamps tv_nsec must be in [0, 999999999].
+            Note that clock_id applies only to the presentation clock,
+            and implies nothing about e.g. the timestamps used in the
+            Wayland core protocol input events.
+            Compositors should prefer a clock which does not jump and is
+            not slewed e.g. by NTP. The absolute value of the clock is
+            irrelevant. Precision of one millisecond or better is
+            recommended. Clients must be able to query the current clock
+            value directly, not by asking the compositor.
+            """
+
+            ...
+class wp_presentation_feedback:
+    """
+    presentation time feedback event
+    A presentation_feedback object returns an indication that a
+    wl_surface content update has become visible to the user.
+    One object corresponds to one content update submission
+    (wl_surface.commit). There are two possible outcomes: the
+    content update is presented to the user, and a presentation
+    timestamp delivered; or, the user did not see the content
+    update because it was superseded or its surface destroyed,
+    and the content update is discarded.
+    Once a presentation_feedback object has delivered a 'presented'
+    or 'discarded' event it is automatically destroyed.
+    """
+    object_id = 0
+    version = 2
+
+    class kind(IntFlag):
+        vsync: int
+        hw_clock: int
+        hw_completion: int
+        zero_copy: int
+
+    class events:
+        @staticmethod
+        def sync_output(output: object) -> None:
+            """
+            presentation synchronized to this output
+            As presentation can be synchronized to only one output at a
+            time, this event tells which output it was. This event is only
+            sent prior to the presented event.
+            As clients may bind to the same global wl_output multiple
+            times, this event is sent for each bound instance that matches
+            the synchronized output. If a client has not bound to the
+            right wl_output global at all, this event is not sent.
+            """
+
+            ...
+
+        @staticmethod
+        def presented(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint, refresh: uint, seq_hi: uint, seq_lo: uint, flags: wp_presentation_feedback.kind) -> None:
+            """
+            the content update was displayed
+            The associated content update was displayed to the user at the
+            indicated time (tv_sec_hi/lo, tv_nsec). For the interpretation of
+            the timestamp, see presentation.clock_id event.
+            The timestamp corresponds to the time when the content update
+            turned into light the first time on the surface's main output.
+            Compositors may approximate this from the framebuffer flip
+            completion events from the system, and the latency of the
+            physical display path if known.
+            This event is preceded by all related sync_output events
+            telling which output's refresh cycle the feedback corresponds
+            to, i.e. the main output for the surface. Compositors are
+            recommended to choose the output containing the largest part
+            of the wl_surface, or keeping the output they previously
+            chose. Having a stable presentation output association helps
+            clients predict future output refreshes (vblank).
+            The 'refresh' argument gives the compositor's prediction of how
+            many nanoseconds after tv_sec, tv_nsec the very next output
+            refresh may occur. This is to further aid clients in
+            predicting future refreshes, i.e., estimating the timestamps
+            targeting the next few vblanks. If such prediction cannot
+            usefully be done, the argument is zero.
+            For version 2 and later, if the output does not have a constant
+            refresh rate, explicit video mode switches excluded, then the
+            refresh argument must be either an appropriate rate picked by the
+            compositor (e.g. fastest rate), or 0 if no such rate exists.
+            For version 1, if the output does not have a constant refresh rate,
+            the refresh argument must be zero.
+            The 64-bit value combined from seq_hi and seq_lo is the value
+            of the output's vertical retrace counter when the content
+            update was first scanned out to the display. This value must
+            be compatible with the definition of MSC in
+            GLX_OML_sync_control specification. Note, that if the display
+            path has a non-zero latency, the time instant specified by
+            this counter may differ from the timestamp's.
+            If the output does not have a concept of vertical retrace or a
+            refresh cycle, or the output device is self-refreshing without
+            a way to query the refresh count, then the arguments seq_hi
+            and seq_lo must be zero.
+            """
+
+            ...
+
+        @staticmethod
+        def discarded() -> None:
+            """
+            the content update was not displayed
+            The content update was never displayed to the user.
+            """
+
+            ...
 class xdg_wm_base:
     """
     create desktop-style surfaces
@@ -8591,6 +10788,1099 @@ class xdg_popup:
             """
 
             ...
+class zwp_pointer_constraints_v1:
+    """
+    constrain the movement of a pointer
+    The global interface exposing pointer constraining functionality. It
+    exposes two requests: lock_pointer for locking the pointer to its
+    position, and confine_pointer for locking the pointer to a region.
+    The lock_pointer and confine_pointer requests create the objects
+    wp_locked_pointer and wp_confined_pointer respectively, and the client can
+    use these objects to interact with the lock.
+    For any surface, only one lock or confinement may be active across all
+    wl_pointer objects of the same seat. If a lock or confinement is requested
+    when another lock or confinement is active or requested on the same surface
+    and with any of the wl_pointer objects of the same seat, an
+    'already_constrained' error will be raised.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        already_constrained: int
+
+
+    class lifetime(Enum):
+        oneshot: int
+        persistent: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the pointer constraints manager object
+        Used by the client to notify the server that it will no longer use this
+        pointer constraints object.
+        """
+
+        ...
+
+    @staticmethod
+    def lock_pointer(surface: object, pointer: object, region: object, lifetime: zwp_pointer_constraints_v1.lifetime) -> zwp_locked_pointer_v1:
+        """
+        lock pointer to a position
+        The lock_pointer request lets the client request to disable movements of
+        the virtual pointer (i.e. the cursor), effectively locking the pointer
+        to a position. This request may not take effect immediately; in the
+        future, when the compositor deems implementation-specific constraints
+        are satisfied, the pointer lock will be activated and the compositor
+        sends a locked event.
+        The protocol provides no guarantee that the constraints are ever
+        satisfied, and does not require the compositor to send an error if the
+        constraints cannot ever be satisfied. It is thus possible to request a
+        lock that will never activate.
+        There may not be another pointer constraint of any kind requested or
+        active on the surface for any of the wl_pointer objects of the seat of
+        the passed pointer when requesting a lock. If there is, an error will be
+        raised. See general pointer lock documentation for more details.
+        The intersection of the region passed with this request and the input
+        region of the surface is used to determine where the pointer must be
+        in order for the lock to activate. It is up to the compositor whether to
+        warp the pointer or require some kind of user interaction for the lock
+        to activate. If the region is null the surface input region is used.
+        A surface may receive pointer focus without the lock being activated.
+        The request creates a new object wp_locked_pointer which is used to
+        interact with the lock as well as receive updates about its state. See
+        the the description of wp_locked_pointer for further information.
+        Note that while a pointer is locked, the wl_pointer objects of the
+        corresponding seat will not emit any wl_pointer.motion events, but
+        relative motion events will still be emitted via wp_relative_pointer
+        objects of the same seat. wl_pointer.axis and wl_pointer.button events
+        are unaffected.
+        """
+
+        ...
+
+    @staticmethod
+    def confine_pointer(surface: object, pointer: object, region: object, lifetime: zwp_pointer_constraints_v1.lifetime) -> zwp_confined_pointer_v1:
+        """
+        confine pointer to a region
+        The confine_pointer request lets the client request to confine the
+        pointer cursor to a given region. This request may not take effect
+        immediately; in the future, when the compositor deems implementation-
+        specific constraints are satisfied, the pointer confinement will be
+        activated and the compositor sends a confined event.
+        The intersection of the region passed with this request and the input
+        region of the surface is used to determine where the pointer must be
+        in order for the confinement to activate. It is up to the compositor
+        whether to warp the pointer or require some kind of user interaction for
+        the confinement to activate. If the region is null the surface input
+        region is used.
+        The request will create a new object wp_confined_pointer which is used
+        to interact with the confinement as well as receive updates about its
+        state. See the the description of wp_confined_pointer for further
+        information.
+        """
+
+        ...
+class zwp_locked_pointer_v1:
+    """
+    receive relative pointer motion events
+    The wp_locked_pointer interface represents a locked pointer state.
+    While the lock of this object is active, the wl_pointer objects of the
+    associated seat will not emit any wl_pointer.motion events.
+    This object will send the event 'locked' when the lock is activated.
+    Whenever the lock is activated, it is guaranteed that the locked surface
+    will already have received pointer focus and that the pointer will be
+    within the region passed to the request creating this object.
+    To unlock the pointer, send the destroy request. This will also destroy
+    the wp_locked_pointer object.
+    If the compositor decides to unlock the pointer the unlocked event is
+    sent. See wp_locked_pointer.unlock for details.
+    When unlocking, the compositor may warp the cursor position to the set
+    cursor position hint. If it does, it will not result in any relative
+    motion events emitted via wp_relative_pointer.
+    If the surface the lock was requested on is destroyed and the lock is not
+    yet activated, the wp_locked_pointer object is now defunct and must be
+    destroyed.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the locked pointer object
+        Destroy the locked pointer object. If applicable, the compositor will
+        unlock the pointer.
+        """
+
+        ...
+
+    @staticmethod
+    def set_cursor_position_hint(surface_x: fixed, surface_y: fixed) -> None:
+        """
+        set the pointer cursor position hint
+        Set the cursor position hint relative to the top left corner of the
+        surface.
+        If the client is drawing its own cursor, it should update the position
+        hint to the position of its own cursor. A compositor may use this
+        information to warp the pointer upon unlock in order to avoid pointer
+        jumps.
+        The cursor position hint is double-buffered state, see
+        wl_surface.commit.
+        """
+
+        ...
+
+    @staticmethod
+    def set_region(region: object) -> None:
+        """
+        set a new lock region
+        Set a new region used to lock the pointer.
+        The new lock region is double-buffered, see wl_surface.commit.
+        For details about the lock region, see wp_locked_pointer.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def locked() -> None:
+            """
+            lock activation event
+            Notification that the pointer lock of the seat's pointer is activated.
+            """
+
+            ...
+
+        @staticmethod
+        def unlocked() -> None:
+            """
+            lock deactivation event
+            Notification that the pointer lock of the seat's pointer is no longer
+            active. If this is a oneshot pointer lock (see
+            wp_pointer_constraints.lifetime) this object is now defunct and should
+            be destroyed. If this is a persistent pointer lock (see
+            wp_pointer_constraints.lifetime) this pointer lock may again
+            reactivate in the future.
+            """
+
+            ...
+class zwp_confined_pointer_v1:
+    """
+    confined pointer object
+    The wp_confined_pointer interface represents a confined pointer state.
+    This object will send the event 'confined' when the confinement is
+    activated. Whenever the confinement is activated, it is guaranteed that
+    the surface the pointer is confined to will already have received pointer
+    focus and that the pointer will be within the region passed to the request
+    creating this object. It is up to the compositor to decide whether this
+    requires some user interaction and if the pointer will warp to within the
+    passed region if outside.
+    To unconfine the pointer, send the destroy request. This will also destroy
+    the wp_confined_pointer object.
+    If the compositor decides to unconfine the pointer the unconfined event is
+    sent. The wp_confined_pointer object is at this point defunct and should
+    be destroyed.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the confined pointer object
+        Destroy the confined pointer object. If applicable, the compositor will
+        unconfine the pointer.
+        """
+
+        ...
+
+    @staticmethod
+    def set_region(region: object) -> None:
+        """
+        set a new confine region
+        Set a new region used to confine the pointer.
+        The new confine region is double-buffered, see wl_surface.commit.
+        If the confinement is active when the new confinement region is applied
+        and the pointer ends up outside of newly applied region, the pointer may
+        warped to a position within the new confinement region. If warped, a
+        wl_pointer.motion event will be emitted, but no
+        wp_relative_pointer.relative_motion event.
+        The compositor may also, instead of using the new region, unconfine the
+        pointer.
+        For details about the confine region, see wp_confined_pointer.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def confined() -> None:
+            """
+            pointer confined
+            Notification that the pointer confinement of the seat's pointer is
+            activated.
+            """
+
+            ...
+
+        @staticmethod
+        def unconfined() -> None:
+            """
+            pointer unconfined
+            Notification that the pointer confinement of the seat's pointer is no
+            longer active. If this is a oneshot pointer confinement (see
+            wp_pointer_constraints.lifetime) this object is now defunct and should
+            be destroyed. If this is a persistent pointer confinement (see
+            wp_pointer_constraints.lifetime) this pointer confinement may again
+            reactivate in the future.
+            """
+
+            ...
+class zxdg_exporter_v2:
+    """
+    interface for exporting surfaces
+    A global interface used for exporting surfaces that can later be imported
+    using xdg_importer.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        invalid_surface: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_exporter object
+        Notify the compositor that the xdg_exporter object will no longer be
+        used.
+        """
+
+        ...
+
+    @staticmethod
+    def export_toplevel(surface: object) -> zxdg_exported_v2:
+        """
+        export a toplevel surface
+        The export_toplevel request exports the passed surface so that it can later be
+        imported via xdg_importer. When called, a new xdg_exported object will
+        be created and xdg_exported.handle will be sent immediately. See the
+        corresponding interface and event for details.
+        A surface may be exported multiple times, and each exported handle may
+        be used to create an xdg_imported multiple times. Only xdg_toplevel
+        equivalent surfaces may be exported, otherwise an invalid_surface
+        protocol error is sent.
+        """
+
+        ...
+class zxdg_importer_v2:
+    """
+    interface for importing surfaces
+    A global interface used for importing surfaces exported by xdg_exporter.
+    With this interface, a client can create a reference to a surface of
+    another client.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_importer object
+        Notify the compositor that the xdg_importer object will no longer be
+        used.
+        """
+
+        ...
+
+    @staticmethod
+    def import_toplevel(handle: string) -> zxdg_imported_v2:
+        """
+        import a toplevel surface
+        The import_toplevel request imports a surface from any client given a handle
+        retrieved by exporting said surface using xdg_exporter.export_toplevel.
+        When called, a new xdg_imported object will be created. This new object
+        represents the imported surface, and the importing client can
+        manipulate its relationship using it. See xdg_imported for details.
+        """
+
+        ...
+class zxdg_exported_v2:
+    """
+    an exported surface handle
+    An xdg_exported object represents an exported reference to a surface. The
+    exported surface may be referenced as long as the xdg_exported object not
+    destroyed. Destroying the xdg_exported invalidates any relationship the
+    importer may have established using xdg_imported.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        unexport the exported surface
+        Revoke the previously exported surface. This invalidates any
+        relationship the importer may have set up using the xdg_imported created
+        given the handle sent via xdg_exported.handle.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def handle(handle: string) -> None:
+            """
+            the exported surface handle
+            The handle event contains the unique handle of this exported surface
+            reference. It may be shared with any client, which then can use it to
+            import the surface by calling xdg_importer.import_toplevel. A handle
+            may be used to import the surface multiple times.
+            """
+
+            ...
+class zxdg_imported_v2:
+    """
+    an imported surface handle
+    An xdg_imported object represents an imported reference to surface exported
+    by some client. A client can use this interface to manipulate
+    relationships between its own surfaces and the imported surface.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        invalid_surface: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_imported object
+        Notify the compositor that it will no longer use the xdg_imported
+        object. Any relationship that may have been set up will at this point
+        be invalidated.
+        """
+
+        ...
+
+    @staticmethod
+    def set_parent_of(surface: object) -> None:
+        """
+        set as the parent of some surface
+        Set the imported surface as the parent of some surface of the client.
+        The passed surface must be an xdg_toplevel equivalent, otherwise an
+        invalid_surface protocol error is sent. Calling this function sets up
+        a surface to surface relation with the same stacking and positioning
+        semantics as xdg_toplevel.set_parent.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def destroyed() -> None:
+            """
+            the imported surface handle has been destroyed
+            The imported surface handle has been destroyed and any relationship set
+            up has been invalidated. This may happen for various reasons, for
+            example if the exported surface or the exported surface handle has been
+            destroyed, if the handle used for importing was invalid.
+            """
+
+            ...
+class zxdg_exporter_v1:
+    """
+    interface for exporting surfaces
+    A global interface used for exporting surfaces that can later be imported
+    using xdg_importer.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_exporter object
+        Notify the compositor that the xdg_exporter object will no longer be
+        used.
+        """
+
+        ...
+
+    @staticmethod
+    def export(surface: object) -> zxdg_exported_v1:
+        """
+        export a surface
+        The export request exports the passed surface so that it can later be
+        imported via xdg_importer. When called, a new xdg_exported object will
+        be created and xdg_exported.handle will be sent immediately. See the
+        corresponding interface and event for details.
+        A surface may be exported multiple times, and each exported handle may
+        be used to create an xdg_imported multiple times. Only xdg_surface
+        surfaces may be exported.
+        """
+
+        ...
+class zxdg_importer_v1:
+    """
+    interface for importing surfaces
+    A global interface used for importing surfaces exported by xdg_exporter.
+    With this interface, a client can create a reference to a surface of
+    another client.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_importer object
+        Notify the compositor that the xdg_importer object will no longer be
+        used.
+        """
+
+        ...
+
+    @staticmethod
+    def import_(handle: string) -> zxdg_imported_v1:
+        """
+        import a surface
+        The import request imports a surface from any client given a handle
+        retrieved by exporting said surface using xdg_exporter.export. When
+        called, a new xdg_imported object will be created. This new object
+        represents the imported surface, and the importing client can
+        manipulate its relationship using it. See xdg_imported for details.
+        """
+
+        ...
+class zxdg_exported_v1:
+    """
+    an exported surface handle
+    An xdg_exported object represents an exported reference to a surface. The
+    exported surface may be referenced as long as the xdg_exported object not
+    destroyed. Destroying the xdg_exported invalidates any relationship the
+    importer may have established using xdg_imported.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        unexport the exported surface
+        Revoke the previously exported surface. This invalidates any
+        relationship the importer may have set up using the xdg_imported created
+        given the handle sent via xdg_exported.handle.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def handle(handle: string) -> None:
+            """
+            the exported surface handle
+            The handle event contains the unique handle of this exported surface
+            reference. It may be shared with any client, which then can use it to
+            import the surface by calling xdg_importer.import. A handle may be
+            used to import the surface multiple times.
+            """
+
+            ...
+class zxdg_imported_v1:
+    """
+    an imported surface handle
+    An xdg_imported object represents an imported reference to surface exported
+    by some client. A client can use this interface to manipulate
+    relationships between its own surfaces and the imported surface.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_imported object
+        Notify the compositor that it will no longer use the xdg_imported
+        object. Any relationship that may have been set up will at this point
+        be invalidated.
+        """
+
+        ...
+
+    @staticmethod
+    def set_parent_of(surface: object) -> None:
+        """
+        set as the parent of some surface
+        Set the imported surface as the parent of some surface of the client.
+        The passed surface must be a toplevel xdg_surface. Calling this function
+        sets up a surface to surface relation with the same stacking and positioning
+        semantics as xdg_surface.set_parent.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def destroyed() -> None:
+            """
+            the imported surface handle has been destroyed
+            The imported surface handle has been destroyed and any relationship set
+            up has been invalidated. This may happen for various reasons, for
+            example if the exported surface or the exported surface handle has been
+            destroyed, if the handle used for importing was invalid.
+            """
+
+            ...
+class zwp_primary_selection_device_manager_v1:
+    """
+    X primary selection emulation
+    The primary selection device manager is a singleton global object that
+    provides access to the primary selection. It allows to create
+    wp_primary_selection_source objects, as well as retrieving the per-seat
+    wp_primary_selection_device objects.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def create_source() -> zwp_primary_selection_source_v1:
+        """
+        create a new primary selection source
+        Create a new primary selection source.
+        """
+
+        ...
+
+    @staticmethod
+    def get_device(seat: object) -> zwp_primary_selection_device_v1:
+        """
+        create a new primary selection device
+        Create a new data device for a given seat.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the primary selection device manager
+        Destroy the primary selection device manager.
+        """
+
+        ...
+class zwp_primary_selection_device_v1:
+    """
+
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def set_selection(source: object, serial: uint) -> None:
+        """
+        set the primary selection
+        Replaces the current selection. The previous owner of the primary
+        selection will receive a wp_primary_selection_source.cancelled event.
+        To unset the selection, set the source to NULL.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the primary selection device
+        Destroy the primary selection device.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def data_offer(offer: zwp_primary_selection_offer_v1) -> None:
+            """
+            introduce a new wp_primary_selection_offer
+            Introduces a new wp_primary_selection_offer object that may be used
+            to receive the current primary selection. Immediately following this
+            event, the new wp_primary_selection_offer object will send
+            wp_primary_selection_offer.offer events to describe the offered mime
+            types.
+            """
+
+            ...
+
+        @staticmethod
+        def selection(id: object) -> None:
+            """
+            advertise a new primary selection
+            The wp_primary_selection_device.selection event is sent to notify the
+            client of a new primary selection. This event is sent after the
+            wp_primary_selection.data_offer event introducing this object, and after
+            the offer has announced its mimetypes through
+            wp_primary_selection_offer.offer.
+            The data_offer is valid until a new offer or NULL is received
+            or until the client loses keyboard focus. The client must destroy the
+            previous selection data_offer, if any, upon receiving this event.
+            """
+
+            ...
+class zwp_primary_selection_offer_v1:
+    """
+    offer to transfer primary selection contents
+    A wp_primary_selection_offer represents an offer to transfer the contents
+    of the primary selection clipboard to the client. Similar to
+    wl_data_offer, the offer also describes the mime types that the data can
+    be converted to and provides the mechanisms for transferring the data
+    directly to the client.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def receive(mime_type: string, fd: fd) -> None:
+        """
+        request that the data is transferred
+        To transfer the contents of the primary selection clipboard, the client
+        issues this request and indicates the mime type that it wants to
+        receive. The transfer happens through the passed file descriptor
+        (typically created with the pipe system call). The source client writes
+        the data in the mime type representation requested and then closes the
+        file descriptor.
+        The receiving client reads from the read end of the pipe until EOF and
+        closes its end, at which point the transfer is complete.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the primary selection offer
+        Destroy the primary selection offer.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def offer(mime_type: string) -> None:
+            """
+            advertise offered mime type
+            Sent immediately after creating announcing the
+            wp_primary_selection_offer through
+            wp_primary_selection_device.data_offer. One event is sent per offered
+            mime type.
+            """
+
+            ...
+class zwp_primary_selection_source_v1:
+    """
+    offer to replace the contents of the primary selection
+    The source side of a wp_primary_selection_offer, it provides a way to
+    describe the offered data and respond to requests to transfer the
+    requested contents of the primary selection clipboard.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def offer(mime_type: string) -> None:
+        """
+        add an offered mime type
+        This request adds a mime type to the set of mime types advertised to
+        targets. Can be called several times to offer multiple types.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the primary selection source
+        Destroy the primary selection source.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def send(mime_type: string, fd: fd) -> None:
+            """
+            send the primary selection contents
+            Request for the current primary selection contents from the client.
+            Send the specified mime type over the passed file descriptor, then
+            close it.
+            """
+
+            ...
+
+        @staticmethod
+        def cancelled() -> None:
+            """
+            request for primary selection contents was canceled
+            This primary selection source is no longer valid. The client should
+            clean up and destroy this primary selection source.
+            """
+
+            ...
+class zwp_relative_pointer_manager_v1:
+    """
+    get relative pointer objects
+    A global interface used for getting the relative pointer object for a
+    given pointer.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the relative pointer manager object
+        Used by the client to notify the server that it will no longer use this
+        relative pointer manager object.
+        """
+
+        ...
+
+    @staticmethod
+    def get_relative_pointer(pointer: object) -> zwp_relative_pointer_v1:
+        """
+        get a relative pointer object
+        Create a relative pointer interface given a wl_pointer object. See the
+        wp_relative_pointer interface for more details.
+        """
+
+        ...
+class zwp_relative_pointer_v1:
+    """
+    relative pointer object
+    A wp_relative_pointer object is an extension to the wl_pointer interface
+    used for emitting relative pointer events. It shares the same focus as
+    wl_pointer objects of the same seat and will only emit events when it has
+    focus.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        release the relative pointer object
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def relative_motion(utime_hi: uint, utime_lo: uint, dx: fixed, dy: fixed, dx_unaccel: fixed, dy_unaccel: fixed) -> None:
+            """
+            relative pointer motion
+            Relative x/y pointer motion from the pointer of the seat associated with
+            this object.
+            A relative motion is in the same dimension as regular wl_pointer motion
+            events, except they do not represent an absolute position. For example,
+            moving a pointer from (x, y) to (x', y') would have the equivalent
+            relative motion (x' - x, y' - y). If a pointer motion caused the
+            absolute pointer position to be clipped by for example the edge of the
+            monitor, the relative motion is unaffected by the clipping and will
+            represent the unclipped motion.
+            This event also contains non-accelerated motion deltas. The
+            non-accelerated delta is, when applicable, the regular pointer motion
+            delta as it was before having applied motion acceleration and other
+            transformations such as normalization.
+            Note that the non-accelerated delta does not represent 'raw' events as
+            they were read from some device. Pointer motion acceleration is device-
+            and configuration-specific and non-accelerated deltas and accelerated
+            deltas may have the same value on some devices.
+            Relative motions are not coupled to wl_pointer.motion events, and can be
+            sent in combination with such events, but also independently. There may
+            also be scenarios where wl_pointer.motion is sent, but there is no
+            relative motion. The order of an absolute and relative motion event
+            originating from the same physical motion is not guaranteed.
+            If the client needs button events or focus state, it can receive them
+            from a wl_pointer object of the same seat that the wp_relative_pointer
+            object is associated with.
+            """
+
+            ...
+class zxdg_output_manager_v1:
+    """
+    manage xdg_output objects
+    A global factory interface for xdg_output objects.
+    """
+    object_id = 0
+    version = 3
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_output_manager object
+        Using this request a client can tell the server that it is not
+        going to use the xdg_output_manager object anymore.
+        Any objects already created through this instance are not affected.
+        """
+
+        ...
+
+    @staticmethod
+    def get_xdg_output(output: object) -> zxdg_output_v1:
+        """
+        create an xdg output from a wl_output
+        This creates a new xdg_output object for the given wl_output.
+        """
+
+        ...
+class zxdg_output_v1:
+    """
+    compositor logical output region
+    An xdg_output describes part of the compositor geometry.
+    This typically corresponds to a monitor that displays part of the
+    compositor space.
+    For objects version 3 onwards, after all xdg_output properties have been
+    sent (when the object is created and when properties are updated), a
+    wl_output.done event is sent. This allows changes to the output
+    properties to be seen as atomic, even if they happen via multiple events.
+    """
+    object_id = 0
+    version = 3
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the xdg_output object
+        Using this request a client can tell the server that it is not
+        going to use the xdg_output object anymore.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def logical_position(x: int, y: int) -> None:
+            """
+            position of the output within the global compositor space
+            The position event describes the location of the wl_output within
+            the global compositor space.
+            The logical_position event is sent after creating an xdg_output
+            (see xdg_output_manager.get_xdg_output) and whenever the location
+            of the output changes within the global compositor space.
+            """
+
+            ...
+
+        @staticmethod
+        def logical_size(width: int, height: int) -> None:
+            """
+            size of the output in the global compositor space
+            The logical_size event describes the size of the output in the
+            global compositor space.
+            Most regular Wayland clients should not pay attention to the
+            logical size and would rather rely on xdg_shell interfaces.
+            Some clients such as Xwayland, however, need this to configure
+            their surfaces in the global compositor space as the compositor
+            may apply a different scale from what is advertised by the output
+            scaling property (to achieve fractional scaling, for example).
+            For example, for a wl_output mode 3840×2160 and a scale factor 2:
+            - A compositor not scaling the monitor viewport in its compositing space
+            will advertise a logical size of 3840×2160,
+            - A compositor scaling the monitor viewport with scale factor 2 will
+            advertise a logical size of 1920×1080,
+            - A compositor scaling the monitor viewport using a fractional scale of
+            1.5 will advertise a logical size of 2560×1440.
+            For example, for a wl_output mode 1920×1080 and a 90 degree rotation,
+            the compositor will advertise a logical size of 1080x1920.
+            The logical_size event is sent after creating an xdg_output
+            (see xdg_output_manager.get_xdg_output) and whenever the logical
+            size of the output changes, either as a result of a change in the
+            applied scale or because of a change in the corresponding output
+            mode(see wl_output.mode) or transform (see wl_output.transform).
+            """
+
+            ...
+
+        @staticmethod
+        def done() -> None:
+            """
+            all information about the output have been sent
+            This event is sent after all other properties of an xdg_output
+            have been sent.
+            This allows changes to the xdg_output properties to be seen as
+            atomic, even if they happen via multiple events.
+            For objects version 3 onwards, this event is deprecated. Compositors
+            are not required to send it anymore and must send wl_output.done
+            instead.
+            """
+
+            ...
+
+        @staticmethod
+        def name(name: string) -> None:
+            """
+            name of this output
+            Many compositors will assign names to their outputs, show them to the
+            user, allow them to be configured by name, etc. The client may wish to
+            know this name as well to offer the user similar behaviors.
+            The naming convention is compositor defined, but limited to
+            alphanumeric characters and dashes (-). Each name is unique among all
+            wl_output globals, but if a wl_output global is destroyed the same name
+            may be reused later. The names will also remain consistent across
+            sessions with the same hardware and software configuration.
+            Examples of names include 'HDMI-A-1', 'WL-1', 'X11-1', etc. However, do
+            not assume that the name is a reflection of an underlying DRM
+            connector, X11 connection, etc.
+            The name event is sent after creating an xdg_output (see
+            xdg_output_manager.get_xdg_output). This event is only sent once per
+            xdg_output, and the name does not change over the lifetime of the
+            wl_output global.
+            This event is deprecated, instead clients should use wl_output.name.
+            Compositors must still support this event.
+            """
+
+            ...
+
+        @staticmethod
+        def description(description: string) -> None:
+            """
+            human-readable description of this output
+            Many compositors can produce human-readable descriptions of their
+            outputs.  The client may wish to know this description as well, to
+            communicate the user for various purposes.
+            The description is a UTF-8 string with no convention defined for its
+            contents. Examples might include 'Foocorp 11" Display' or 'Virtual X11
+            output via :1'.
+            The description event is sent after creating an xdg_output (see
+            xdg_output_manager.get_xdg_output) and whenever the description
+            changes. The description is optional, and may not be sent at all.
+            For objects of version 2 and lower, this event is only sent once per
+            xdg_output, and the description does not change over the lifetime of
+            the wl_output global.
+            This event is deprecated, instead clients should use
+            wl_output.description. Compositors must still support this event.
+            """
+
+            ...
+class zxdg_decoration_manager_v1:
+    """
+    window decoration manager
+    This interface allows a compositor to announce support for server-side
+    decorations.
+    A window decoration is a set of window controls as deemed appropriate by
+    the party managing them, such as user interface components used to move,
+    resize and change a window's state.
+    A client can use this protocol to request being decorated by a supporting
+    compositor.
+    If compositor and client do not negotiate the use of a server-side
+    decoration using this protocol, clients continue to self-decorate as they
+    see fit.
+    Warning! The protocol described in this file is experimental and
+    backward incompatible changes may be made. Backward compatible changes
+    may be added together with the corresponding interface version bump.
+    Backward incompatible changes are done by bumping the version number in
+    the protocol and interface names and resetting the interface version.
+    Once the protocol is to be declared stable, the 'z' prefix and the
+    version number in the protocol and interface names are removed and the
+    interface version number is reset.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the decoration manager object
+        Destroy the decoration manager. This doesn't destroy objects created
+        with the manager.
+        """
+
+        ...
+
+    @staticmethod
+    def get_toplevel_decoration(toplevel: object) -> zxdg_toplevel_decoration_v1:
+        """
+        create a new toplevel decoration object
+        Create a new decoration object associated with the given toplevel.
+        Creating an xdg_toplevel_decoration from an xdg_toplevel which has a
+        buffer attached or committed is a client error, and any attempts by a
+        client to attach or manipulate a buffer prior to the first
+        xdg_toplevel_decoration.configure event must also be treated as
+        errors.
+        """
+
+        ...
+class zxdg_toplevel_decoration_v1:
+    """
+    decoration object for a toplevel surface
+    The decoration object allows the compositor to toggle server-side window
+    decorations for a toplevel surface. The client can request to switch to
+    another mode.
+    The xdg_toplevel_decoration object must be destroyed before its
+    xdg_toplevel.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        unconfigured_buffer: int
+        already_constructed: int
+        orphaned: int
+        invalid_mode: int
+
+
+    class mode(Enum):
+        client_side: int
+        server_side: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the decoration object
+        Switch back to a mode without any server-side decorations at the next
+        commit.
+        """
+
+        ...
+
+    @staticmethod
+    def set_mode(mode: zxdg_toplevel_decoration_v1.mode) -> None:
+        """
+        set the decoration mode
+        Set the toplevel surface decoration mode. This informs the compositor
+        that the client prefers the provided decoration mode.
+        After requesting a decoration mode, the compositor will respond by
+        emitting an xdg_surface.configure event. The client should then update
+        its content, drawing it without decorations if the received mode is
+        server-side decorations. The client must also acknowledge the configure
+        when committing the new content (see xdg_surface.ack_configure).
+        The compositor can decide not to use the client's mode and enforce a
+        different mode instead.
+        Clients whose decoration mode depend on the xdg_toplevel state may send
+        a set_mode request in response to an xdg_surface.configure event and wait
+        for the next xdg_surface.configure event to prevent unwanted state.
+        Such clients are responsible for preventing configure loops and must
+        make sure not to send multiple successive set_mode requests with the
+        same decoration mode.
+        If an invalid mode is supplied by the client, the invalid_mode protocol
+        error is raised by the compositor.
+        """
+
+        ...
+
+    @staticmethod
+    def unset_mode() -> None:
+        """
+        unset the decoration mode
+        Unset the toplevel surface decoration mode. This informs the compositor
+        that the client doesn't prefer a particular decoration mode.
+        This request has the same semantics as set_mode.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def configure(mode: zxdg_toplevel_decoration_v1.mode) -> None:
+            """
+            notify a decoration mode change
+            The configure event configures the effective decoration mode. The
+            configured state should not be applied immediately. Clients must send an
+            ack_configure in response to this event. See xdg_surface.configure and
+            xdg_surface.ack_configure for details.
+            A configure event can be sent at any time. The specified mode must be
+            obeyed by the client.
+            """
+
+            ...
 class zwp_fullscreen_shell_v1:
     """
     displays a single surface per output
@@ -8782,67 +12072,6 @@ class zwp_fullscreen_shell_mode_feedback_v1:
             """
 
             ...
-class zwp_idle_inhibit_manager_v1:
-    """
-    control behavior when display idles
-    This interface permits inhibiting the idle behavior such as screen
-    blanking, locking, and screensaving.  The client binds the idle manager
-    globally, then creates idle-inhibitor objects for each surface.
-    Warning! The protocol described in this file is experimental and
-    backward incompatible changes may be made. Backward compatible changes
-    may be added together with the corresponding interface version bump.
-    Backward incompatible changes are done by bumping the version number in
-    the protocol and interface names and resetting the interface version.
-    Once the protocol is to be declared stable, the 'z' prefix and the
-    version number in the protocol and interface names are removed and the
-    interface version number is reset.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the idle inhibitor object
-        Destroy the inhibit manager.
-        """
-
-        ...
-
-    @staticmethod
-    def create_inhibitor(surface: object) -> zwp_idle_inhibitor_v1:
-        """
-        create a new inhibitor object
-        Create a new inhibitor object associated with the given surface.
-        """
-
-        ...
-class zwp_idle_inhibitor_v1:
-    """
-    context object for inhibiting idle behavior
-    An idle inhibitor prevents the output that the associated surface is
-    visible on from being set to a state where it is not visually usable due
-    to lack of user interaction (e.g. blanked, dimmed, locked, set to power
-    save, etc.)  Any screensaver processes are also blocked from displaying.
-    If the surface is destroyed, unmapped, becomes occluded, loses
-    visibility, or otherwise becomes not visually relevant for the user, the
-    idle inhibitor will not be honored by the compositor; if the surface
-    subsequently regains visibility the inhibitor takes effect once again.
-    Likewise, the inhibitor isn't honored if the system was already idled at
-    the time the inhibitor was established, although if the system later
-    de-idles and re-idles the inhibitor will take effect.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the idle inhibitor object
-        Remove the inhibitor effect from the associated wl_surface.
-        """
-
-        ...
 class zwp_input_method_context_v1:
     """
     input method context
@@ -9161,110 +12390,6 @@ class zwp_input_method_v1:
             """
 
             ...
-class zwp_input_timestamps_manager_v1:
-    """
-    context object for high-resolution input timestamps
-    A global interface used for requesting high-resolution timestamps
-    for input events.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the input timestamps manager object
-        Informs the server that the client will no longer be using this
-        protocol object. Existing objects created by this object are not
-        affected.
-        """
-
-        ...
-
-    @staticmethod
-    def get_keyboard_timestamps(keyboard: object) -> zwp_input_timestamps_v1:
-        """
-        subscribe to high-resolution keyboard timestamp events
-        Creates a new input timestamps object that represents a subscription
-        to high-resolution timestamp events for all wl_keyboard events that
-        carry a timestamp.
-        If the associated wl_keyboard object is invalidated, either through
-        client action (e.g. release) or server-side changes, the input
-        timestamps object becomes inert and the client should destroy it
-        by calling zwp_input_timestamps_v1.destroy.
-        """
-
-        ...
-
-    @staticmethod
-    def get_pointer_timestamps(pointer: object) -> zwp_input_timestamps_v1:
-        """
-        subscribe to high-resolution pointer timestamp events
-        Creates a new input timestamps object that represents a subscription
-        to high-resolution timestamp events for all wl_pointer events that
-        carry a timestamp.
-        If the associated wl_pointer object is invalidated, either through
-        client action (e.g. release) or server-side changes, the input
-        timestamps object becomes inert and the client should destroy it
-        by calling zwp_input_timestamps_v1.destroy.
-        """
-
-        ...
-
-    @staticmethod
-    def get_touch_timestamps(touch: object) -> zwp_input_timestamps_v1:
-        """
-        subscribe to high-resolution touch timestamp events
-        Creates a new input timestamps object that represents a subscription
-        to high-resolution timestamp events for all wl_touch events that
-        carry a timestamp.
-        If the associated wl_touch object becomes invalid, either through
-        client action (e.g. release) or server-side changes, the input
-        timestamps object becomes inert and the client should destroy it
-        by calling zwp_input_timestamps_v1.destroy.
-        """
-
-        ...
-class zwp_input_timestamps_v1:
-    """
-    context object for input timestamps
-    Provides high-resolution timestamp events for a set of subscribed input
-    events. The set of subscribed input events is determined by the
-    zwp_input_timestamps_manager_v1 request used to create this object.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the input timestamps object
-        Informs the server that the client will no longer be using this
-        protocol object. After the server processes the request, no more
-        timestamp events will be emitted.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def timestamp(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
-            """
-            high-resolution timestamp event
-            The timestamp event is associated with the first subsequent input event
-            carrying a timestamp which belongs to the set of input events this
-            object is subscribed to.
-            The timestamp provided by this event is a high-resolution version of
-            the timestamp argument of the associated input event. The provided
-            timestamp is in the same clock domain and is at least as accurate as
-            the associated input event timestamp.
-            The timestamp is expressed as tv_sec_hi, tv_sec_lo, tv_nsec triples,
-            each component being an unsigned 32-bit value. Whole seconds are in
-            tv_sec which is a 64-bit value combined from tv_sec_hi and tv_sec_lo,
-            and the additional fractional part in tv_nsec as nanoseconds. Hence,
-            for valid timestamps tv_nsec must be in [0, 999999999].
-            """
-
-            ...
 class zwp_keyboard_shortcuts_inhibit_manager_v1:
     """
     context object for keyboard grab_manager
@@ -9366,15 +12491,12 @@ class zwp_keyboard_shortcuts_inhibitor_v1:
             """
 
             ...
-class zwp_linux_explicit_synchronization_v1:
+class zwp_idle_inhibit_manager_v1:
     """
-    protocol for providing explicit synchronization
-    This global is a factory interface, allowing clients to request
-    explicit synchronization for buffers on a per-surface basis.
-    See zwp_linux_surface_synchronization_v1 for more information.
-    This interface is derived from Chromium's
-    zcr_linux_explicit_synchronization_v1.
-    Note: this protocol is superseded by linux-drm-syncobj.
+    control behavior when display idles
+    This interface permits inhibiting the idle behavior such as screen
+    blanking, locking, and screensaving.  The client binds the idle manager
+    globally, then creates idle-inhibitor objects for each surface.
     Warning! The protocol described in this file is experimental and
     backward incompatible changes may be made. Backward compatible changes
     may be added together with the corresponding interface version bump.
@@ -9385,305 +12507,39 @@ class zwp_linux_explicit_synchronization_v1:
     interface version number is reset.
     """
     object_id = 0
-    version = 2
-
-    class error(Enum):
-        synchronization_exists: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy explicit synchronization factory object
-        Destroy this explicit synchronization factory object. Other objects,
-        including zwp_linux_surface_synchronization_v1 objects created by this
-        factory, shall not be affected by this request.
-        """
-
-        ...
-
-    @staticmethod
-    def get_synchronization(surface: object) -> zwp_linux_surface_synchronization_v1:
-        """
-        extend surface interface for explicit synchronization
-        Instantiate an interface extension for the given wl_surface to provide
-        explicit synchronization.
-        If the given wl_surface already has an explicit synchronization object
-        associated, the synchronization_exists protocol error is raised.
-        Graphics APIs, like EGL or Vulkan, that manage the buffer queue and
-        commits of a wl_surface themselves, are likely to be using this
-        extension internally. If a client is using such an API for a
-        wl_surface, it should not directly use this extension on that surface,
-        to avoid raising a synchronization_exists protocol error.
-        """
-
-        ...
-class zwp_linux_surface_synchronization_v1:
-    """
-    per-surface explicit synchronization support
-    This object implements per-surface explicit synchronization.
-    Synchronization refers to co-ordination of pipelined operations performed
-    on buffers. Most GPU clients will schedule an asynchronous operation to
-    render to the buffer, then immediately send the buffer to the compositor
-    to be attached to a surface.
-    In implicit synchronization, ensuring that the rendering operation is
-    complete before the compositor displays the buffer is an implementation
-    detail handled by either the kernel or userspace graphics driver.
-    By contrast, in explicit synchronization, dma_fence objects mark when the
-    asynchronous operations are complete. When submitting a buffer, the
-    client provides an acquire fence which will be waited on before the
-    compositor accesses the buffer. The Wayland server, through a
-    zwp_linux_buffer_release_v1 object, will inform the client with an event
-    which may be accompanied by a release fence, when the compositor will no
-    longer access the buffer contents due to the specific commit that
-    requested the release event.
-    Each surface can be associated with only one object of this interface at
-    any time.
-    In version 1 of this interface, explicit synchronization is only
-    guaranteed to be supported for buffers created with any version of the
-    wp_linux_dmabuf buffer factory. Version 2 additionally guarantees
-    explicit synchronization support for opaque EGL buffers, which is a type
-    of platform specific buffers described in the EGL_WL_bind_wayland_display
-    extension. Compositors are free to support explicit synchronization for
-    additional buffer types.
-    """
-    object_id = 0
-    version = 2
-
-    class error(Enum):
-        invalid_fence: int
-        duplicate_fence: int
-        duplicate_release: int
-        no_surface: int
-        unsupported_buffer: int
-        no_buffer: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy synchronization object
-        Destroy this explicit synchronization object.
-        Any fence set by this object with set_acquire_fence since the last
-        commit will be discarded by the server. Any fences set by this object
-        before the last commit are not affected.
-        zwp_linux_buffer_release_v1 objects created by this object are not
-        affected by this request.
-        """
-
-        ...
-
-    @staticmethod
-    def set_acquire_fence(fd: fd) -> None:
-        """
-        set the acquire fence
-        Set the acquire fence that must be signaled before the compositor
-        may sample from the buffer attached with wl_surface.attach. The fence
-        is a dma_fence kernel object.
-        The acquire fence is double-buffered state, and will be applied on the
-        next wl_surface.commit request for the associated surface. Thus, it
-        applies only to the buffer that is attached to the surface at commit
-        time.
-        If the provided fd is not a valid dma_fence fd, then an INVALID_FENCE
-        error is raised.
-        If a fence has already been attached during the same commit cycle, a
-        DUPLICATE_FENCE error is raised.
-        If the associated wl_surface was destroyed, a NO_SURFACE error is
-        raised.
-        If at surface commit time the attached buffer does not support explicit
-        synchronization, an UNSUPPORTED_BUFFER error is raised.
-        If at surface commit time there is no buffer attached, a NO_BUFFER
-        error is raised.
-        """
-
-        ...
-
-    @staticmethod
-    def get_release() -> zwp_linux_buffer_release_v1:
-        """
-        release fence for last-attached buffer
-        Create a listener for the release of the buffer attached by the
-        client with wl_surface.attach. See zwp_linux_buffer_release_v1
-        documentation for more information.
-        The release object is double-buffered state, and will be associated
-        with the buffer that is attached to the surface at wl_surface.commit
-        time.
-        If a zwp_linux_buffer_release_v1 object has already been requested for
-        the surface in the same commit cycle, a DUPLICATE_RELEASE error is
-        raised.
-        If the associated wl_surface was destroyed, a NO_SURFACE error
-        is raised.
-        If at surface commit time there is no buffer attached, a NO_BUFFER
-        error is raised.
-        """
-
-        ...
-class zwp_linux_buffer_release_v1:
-    """
-    buffer release explicit synchronization
-    This object is instantiated in response to a
-    zwp_linux_surface_synchronization_v1.get_release request.
-    It provides an alternative to wl_buffer.release events, providing a
-    unique release from a single wl_surface.commit request. The release event
-    also supports explicit synchronization, providing a fence FD for the
-    client to synchronize against.
-    Exactly one event, either a fenced_release or an immediate_release, will
-    be emitted for the wl_surface.commit request. The compositor can choose
-    release by release which event it uses.
-    This event does not replace wl_buffer.release events; servers are still
-    required to send those events.
-    Once a buffer release object has delivered a 'fenced_release' or an
-    'immediate_release' event it is automatically destroyed.
-    """
-    object_id = 0
     version = 1
 
-    class events:
-        @staticmethod
-        def fenced_release(fence: fd) -> None:
-            """
-            release buffer with fence
-            Sent when the compositor has finalised its usage of the associated
-            buffer for the relevant commit, providing a dma_fence which will be
-            signaled when all operations by the compositor on that buffer for that
-            commit have finished.
-            Once the fence has signaled, and assuming the associated buffer is not
-            pending release from other wl_surface.commit requests, no additional
-            explicit or implicit synchronization is required to safely reuse or
-            destroy the buffer.
-            This event destroys the zwp_linux_buffer_release_v1 object.
-            """
-
-            ...
-
-        @staticmethod
-        def immediate_release() -> None:
-            """
-            release buffer immediately
-            Sent when the compositor has finalised its usage of the associated
-            buffer for the relevant commit, and either performed no operations
-            using it, or has a guarantee that all its operations on that buffer for
-            that commit have finished.
-            Once this event is received, and assuming the associated buffer is not
-            pending release from other wl_surface.commit requests, no additional
-            explicit or implicit synchronization is required to safely reuse or
-            destroy the buffer.
-            This event destroys the zwp_linux_buffer_release_v1 object.
-            """
-
-            ...
-class zwp_pointer_constraints_v1:
-    """
-    constrain the movement of a pointer
-    The global interface exposing pointer constraining functionality. It
-    exposes two requests: lock_pointer for locking the pointer to its
-    position, and confine_pointer for locking the pointer to a region.
-    The lock_pointer and confine_pointer requests create the objects
-    wp_locked_pointer and wp_confined_pointer respectively, and the client can
-    use these objects to interact with the lock.
-    For any surface, only one lock or confinement may be active across all
-    wl_pointer objects of the same seat. If a lock or confinement is requested
-    when another lock or confinement is active or requested on the same surface
-    and with any of the wl_pointer objects of the same seat, an
-    'already_constrained' error will be raised.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        already_constrained: int
-
-
-    class lifetime(Enum):
-        oneshot: int
-        persistent: int
-
     @staticmethod
     def destroy() -> None:
         """
-        destroy the pointer constraints manager object
-        Used by the client to notify the server that it will no longer use this
-        pointer constraints object.
+        destroy the idle inhibitor object
+        Destroy the inhibit manager.
         """
 
         ...
 
     @staticmethod
-    def lock_pointer(surface: object, pointer: object, region: object, lifetime: zwp_pointer_constraints_v1.lifetime) -> zwp_locked_pointer_v1:
+    def create_inhibitor(surface: object) -> zwp_idle_inhibitor_v1:
         """
-        lock pointer to a position
-        The lock_pointer request lets the client request to disable movements of
-        the virtual pointer (i.e. the cursor), effectively locking the pointer
-        to a position. This request may not take effect immediately; in the
-        future, when the compositor deems implementation-specific constraints
-        are satisfied, the pointer lock will be activated and the compositor
-        sends a locked event.
-        The protocol provides no guarantee that the constraints are ever
-        satisfied, and does not require the compositor to send an error if the
-        constraints cannot ever be satisfied. It is thus possible to request a
-        lock that will never activate.
-        There may not be another pointer constraint of any kind requested or
-        active on the surface for any of the wl_pointer objects of the seat of
-        the passed pointer when requesting a lock. If there is, an error will be
-        raised. See general pointer lock documentation for more details.
-        The intersection of the region passed with this request and the input
-        region of the surface is used to determine where the pointer must be
-        in order for the lock to activate. It is up to the compositor whether to
-        warp the pointer or require some kind of user interaction for the lock
-        to activate. If the region is null the surface input region is used.
-        A surface may receive pointer focus without the lock being activated.
-        The request creates a new object wp_locked_pointer which is used to
-        interact with the lock as well as receive updates about its state. See
-        the the description of wp_locked_pointer for further information.
-        Note that while a pointer is locked, the wl_pointer objects of the
-        corresponding seat will not emit any wl_pointer.motion events, but
-        relative motion events will still be emitted via wp_relative_pointer
-        objects of the same seat. wl_pointer.axis and wl_pointer.button events
-        are unaffected.
+        create a new inhibitor object
+        Create a new inhibitor object associated with the given surface.
         """
 
         ...
-
-    @staticmethod
-    def confine_pointer(surface: object, pointer: object, region: object, lifetime: zwp_pointer_constraints_v1.lifetime) -> zwp_confined_pointer_v1:
-        """
-        confine pointer to a region
-        The confine_pointer request lets the client request to confine the
-        pointer cursor to a given region. This request may not take effect
-        immediately; in the future, when the compositor deems implementation-
-        specific constraints are satisfied, the pointer confinement will be
-        activated and the compositor sends a confined event.
-        The intersection of the region passed with this request and the input
-        region of the surface is used to determine where the pointer must be
-        in order for the confinement to activate. It is up to the compositor
-        whether to warp the pointer or require some kind of user interaction for
-        the confinement to activate. If the region is null the surface input
-        region is used.
-        The request will create a new object wp_confined_pointer which is used
-        to interact with the confinement as well as receive updates about its
-        state. See the the description of wp_confined_pointer for further
-        information.
-        """
-
-        ...
-class zwp_locked_pointer_v1:
+class zwp_idle_inhibitor_v1:
     """
-    receive relative pointer motion events
-    The wp_locked_pointer interface represents a locked pointer state.
-    While the lock of this object is active, the wl_pointer objects of the
-    associated seat will not emit any wl_pointer.motion events.
-    This object will send the event 'locked' when the lock is activated.
-    Whenever the lock is activated, it is guaranteed that the locked surface
-    will already have received pointer focus and that the pointer will be
-    within the region passed to the request creating this object.
-    To unlock the pointer, send the destroy request. This will also destroy
-    the wp_locked_pointer object.
-    If the compositor decides to unlock the pointer the unlocked event is
-    sent. See wp_locked_pointer.unlock for details.
-    When unlocking, the compositor may warp the cursor position to the set
-    cursor position hint. If it does, it will not result in any relative
-    motion events emitted via wp_relative_pointer.
-    If the surface the lock was requested on is destroyed and the lock is not
-    yet activated, the wp_locked_pointer object is now defunct and must be
-    destroyed.
+    context object for inhibiting idle behavior
+    An idle inhibitor prevents the output that the associated surface is
+    visible on from being set to a state where it is not visually usable due
+    to lack of user interaction (e.g. blanked, dimmed, locked, set to power
+    save, etc.)  Any screensaver processes are also blocked from displaying.
+    If the surface is destroyed, unmapped, becomes occluded, loses
+    visibility, or otherwise becomes not visually relevant for the user, the
+    idle inhibitor will not be honored by the compositor; if the surface
+    subsequently regains visibility the inhibitor takes effect once again.
+    Likewise, the inhibitor isn't honored if the system was already idled at
+    the time the inhibitor was established, although if the system later
+    de-idles and re-idles the inhibitor will take effect.
     """
     object_id = 0
     version = 1
@@ -9691,133 +12547,11 @@ class zwp_locked_pointer_v1:
     @staticmethod
     def destroy() -> None:
         """
-        destroy the locked pointer object
-        Destroy the locked pointer object. If applicable, the compositor will
-        unlock the pointer.
+        destroy the idle inhibitor object
+        Remove the inhibitor effect from the associated wl_surface.
         """
 
         ...
-
-    @staticmethod
-    def set_cursor_position_hint(surface_x: fixed, surface_y: fixed) -> None:
-        """
-        set the pointer cursor position hint
-        Set the cursor position hint relative to the top left corner of the
-        surface.
-        If the client is drawing its own cursor, it should update the position
-        hint to the position of its own cursor. A compositor may use this
-        information to warp the pointer upon unlock in order to avoid pointer
-        jumps.
-        The cursor position hint is double-buffered state, see
-        wl_surface.commit.
-        """
-
-        ...
-
-    @staticmethod
-    def set_region(region: object) -> None:
-        """
-        set a new lock region
-        Set a new region used to lock the pointer.
-        The new lock region is double-buffered, see wl_surface.commit.
-        For details about the lock region, see wp_locked_pointer.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def locked() -> None:
-            """
-            lock activation event
-            Notification that the pointer lock of the seat's pointer is activated.
-            """
-
-            ...
-
-        @staticmethod
-        def unlocked() -> None:
-            """
-            lock deactivation event
-            Notification that the pointer lock of the seat's pointer is no longer
-            active. If this is a oneshot pointer lock (see
-            wp_pointer_constraints.lifetime) this object is now defunct and should
-            be destroyed. If this is a persistent pointer lock (see
-            wp_pointer_constraints.lifetime) this pointer lock may again
-            reactivate in the future.
-            """
-
-            ...
-class zwp_confined_pointer_v1:
-    """
-    confined pointer object
-    The wp_confined_pointer interface represents a confined pointer state.
-    This object will send the event 'confined' when the confinement is
-    activated. Whenever the confinement is activated, it is guaranteed that
-    the surface the pointer is confined to will already have received pointer
-    focus and that the pointer will be within the region passed to the request
-    creating this object. It is up to the compositor to decide whether this
-    requires some user interaction and if the pointer will warp to within the
-    passed region if outside.
-    To unconfine the pointer, send the destroy request. This will also destroy
-    the wp_confined_pointer object.
-    If the compositor decides to unconfine the pointer the unconfined event is
-    sent. The wp_confined_pointer object is at this point defunct and should
-    be destroyed.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the confined pointer object
-        Destroy the confined pointer object. If applicable, the compositor will
-        unconfine the pointer.
-        """
-
-        ...
-
-    @staticmethod
-    def set_region(region: object) -> None:
-        """
-        set a new confine region
-        Set a new region used to confine the pointer.
-        The new confine region is double-buffered, see wl_surface.commit.
-        If the confinement is active when the new confinement region is applied
-        and the pointer ends up outside of newly applied region, the pointer may
-        warped to a position within the new confinement region. If warped, a
-        wl_pointer.motion event will be emitted, but no
-        wp_relative_pointer.relative_motion event.
-        The compositor may also, instead of using the new region, unconfine the
-        pointer.
-        For details about the confine region, see wp_confined_pointer.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def confined() -> None:
-            """
-            pointer confined
-            Notification that the pointer confinement of the seat's pointer is
-            activated.
-            """
-
-            ...
-
-        @staticmethod
-        def unconfined() -> None:
-            """
-            pointer unconfined
-            Notification that the pointer confinement of the seat's pointer is no
-            longer active. If this is a oneshot pointer confinement (see
-            wp_pointer_constraints.lifetime) this object is now defunct and should
-            be destroyed. If this is a persistent pointer confinement (see
-            wp_pointer_constraints.lifetime) this pointer confinement may again
-            reactivate in the future.
-            """
-
-            ...
 class zwp_pointer_gestures_v1:
     """
     touchpad gestures
@@ -10062,271 +12796,368 @@ class zwp_pointer_gesture_hold_v1:
             """
 
             ...
-class zwp_primary_selection_device_manager_v1:
+class zwp_input_timestamps_manager_v1:
     """
-    X primary selection emulation
-    The primary selection device manager is a singleton global object that
-    provides access to the primary selection. It allows to create
-    wp_primary_selection_source objects, as well as retrieving the per-seat
-    wp_primary_selection_device objects.
+    context object for high-resolution input timestamps
+    A global interface used for requesting high-resolution timestamps
+    for input events.
     """
     object_id = 0
     version = 1
 
     @staticmethod
-    def create_source() -> zwp_primary_selection_source_v1:
-        """
-        create a new primary selection source
-        Create a new primary selection source.
-        """
-
-        ...
-
-    @staticmethod
-    def get_device(seat: object) -> zwp_primary_selection_device_v1:
-        """
-        create a new primary selection device
-        Create a new data device for a given seat.
-        """
-
-        ...
-
-    @staticmethod
     def destroy() -> None:
         """
-        destroy the primary selection device manager
-        Destroy the primary selection device manager.
+        destroy the input timestamps manager object
+        Informs the server that the client will no longer be using this
+        protocol object. Existing objects created by this object are not
+        affected.
         """
 
         ...
-class zwp_primary_selection_device_v1:
-    """
 
+    @staticmethod
+    def get_keyboard_timestamps(keyboard: object) -> zwp_input_timestamps_v1:
+        """
+        subscribe to high-resolution keyboard timestamp events
+        Creates a new input timestamps object that represents a subscription
+        to high-resolution timestamp events for all wl_keyboard events that
+        carry a timestamp.
+        If the associated wl_keyboard object is invalidated, either through
+        client action (e.g. release) or server-side changes, the input
+        timestamps object becomes inert and the client should destroy it
+        by calling zwp_input_timestamps_v1.destroy.
+        """
+
+        ...
+
+    @staticmethod
+    def get_pointer_timestamps(pointer: object) -> zwp_input_timestamps_v1:
+        """
+        subscribe to high-resolution pointer timestamp events
+        Creates a new input timestamps object that represents a subscription
+        to high-resolution timestamp events for all wl_pointer events that
+        carry a timestamp.
+        If the associated wl_pointer object is invalidated, either through
+        client action (e.g. release) or server-side changes, the input
+        timestamps object becomes inert and the client should destroy it
+        by calling zwp_input_timestamps_v1.destroy.
+        """
+
+        ...
+
+    @staticmethod
+    def get_touch_timestamps(touch: object) -> zwp_input_timestamps_v1:
+        """
+        subscribe to high-resolution touch timestamp events
+        Creates a new input timestamps object that represents a subscription
+        to high-resolution timestamp events for all wl_touch events that
+        carry a timestamp.
+        If the associated wl_touch object becomes invalid, either through
+        client action (e.g. release) or server-side changes, the input
+        timestamps object becomes inert and the client should destroy it
+        by calling zwp_input_timestamps_v1.destroy.
+        """
+
+        ...
+class zwp_input_timestamps_v1:
+    """
+    context object for input timestamps
+    Provides high-resolution timestamp events for a set of subscribed input
+    events. The set of subscribed input events is determined by the
+    zwp_input_timestamps_manager_v1 request used to create this object.
     """
     object_id = 0
     version = 1
 
     @staticmethod
-    def set_selection(source: object, serial: uint) -> None:
-        """
-        set the primary selection
-        Replaces the current selection. The previous owner of the primary
-        selection will receive a wp_primary_selection_source.cancelled event.
-        To unset the selection, set the source to NULL.
-        """
-
-        ...
-
-    @staticmethod
     def destroy() -> None:
         """
-        destroy the primary selection device
-        Destroy the primary selection device.
+        destroy the input timestamps object
+        Informs the server that the client will no longer be using this
+        protocol object. After the server processes the request, no more
+        timestamp events will be emitted.
         """
 
         ...
     class events:
         @staticmethod
-        def data_offer(offer: zwp_primary_selection_offer_v1) -> None:
+        def timestamp(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
             """
-            introduce a new wp_primary_selection_offer
-            Introduces a new wp_primary_selection_offer object that may be used
-            to receive the current primary selection. Immediately following this
-            event, the new wp_primary_selection_offer object will send
-            wp_primary_selection_offer.offer events to describe the offered mime
-            types.
-            """
-
-            ...
-
-        @staticmethod
-        def selection(id: object) -> None:
-            """
-            advertise a new primary selection
-            The wp_primary_selection_device.selection event is sent to notify the
-            client of a new primary selection. This event is sent after the
-            wp_primary_selection.data_offer event introducing this object, and after
-            the offer has announced its mimetypes through
-            wp_primary_selection_offer.offer.
-            The data_offer is valid until a new offer or NULL is received
-            or until the client loses keyboard focus. The client must destroy the
-            previous selection data_offer, if any, upon receiving this event.
+            high-resolution timestamp event
+            The timestamp event is associated with the first subsequent input event
+            carrying a timestamp which belongs to the set of input events this
+            object is subscribed to.
+            The timestamp provided by this event is a high-resolution version of
+            the timestamp argument of the associated input event. The provided
+            timestamp is in the same clock domain and is at least as accurate as
+            the associated input event timestamp.
+            The timestamp is expressed as tv_sec_hi, tv_sec_lo, tv_nsec triples,
+            each component being an unsigned 32-bit value. Whole seconds are in
+            tv_sec which is a 64-bit value combined from tv_sec_hi and tv_sec_lo,
+            and the additional fractional part in tv_nsec as nanoseconds. Hence,
+            for valid timestamps tv_nsec must be in [0, 999999999].
             """
 
             ...
-class zwp_primary_selection_offer_v1:
+class zwp_xwayland_keyboard_grab_manager_v1:
     """
-    offer to transfer primary selection contents
-    A wp_primary_selection_offer represents an offer to transfer the contents
-    of the primary selection clipboard to the client. Similar to
-    wl_data_offer, the offer also describes the mime types that the data can
-    be converted to and provides the mechanisms for transferring the data
-    directly to the client.
+    context object for keyboard grab manager
+    A global interface used for grabbing the keyboard.
     """
     object_id = 0
     version = 1
 
     @staticmethod
-    def receive(mime_type: string, fd: fd) -> None:
+    def destroy() -> None:
         """
-        request that the data is transferred
-        To transfer the contents of the primary selection clipboard, the client
-        issues this request and indicates the mime type that it wants to
-        receive. The transfer happens through the passed file descriptor
-        (typically created with the pipe system call). The source client writes
-        the data in the mime type representation requested and then closes the
-        file descriptor.
-        The receiving client reads from the read end of the pipe until EOF and
-        closes its end, at which point the transfer is complete.
+        destroy the keyboard grab manager
+        Destroy the keyboard grab manager.
         """
 
         ...
 
     @staticmethod
-    def destroy() -> None:
+    def grab_keyboard(surface: object, seat: object) -> zwp_xwayland_keyboard_grab_v1:
         """
-        destroy the primary selection offer
-        Destroy the primary selection offer.
+        grab the keyboard to a surface
+        The grab_keyboard request asks for a grab of the keyboard, forcing
+        the keyboard focus for the given seat upon the given surface.
+        The protocol provides no guarantee that the grab is ever satisfied,
+        and does not require the compositor to send an error if the grab
+        cannot ever be satisfied. It is thus possible to request a keyboard
+        grab that will never be effective.
+        The protocol:
+        * does not guarantee that the grab itself is applied for a surface,
+        the grab request may be silently ignored by the compositor,
+        * does not guarantee that any events are sent to this client even
+        if the grab is applied to a surface,
+        * does not guarantee that events sent to this client are exhaustive,
+        a compositor may filter some events for its own consumption,
+        * does not guarantee that events sent to this client are continuous,
+        a compositor may change and reroute keyboard events while the grab
+        is nominally active.
         """
 
         ...
+class zwp_xwayland_keyboard_grab_v1:
+    """
+    interface for grabbing the keyboard
+    A global interface used for grabbing the keyboard.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the grabbed keyboard object
+        Destroy the grabbed keyboard object. If applicable, the compositor
+        will ungrab the keyboard.
+        """
+
+        ...
+class zwp_linux_explicit_synchronization_v1:
+    """
+    protocol for providing explicit synchronization
+    This global is a factory interface, allowing clients to request
+    explicit synchronization for buffers on a per-surface basis.
+    See zwp_linux_surface_synchronization_v1 for more information.
+    This interface is derived from Chromium's
+    zcr_linux_explicit_synchronization_v1.
+    Note: this protocol is superseded by linux-drm-syncobj.
+    Warning! The protocol described in this file is experimental and
+    backward incompatible changes may be made. Backward compatible changes
+    may be added together with the corresponding interface version bump.
+    Backward incompatible changes are done by bumping the version number in
+    the protocol and interface names and resetting the interface version.
+    Once the protocol is to be declared stable, the 'z' prefix and the
+    version number in the protocol and interface names are removed and the
+    interface version number is reset.
+    """
+    object_id = 0
+    version = 2
+
+    class error(Enum):
+        synchronization_exists: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy explicit synchronization factory object
+        Destroy this explicit synchronization factory object. Other objects,
+        including zwp_linux_surface_synchronization_v1 objects created by this
+        factory, shall not be affected by this request.
+        """
+
+        ...
+
+    @staticmethod
+    def get_synchronization(surface: object) -> zwp_linux_surface_synchronization_v1:
+        """
+        extend surface interface for explicit synchronization
+        Instantiate an interface extension for the given wl_surface to provide
+        explicit synchronization.
+        If the given wl_surface already has an explicit synchronization object
+        associated, the synchronization_exists protocol error is raised.
+        Graphics APIs, like EGL or Vulkan, that manage the buffer queue and
+        commits of a wl_surface themselves, are likely to be using this
+        extension internally. If a client is using such an API for a
+        wl_surface, it should not directly use this extension on that surface,
+        to avoid raising a synchronization_exists protocol error.
+        """
+
+        ...
+class zwp_linux_surface_synchronization_v1:
+    """
+    per-surface explicit synchronization support
+    This object implements per-surface explicit synchronization.
+    Synchronization refers to co-ordination of pipelined operations performed
+    on buffers. Most GPU clients will schedule an asynchronous operation to
+    render to the buffer, then immediately send the buffer to the compositor
+    to be attached to a surface.
+    In implicit synchronization, ensuring that the rendering operation is
+    complete before the compositor displays the buffer is an implementation
+    detail handled by either the kernel or userspace graphics driver.
+    By contrast, in explicit synchronization, dma_fence objects mark when the
+    asynchronous operations are complete. When submitting a buffer, the
+    client provides an acquire fence which will be waited on before the
+    compositor accesses the buffer. The Wayland server, through a
+    zwp_linux_buffer_release_v1 object, will inform the client with an event
+    which may be accompanied by a release fence, when the compositor will no
+    longer access the buffer contents due to the specific commit that
+    requested the release event.
+    Each surface can be associated with only one object of this interface at
+    any time.
+    In version 1 of this interface, explicit synchronization is only
+    guaranteed to be supported for buffers created with any version of the
+    wp_linux_dmabuf buffer factory. Version 2 additionally guarantees
+    explicit synchronization support for opaque EGL buffers, which is a type
+    of platform specific buffers described in the EGL_WL_bind_wayland_display
+    extension. Compositors are free to support explicit synchronization for
+    additional buffer types.
+    """
+    object_id = 0
+    version = 2
+
+    class error(Enum):
+        invalid_fence: int
+        duplicate_fence: int
+        duplicate_release: int
+        no_surface: int
+        unsupported_buffer: int
+        no_buffer: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy synchronization object
+        Destroy this explicit synchronization object.
+        Any fence set by this object with set_acquire_fence since the last
+        commit will be discarded by the server. Any fences set by this object
+        before the last commit are not affected.
+        zwp_linux_buffer_release_v1 objects created by this object are not
+        affected by this request.
+        """
+
+        ...
+
+    @staticmethod
+    def set_acquire_fence(fd: fd) -> None:
+        """
+        set the acquire fence
+        Set the acquire fence that must be signaled before the compositor
+        may sample from the buffer attached with wl_surface.attach. The fence
+        is a dma_fence kernel object.
+        The acquire fence is double-buffered state, and will be applied on the
+        next wl_surface.commit request for the associated surface. Thus, it
+        applies only to the buffer that is attached to the surface at commit
+        time.
+        If the provided fd is not a valid dma_fence fd, then an INVALID_FENCE
+        error is raised.
+        If a fence has already been attached during the same commit cycle, a
+        DUPLICATE_FENCE error is raised.
+        If the associated wl_surface was destroyed, a NO_SURFACE error is
+        raised.
+        If at surface commit time the attached buffer does not support explicit
+        synchronization, an UNSUPPORTED_BUFFER error is raised.
+        If at surface commit time there is no buffer attached, a NO_BUFFER
+        error is raised.
+        """
+
+        ...
+
+    @staticmethod
+    def get_release() -> zwp_linux_buffer_release_v1:
+        """
+        release fence for last-attached buffer
+        Create a listener for the release of the buffer attached by the
+        client with wl_surface.attach. See zwp_linux_buffer_release_v1
+        documentation for more information.
+        The release object is double-buffered state, and will be associated
+        with the buffer that is attached to the surface at wl_surface.commit
+        time.
+        If a zwp_linux_buffer_release_v1 object has already been requested for
+        the surface in the same commit cycle, a DUPLICATE_RELEASE error is
+        raised.
+        If the associated wl_surface was destroyed, a NO_SURFACE error
+        is raised.
+        If at surface commit time there is no buffer attached, a NO_BUFFER
+        error is raised.
+        """
+
+        ...
+class zwp_linux_buffer_release_v1:
+    """
+    buffer release explicit synchronization
+    This object is instantiated in response to a
+    zwp_linux_surface_synchronization_v1.get_release request.
+    It provides an alternative to wl_buffer.release events, providing a
+    unique release from a single wl_surface.commit request. The release event
+    also supports explicit synchronization, providing a fence FD for the
+    client to synchronize against.
+    Exactly one event, either a fenced_release or an immediate_release, will
+    be emitted for the wl_surface.commit request. The compositor can choose
+    release by release which event it uses.
+    This event does not replace wl_buffer.release events; servers are still
+    required to send those events.
+    Once a buffer release object has delivered a 'fenced_release' or an
+    'immediate_release' event it is automatically destroyed.
+    """
+    object_id = 0
+    version = 1
+
     class events:
         @staticmethod
-        def offer(mime_type: string) -> None:
+        def fenced_release(fence: fd) -> None:
             """
-            advertise offered mime type
-            Sent immediately after creating announcing the
-            wp_primary_selection_offer through
-            wp_primary_selection_device.data_offer. One event is sent per offered
-            mime type.
-            """
-
-            ...
-class zwp_primary_selection_source_v1:
-    """
-    offer to replace the contents of the primary selection
-    The source side of a wp_primary_selection_offer, it provides a way to
-    describe the offered data and respond to requests to transfer the
-    requested contents of the primary selection clipboard.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def offer(mime_type: string) -> None:
-        """
-        add an offered mime type
-        This request adds a mime type to the set of mime types advertised to
-        targets. Can be called several times to offer multiple types.
-        """
-
-        ...
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the primary selection source
-        Destroy the primary selection source.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def send(mime_type: string, fd: fd) -> None:
-            """
-            send the primary selection contents
-            Request for the current primary selection contents from the client.
-            Send the specified mime type over the passed file descriptor, then
-            close it.
+            release buffer with fence
+            Sent when the compositor has finalised its usage of the associated
+            buffer for the relevant commit, providing a dma_fence which will be
+            signaled when all operations by the compositor on that buffer for that
+            commit have finished.
+            Once the fence has signaled, and assuming the associated buffer is not
+            pending release from other wl_surface.commit requests, no additional
+            explicit or implicit synchronization is required to safely reuse or
+            destroy the buffer.
+            This event destroys the zwp_linux_buffer_release_v1 object.
             """
 
             ...
 
         @staticmethod
-        def cancelled() -> None:
+        def immediate_release() -> None:
             """
-            request for primary selection contents was canceled
-            This primary selection source is no longer valid. The client should
-            clean up and destroy this primary selection source.
-            """
-
-            ...
-class zwp_relative_pointer_manager_v1:
-    """
-    get relative pointer objects
-    A global interface used for getting the relative pointer object for a
-    given pointer.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the relative pointer manager object
-        Used by the client to notify the server that it will no longer use this
-        relative pointer manager object.
-        """
-
-        ...
-
-    @staticmethod
-    def get_relative_pointer(pointer: object) -> zwp_relative_pointer_v1:
-        """
-        get a relative pointer object
-        Create a relative pointer interface given a wl_pointer object. See the
-        wp_relative_pointer interface for more details.
-        """
-
-        ...
-class zwp_relative_pointer_v1:
-    """
-    relative pointer object
-    A wp_relative_pointer object is an extension to the wl_pointer interface
-    used for emitting relative pointer events. It shares the same focus as
-    wl_pointer objects of the same seat and will only emit events when it has
-    focus.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        release the relative pointer object
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def relative_motion(utime_hi: uint, utime_lo: uint, dx: fixed, dy: fixed, dx_unaccel: fixed, dy_unaccel: fixed) -> None:
-            """
-            relative pointer motion
-            Relative x/y pointer motion from the pointer of the seat associated with
-            this object.
-            A relative motion is in the same dimension as regular wl_pointer motion
-            events, except they do not represent an absolute position. For example,
-            moving a pointer from (x, y) to (x', y') would have the equivalent
-            relative motion (x' - x, y' - y). If a pointer motion caused the
-            absolute pointer position to be clipped by for example the edge of the
-            monitor, the relative motion is unaffected by the clipping and will
-            represent the unclipped motion.
-            This event also contains non-accelerated motion deltas. The
-            non-accelerated delta is, when applicable, the regular pointer motion
-            delta as it was before having applied motion acceleration and other
-            transformations such as normalization.
-            Note that the non-accelerated delta does not represent 'raw' events as
-            they were read from some device. Pointer motion acceleration is device-
-            and configuration-specific and non-accelerated deltas and accelerated
-            deltas may have the same value on some devices.
-            Relative motions are not coupled to wl_pointer.motion events, and can be
-            sent in combination with such events, but also independently. There may
-            also be scenarios where wl_pointer.motion is sent, but there is no
-            relative motion. The order of an absolute and relative motion event
-            originating from the same physical motion is not guaranteed.
-            If the client needs button events or focus state, it can receive them
-            from a wl_pointer object of the same seat that the wp_relative_pointer
-            object is associated with.
+            release buffer immediately
+            Sent when the compositor has finalised its usage of the associated
+            buffer for the relevant commit, and either performed no operations
+            using it, or has a guarantee that all its operations on that buffer for
+            that commit have finished.
+            Once this event is received, and assuming the associated buffer is not
+            pending release from other wl_surface.commit requests, no additional
+            explicit or implicit synchronization is required to safely reuse or
+            destroy the buffer.
+            This event destroys the zwp_linux_buffer_release_v1 object.
             """
 
             ...
@@ -11597,687 +14428,6 @@ class zwp_text_input_manager_v3:
         """
 
         ...
-class zxdg_decoration_manager_v1:
-    """
-    window decoration manager
-    This interface allows a compositor to announce support for server-side
-    decorations.
-    A window decoration is a set of window controls as deemed appropriate by
-    the party managing them, such as user interface components used to move,
-    resize and change a window's state.
-    A client can use this protocol to request being decorated by a supporting
-    compositor.
-    If compositor and client do not negotiate the use of a server-side
-    decoration using this protocol, clients continue to self-decorate as they
-    see fit.
-    Warning! The protocol described in this file is experimental and
-    backward incompatible changes may be made. Backward compatible changes
-    may be added together with the corresponding interface version bump.
-    Backward incompatible changes are done by bumping the version number in
-    the protocol and interface names and resetting the interface version.
-    Once the protocol is to be declared stable, the 'z' prefix and the
-    version number in the protocol and interface names are removed and the
-    interface version number is reset.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the decoration manager object
-        Destroy the decoration manager. This doesn't destroy objects created
-        with the manager.
-        """
-
-        ...
-
-    @staticmethod
-    def get_toplevel_decoration(toplevel: object) -> zxdg_toplevel_decoration_v1:
-        """
-        create a new toplevel decoration object
-        Create a new decoration object associated with the given toplevel.
-        Creating an xdg_toplevel_decoration from an xdg_toplevel which has a
-        buffer attached or committed is a client error, and any attempts by a
-        client to attach or manipulate a buffer prior to the first
-        xdg_toplevel_decoration.configure event must also be treated as
-        errors.
-        """
-
-        ...
-class zxdg_toplevel_decoration_v1:
-    """
-    decoration object for a toplevel surface
-    The decoration object allows the compositor to toggle server-side window
-    decorations for a toplevel surface. The client can request to switch to
-    another mode.
-    The xdg_toplevel_decoration object must be destroyed before its
-    xdg_toplevel.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        unconfigured_buffer: int
-        already_constructed: int
-        orphaned: int
-        invalid_mode: int
-
-
-    class mode(Enum):
-        client_side: int
-        server_side: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the decoration object
-        Switch back to a mode without any server-side decorations at the next
-        commit.
-        """
-
-        ...
-
-    @staticmethod
-    def set_mode(mode: zxdg_toplevel_decoration_v1.mode) -> None:
-        """
-        set the decoration mode
-        Set the toplevel surface decoration mode. This informs the compositor
-        that the client prefers the provided decoration mode.
-        After requesting a decoration mode, the compositor will respond by
-        emitting an xdg_surface.configure event. The client should then update
-        its content, drawing it without decorations if the received mode is
-        server-side decorations. The client must also acknowledge the configure
-        when committing the new content (see xdg_surface.ack_configure).
-        The compositor can decide not to use the client's mode and enforce a
-        different mode instead.
-        Clients whose decoration mode depend on the xdg_toplevel state may send
-        a set_mode request in response to an xdg_surface.configure event and wait
-        for the next xdg_surface.configure event to prevent unwanted state.
-        Such clients are responsible for preventing configure loops and must
-        make sure not to send multiple successive set_mode requests with the
-        same decoration mode.
-        If an invalid mode is supplied by the client, the invalid_mode protocol
-        error is raised by the compositor.
-        """
-
-        ...
-
-    @staticmethod
-    def unset_mode() -> None:
-        """
-        unset the decoration mode
-        Unset the toplevel surface decoration mode. This informs the compositor
-        that the client doesn't prefer a particular decoration mode.
-        This request has the same semantics as set_mode.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def configure(mode: zxdg_toplevel_decoration_v1.mode) -> None:
-            """
-            notify a decoration mode change
-            The configure event configures the effective decoration mode. The
-            configured state should not be applied immediately. Clients must send an
-            ack_configure in response to this event. See xdg_surface.configure and
-            xdg_surface.ack_configure for details.
-            A configure event can be sent at any time. The specified mode must be
-            obeyed by the client.
-            """
-
-            ...
-class zxdg_exporter_v1:
-    """
-    interface for exporting surfaces
-    A global interface used for exporting surfaces that can later be imported
-    using xdg_importer.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_exporter object
-        Notify the compositor that the xdg_exporter object will no longer be
-        used.
-        """
-
-        ...
-
-    @staticmethod
-    def export(surface: object) -> zxdg_exported_v1:
-        """
-        export a surface
-        The export request exports the passed surface so that it can later be
-        imported via xdg_importer. When called, a new xdg_exported object will
-        be created and xdg_exported.handle will be sent immediately. See the
-        corresponding interface and event for details.
-        A surface may be exported multiple times, and each exported handle may
-        be used to create an xdg_imported multiple times. Only xdg_surface
-        surfaces may be exported.
-        """
-
-        ...
-class zxdg_importer_v1:
-    """
-    interface for importing surfaces
-    A global interface used for importing surfaces exported by xdg_exporter.
-    With this interface, a client can create a reference to a surface of
-    another client.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_importer object
-        Notify the compositor that the xdg_importer object will no longer be
-        used.
-        """
-
-        ...
-
-    @staticmethod
-    def import_(handle: string) -> zxdg_imported_v1:
-        """
-        import a surface
-        The import request imports a surface from any client given a handle
-        retrieved by exporting said surface using xdg_exporter.export. When
-        called, a new xdg_imported object will be created. This new object
-        represents the imported surface, and the importing client can
-        manipulate its relationship using it. See xdg_imported for details.
-        """
-
-        ...
-class zxdg_exported_v1:
-    """
-    an exported surface handle
-    An xdg_exported object represents an exported reference to a surface. The
-    exported surface may be referenced as long as the xdg_exported object not
-    destroyed. Destroying the xdg_exported invalidates any relationship the
-    importer may have established using xdg_imported.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        unexport the exported surface
-        Revoke the previously exported surface. This invalidates any
-        relationship the importer may have set up using the xdg_imported created
-        given the handle sent via xdg_exported.handle.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def handle(handle: string) -> None:
-            """
-            the exported surface handle
-            The handle event contains the unique handle of this exported surface
-            reference. It may be shared with any client, which then can use it to
-            import the surface by calling xdg_importer.import. A handle may be
-            used to import the surface multiple times.
-            """
-
-            ...
-class zxdg_imported_v1:
-    """
-    an imported surface handle
-    An xdg_imported object represents an imported reference to surface exported
-    by some client. A client can use this interface to manipulate
-    relationships between its own surfaces and the imported surface.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_imported object
-        Notify the compositor that it will no longer use the xdg_imported
-        object. Any relationship that may have been set up will at this point
-        be invalidated.
-        """
-
-        ...
-
-    @staticmethod
-    def set_parent_of(surface: object) -> None:
-        """
-        set as the parent of some surface
-        Set the imported surface as the parent of some surface of the client.
-        The passed surface must be a toplevel xdg_surface. Calling this function
-        sets up a surface to surface relation with the same stacking and positioning
-        semantics as xdg_surface.set_parent.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def destroyed() -> None:
-            """
-            the imported surface handle has been destroyed
-            The imported surface handle has been destroyed and any relationship set
-            up has been invalidated. This may happen for various reasons, for
-            example if the exported surface or the exported surface handle has been
-            destroyed, if the handle used for importing was invalid.
-            """
-
-            ...
-class zxdg_exporter_v2:
-    """
-    interface for exporting surfaces
-    A global interface used for exporting surfaces that can later be imported
-    using xdg_importer.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        invalid_surface: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_exporter object
-        Notify the compositor that the xdg_exporter object will no longer be
-        used.
-        """
-
-        ...
-
-    @staticmethod
-    def export_toplevel(surface: object) -> zxdg_exported_v2:
-        """
-        export a toplevel surface
-        The export_toplevel request exports the passed surface so that it can later be
-        imported via xdg_importer. When called, a new xdg_exported object will
-        be created and xdg_exported.handle will be sent immediately. See the
-        corresponding interface and event for details.
-        A surface may be exported multiple times, and each exported handle may
-        be used to create an xdg_imported multiple times. Only xdg_toplevel
-        equivalent surfaces may be exported, otherwise an invalid_surface
-        protocol error is sent.
-        """
-
-        ...
-class zxdg_importer_v2:
-    """
-    interface for importing surfaces
-    A global interface used for importing surfaces exported by xdg_exporter.
-    With this interface, a client can create a reference to a surface of
-    another client.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_importer object
-        Notify the compositor that the xdg_importer object will no longer be
-        used.
-        """
-
-        ...
-
-    @staticmethod
-    def import_toplevel(handle: string) -> zxdg_imported_v2:
-        """
-        import a toplevel surface
-        The import_toplevel request imports a surface from any client given a handle
-        retrieved by exporting said surface using xdg_exporter.export_toplevel.
-        When called, a new xdg_imported object will be created. This new object
-        represents the imported surface, and the importing client can
-        manipulate its relationship using it. See xdg_imported for details.
-        """
-
-        ...
-class zxdg_exported_v2:
-    """
-    an exported surface handle
-    An xdg_exported object represents an exported reference to a surface. The
-    exported surface may be referenced as long as the xdg_exported object not
-    destroyed. Destroying the xdg_exported invalidates any relationship the
-    importer may have established using xdg_imported.
-    """
-    object_id = 0
-    version = 1
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        unexport the exported surface
-        Revoke the previously exported surface. This invalidates any
-        relationship the importer may have set up using the xdg_imported created
-        given the handle sent via xdg_exported.handle.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def handle(handle: string) -> None:
-            """
-            the exported surface handle
-            The handle event contains the unique handle of this exported surface
-            reference. It may be shared with any client, which then can use it to
-            import the surface by calling xdg_importer.import_toplevel. A handle
-            may be used to import the surface multiple times.
-            """
-
-            ...
-class zxdg_imported_v2:
-    """
-    an imported surface handle
-    An xdg_imported object represents an imported reference to surface exported
-    by some client. A client can use this interface to manipulate
-    relationships between its own surfaces and the imported surface.
-    """
-    object_id = 0
-    version = 1
-
-    class error(Enum):
-        invalid_surface: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_imported object
-        Notify the compositor that it will no longer use the xdg_imported
-        object. Any relationship that may have been set up will at this point
-        be invalidated.
-        """
-
-        ...
-
-    @staticmethod
-    def set_parent_of(surface: object) -> None:
-        """
-        set as the parent of some surface
-        Set the imported surface as the parent of some surface of the client.
-        The passed surface must be an xdg_toplevel equivalent, otherwise an
-        invalid_surface protocol error is sent. Calling this function sets up
-        a surface to surface relation with the same stacking and positioning
-        semantics as xdg_toplevel.set_parent.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def destroyed() -> None:
-            """
-            the imported surface handle has been destroyed
-            The imported surface handle has been destroyed and any relationship set
-            up has been invalidated. This may happen for various reasons, for
-            example if the exported surface or the exported surface handle has been
-            destroyed, if the handle used for importing was invalid.
-            """
-
-            ...
-class zxdg_output_manager_v1:
-    """
-    manage xdg_output objects
-    A global factory interface for xdg_output objects.
-    """
-    object_id = 0
-    version = 3
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_output_manager object
-        Using this request a client can tell the server that it is not
-        going to use the xdg_output_manager object anymore.
-        Any objects already created through this instance are not affected.
-        """
-
-        ...
-
-    @staticmethod
-    def get_xdg_output(output: object) -> zxdg_output_v1:
-        """
-        create an xdg output from a wl_output
-        This creates a new xdg_output object for the given wl_output.
-        """
-
-        ...
-class zxdg_output_v1:
-    """
-    compositor logical output region
-    An xdg_output describes part of the compositor geometry.
-    This typically corresponds to a monitor that displays part of the
-    compositor space.
-    For objects version 3 onwards, after all xdg_output properties have been
-    sent (when the object is created and when properties are updated), a
-    wl_output.done event is sent. This allows changes to the output
-    properties to be seen as atomic, even if they happen via multiple events.
-    """
-    object_id = 0
-    version = 3
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy the xdg_output object
-        Using this request a client can tell the server that it is not
-        going to use the xdg_output object anymore.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def logical_position(x: int, y: int) -> None:
-            """
-            position of the output within the global compositor space
-            The position event describes the location of the wl_output within
-            the global compositor space.
-            The logical_position event is sent after creating an xdg_output
-            (see xdg_output_manager.get_xdg_output) and whenever the location
-            of the output changes within the global compositor space.
-            """
-
-            ...
-
-        @staticmethod
-        def logical_size(width: int, height: int) -> None:
-            """
-            size of the output in the global compositor space
-            The logical_size event describes the size of the output in the
-            global compositor space.
-            Most regular Wayland clients should not pay attention to the
-            logical size and would rather rely on xdg_shell interfaces.
-            Some clients such as Xwayland, however, need this to configure
-            their surfaces in the global compositor space as the compositor
-            may apply a different scale from what is advertised by the output
-            scaling property (to achieve fractional scaling, for example).
-            For example, for a wl_output mode 3840×2160 and a scale factor 2:
-            - A compositor not scaling the monitor viewport in its compositing space
-            will advertise a logical size of 3840×2160,
-            - A compositor scaling the monitor viewport with scale factor 2 will
-            advertise a logical size of 1920×1080,
-            - A compositor scaling the monitor viewport using a fractional scale of
-            1.5 will advertise a logical size of 2560×1440.
-            For example, for a wl_output mode 1920×1080 and a 90 degree rotation,
-            the compositor will advertise a logical size of 1080x1920.
-            The logical_size event is sent after creating an xdg_output
-            (see xdg_output_manager.get_xdg_output) and whenever the logical
-            size of the output changes, either as a result of a change in the
-            applied scale or because of a change in the corresponding output
-            mode(see wl_output.mode) or transform (see wl_output.transform).
-            """
-
-            ...
-
-        @staticmethod
-        def done() -> None:
-            """
-            all information about the output have been sent
-            This event is sent after all other properties of an xdg_output
-            have been sent.
-            This allows changes to the xdg_output properties to be seen as
-            atomic, even if they happen via multiple events.
-            For objects version 3 onwards, this event is deprecated. Compositors
-            are not required to send it anymore and must send wl_output.done
-            instead.
-            """
-
-            ...
-
-        @staticmethod
-        def name(name: string) -> None:
-            """
-            name of this output
-            Many compositors will assign names to their outputs, show them to the
-            user, allow them to be configured by name, etc. The client may wish to
-            know this name as well to offer the user similar behaviors.
-            The naming convention is compositor defined, but limited to
-            alphanumeric characters and dashes (-). Each name is unique among all
-            wl_output globals, but if a wl_output global is destroyed the same name
-            may be reused later. The names will also remain consistent across
-            sessions with the same hardware and software configuration.
-            Examples of names include 'HDMI-A-1', 'WL-1', 'X11-1', etc. However, do
-            not assume that the name is a reflection of an underlying DRM
-            connector, X11 connection, etc.
-            The name event is sent after creating an xdg_output (see
-            xdg_output_manager.get_xdg_output). This event is only sent once per
-            xdg_output, and the name does not change over the lifetime of the
-            wl_output global.
-            This event is deprecated, instead clients should use wl_output.name.
-            Compositors must still support this event.
-            """
-
-            ...
-
-        @staticmethod
-        def description(description: string) -> None:
-            """
-            human-readable description of this output
-            Many compositors can produce human-readable descriptions of their
-            outputs.  The client may wish to know this description as well, to
-            communicate the user for various purposes.
-            The description is a UTF-8 string with no convention defined for its
-            contents. Examples might include 'Foocorp 11" Display' or 'Virtual X11
-            output via :1'.
-            The description event is sent after creating an xdg_output (see
-            xdg_output_manager.get_xdg_output) and whenever the description
-            changes. The description is optional, and may not be sent at all.
-            For objects of version 2 and lower, this event is only sent once per
-            xdg_output, and the description does not change over the lifetime of
-            the wl_output global.
-            This event is deprecated, instead clients should use
-            wl_output.description. Compositors must still support this event.
-            """
-
-            ...
-class xdg_shell:
-    """
-    create desktop-style surfaces
-    xdg_shell allows clients to turn a wl_surface into a "real window"
-    which can be dragged, resized, stacked, and moved around by the
-    user. Everything about this interface is suited towards traditional
-    desktop environments.
-    """
-    object_id = 0
-    version = 1
-
-    class version(Enum):
-        current: int
-
-
-    class error(Enum):
-        role: int
-        defunct_surfaces: int
-        not_the_topmost_popup: int
-        invalid_popup_parent: int
-
-    @staticmethod
-    def destroy() -> None:
-        """
-        destroy xdg_shell
-        Destroy this xdg_shell object.
-        Destroying a bound xdg_shell object while there are surfaces
-        still alive created by this xdg_shell object instance is illegal
-        and will result in a protocol error.
-        """
-
-        ...
-
-    @staticmethod
-    def use_unstable_version(version: int) -> None:
-        """
-        enable use of this unstable version
-        Negotiate the unstable version of the interface.  This
-        mechanism is in place to ensure client and server agree on the
-        unstable versions of the protocol that they speak or exit
-        cleanly if they don't agree.  This request will go away once
-        the xdg-shell protocol is stable.
-        """
-
-        ...
-
-    @staticmethod
-    def get_xdg_surface(surface: object) -> xdg_surface:
-        """
-        create a shell surface from a surface
-        This creates an xdg_surface for the given surface and gives it the
-        xdg_surface role. A wl_surface can only be given an xdg_surface role
-        once. If get_xdg_surface is called with a wl_surface that already has
-        an active xdg_surface associated with it, or if it had any other role,
-        an error is raised.
-        See the documentation of xdg_surface for more details about what an
-        xdg_surface is and how it is used.
-        """
-
-        ...
-
-    @staticmethod
-    def get_xdg_popup(surface: object, parent: object, seat: object, serial: uint, x: int, y: int) -> xdg_popup:
-        """
-        create a popup for a surface
-        This creates an xdg_popup for the given surface and gives it the
-        xdg_popup role. A wl_surface can only be given an xdg_popup role
-        once. If get_xdg_popup is called with a wl_surface that already has
-        an active xdg_popup associated with it, or if it had any other role,
-        an error is raised.
-        This request must be used in response to some sort of user action
-        like a button press, key press, or touch down event.
-        See the documentation of xdg_popup for more details about what an
-        xdg_popup is and how it is used.
-        """
-
-        ...
-
-    @staticmethod
-    def pong(serial: uint) -> None:
-        """
-        respond to a ping event
-        A client must respond to a ping event with a pong request or
-        the client may be deemed unresponsive.
-        """
-
-        ...
-    class events:
-        @staticmethod
-        def ping(serial: uint) -> None:
-            """
-            check if the client is alive
-            The ping event asks the client if it's still alive. Pass the
-            serial specified in the event back to the compositor by sending
-            a "pong" request back with the specified serial.
-            Compositors can use this to determine if the client is still
-            alive. It's unspecified what will happen if the client doesn't
-            respond to the ping request, or in what timeframe. Clients should
-            try to respond in a reasonable amount of time.
-            A compositor is free to ping in any way it wants, but a client must
-            always respond to any xdg_shell object it created.
-            """
-
-            ...
 class zxdg_shell_v6:
     """
     create desktop-style surfaces
@@ -13128,10 +15278,115 @@ class zxdg_popup_v6:
             """
 
             ...
-class zwp_xwayland_keyboard_grab_manager_v1:
+class xdg_shell:
     """
-    context object for keyboard grab manager
-    A global interface used for grabbing the keyboard.
+    create desktop-style surfaces
+    xdg_shell allows clients to turn a wl_surface into a "real window"
+    which can be dragged, resized, stacked, and moved around by the
+    user. Everything about this interface is suited towards traditional
+    desktop environments.
+    """
+    object_id = 0
+    version = 1
+
+    class version(Enum):
+        current: int
+
+
+    class error(Enum):
+        role: int
+        defunct_surfaces: int
+        not_the_topmost_popup: int
+        invalid_popup_parent: int
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy xdg_shell
+        Destroy this xdg_shell object.
+        Destroying a bound xdg_shell object while there are surfaces
+        still alive created by this xdg_shell object instance is illegal
+        and will result in a protocol error.
+        """
+
+        ...
+
+    @staticmethod
+    def use_unstable_version(version: int) -> None:
+        """
+        enable use of this unstable version
+        Negotiate the unstable version of the interface.  This
+        mechanism is in place to ensure client and server agree on the
+        unstable versions of the protocol that they speak or exit
+        cleanly if they don't agree.  This request will go away once
+        the xdg-shell protocol is stable.
+        """
+
+        ...
+
+    @staticmethod
+    def get_xdg_surface(surface: object) -> xdg_surface:
+        """
+        create a shell surface from a surface
+        This creates an xdg_surface for the given surface and gives it the
+        xdg_surface role. A wl_surface can only be given an xdg_surface role
+        once. If get_xdg_surface is called with a wl_surface that already has
+        an active xdg_surface associated with it, or if it had any other role,
+        an error is raised.
+        See the documentation of xdg_surface for more details about what an
+        xdg_surface is and how it is used.
+        """
+
+        ...
+
+    @staticmethod
+    def get_xdg_popup(surface: object, parent: object, seat: object, serial: uint, x: int, y: int) -> xdg_popup:
+        """
+        create a popup for a surface
+        This creates an xdg_popup for the given surface and gives it the
+        xdg_popup role. A wl_surface can only be given an xdg_popup role
+        once. If get_xdg_popup is called with a wl_surface that already has
+        an active xdg_popup associated with it, or if it had any other role,
+        an error is raised.
+        This request must be used in response to some sort of user action
+        like a button press, key press, or touch down event.
+        See the documentation of xdg_popup for more details about what an
+        xdg_popup is and how it is used.
+        """
+
+        ...
+
+    @staticmethod
+    def pong(serial: uint) -> None:
+        """
+        respond to a ping event
+        A client must respond to a ping event with a pong request or
+        the client may be deemed unresponsive.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def ping(serial: uint) -> None:
+            """
+            check if the client is alive
+            The ping event asks the client if it's still alive. Pass the
+            serial specified in the event back to the compositor by sending
+            a "pong" request back with the specified serial.
+            Compositors can use this to determine if the client is still
+            alive. It's unspecified what will happen if the client doesn't
+            respond to the ping request, or in what timeframe. Clients should
+            try to respond in a reasonable amount of time.
+            A compositor is free to ping in any way it wants, but a client must
+            always respond to any xdg_shell object it created.
+            """
+
+            ...
+class hyprland_lock_notifier_v1:
+    """
+    lock notification manager
+    This interface allows clients to monitor whether the wayland session is
+    locked or unlocked.
     """
     object_id = 0
     version = 1
@@ -13139,39 +15394,37 @@ class zwp_xwayland_keyboard_grab_manager_v1:
     @staticmethod
     def destroy() -> None:
         """
-        destroy the keyboard grab manager
-        Destroy the keyboard grab manager.
+        destroy the manager
+        Destroy the manager object. All objects created via this interface
+        remain valid.
         """
 
         ...
 
     @staticmethod
-    def grab_keyboard(surface: object, seat: object) -> zwp_xwayland_keyboard_grab_v1:
+    def get_lock_notification() -> hyprland_lock_notification_v1:
         """
-        grab the keyboard to a surface
-        The grab_keyboard request asks for a grab of the keyboard, forcing
-        the keyboard focus for the given seat upon the given surface.
-        The protocol provides no guarantee that the grab is ever satisfied,
-        and does not require the compositor to send an error if the grab
-        cannot ever be satisfied. It is thus possible to request a keyboard
-        grab that will never be effective.
-        The protocol:
-        * does not guarantee that the grab itself is applied for a surface,
-        the grab request may be silently ignored by the compositor,
-        * does not guarantee that any events are sent to this client even
-        if the grab is applied to a surface,
-        * does not guarantee that events sent to this client are exhaustive,
-        a compositor may filter some events for its own consumption,
-        * does not guarantee that events sent to this client are continuous,
-        a compositor may change and reroute keyboard events while the grab
-        is nominally active.
+        create a notification object
+        Create a new lock notification object.
+        If the session is already locked when calling this method,
+        the locked event shall be sent immediately.
         """
 
         ...
-class zwp_xwayland_keyboard_grab_v1:
+class hyprland_lock_notification_v1:
     """
-    interface for grabbing the keyboard
-    A global interface used for grabbing the keyboard.
+    lock notification
+    This interface is used by the compositor to send lock notification events
+    to clients.
+    Typically the "locked" and "unlocked" events are emitted when a client
+    locks/unlocks the session via ext-session-lock, but the compositor may
+    choose to send notifications for any other locking mechanisms.
+    The compositor must notfiy after possible transition periods
+    between locked and unlocked states of the session.
+    In the context of ext-session-lock, that means the "locked" event is
+    expected to be sent after the session-lock client has presented
+    a lock screen frame on every output, which corresponds to the "locked"
+    event of ext-session-lock.
     """
     object_id = 0
     version = 1
@@ -13179,9 +15432,530 @@ class zwp_xwayland_keyboard_grab_v1:
     @staticmethod
     def destroy() -> None:
         """
-        destroy the grabbed keyboard object
-        Destroy the grabbed keyboard object. If applicable, the compositor
-        will ungrab the keyboard.
+        destroy the notification object
+        Destroy the notification object.
         """
 
         ...
+    class events:
+        @staticmethod
+        def locked() -> None:
+            """
+            session is locked
+            This event is sent when the wayland session is locked.
+            It's a compositor protocol error to send this event twice without an
+            unlock event in-between.
+            """
+
+            ...
+
+        @staticmethod
+        def unlocked() -> None:
+            """
+            session is no longer locked
+            This event is sent when the wayland session is unlocked.
+            It's a compositor protocol error to send this event twice without an
+            locked event in-between. It's a compositor protocol error to send this
+            event prior to any locked event.
+            """
+
+            ...
+class hyprland_ctm_control_manager_v1:
+    """
+    manager to control CTMs
+    This object is a manager which offers requests to control CTMs.
+    If any changes are done, once this object is destroyed, CTMs are reset back to
+    an identity matrix.
+    """
+    object_id = 0
+    version = 2
+
+    class error(Enum):
+        invalid_matrix: int
+
+    @staticmethod
+    def set_ctm_for_output(output: object, mat0: fixed, mat1: fixed, mat2: fixed, mat3: fixed, mat4: fixed, mat5: fixed, mat6: fixed, mat7: fixed, mat8: fixed) -> None:
+        """
+        set the CTM of an output
+        Set a CTM for a wl_output.
+        This state is not applied immediately; clients must call .commit to
+        apply any pending changes.
+        The provided values describe a 3x3 Row-Major CTM with values in the range of [0, ∞)
+        Passing values outside of the range will raise an invalid_matrix error.
+        The default value of the CTM is an identity matrix.
+        If an output doesn't get a CTM set with set_ctm_for_output and commit is called,
+        that output will get its CTM reset to an identity matrix.
+        """
+
+        ...
+
+    @staticmethod
+    def commit() -> None:
+        """
+        commit the pending state
+        Commits the pending state(s) set by set_ctm_for_output.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        All objects created by the manager will still remain valid, until their
+        appropriate destroy request has been called.
+        The CTMs of all outputs will be reset to an identity matrix.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def blocked() -> None:
+            """
+            
+            This event is sent if another manager was bound by any client
+            at the time the current manager was bound.
+            Any set_ctm_for_output requests from a blocked manager will be
+            silently ignored by the compositor.
+            The client should destroy the manager after receiving this event.
+            """
+
+            ...
+class hyprland_global_shortcuts_manager_v1:
+    """
+    manager to register global shortcuts
+    This object is a manager which offers requests to create global shortcuts.
+    """
+    object_id = 0
+    version = 1
+
+    class error(Enum):
+        already_taken: int
+
+    @staticmethod
+    def register_shortcut(id: string, app_id: string, description: string, trigger_description: string) -> hyprland_global_shortcut_v1:
+        """
+        register a shortcut
+        Register a new global shortcut.
+        A global shortcut is anonymous, meaning the app does not know what key(s) trigger it.
+        The shortcut's keybinding shall be dealt with by the compositor.
+        In the case of a duplicate app_id + id combination, the already_taken protocol error is raised.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        All objects created by the manager will still remain valid, until their
+        appropriate destroy request has been called.
+        """
+
+        ...
+class hyprland_global_shortcut_v1:
+    """
+    a shortcut
+    This object represents a single shortcut.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object, used or not
+        Destroys the shortcut. Can be sent at any time by the client.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def pressed(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
+            """
+            keystroke pressed
+            The keystroke was pressed.
+            tv_ values hold the timestamp of the occurrence.
+            """
+
+            ...
+
+        @staticmethod
+        def released(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
+            """
+            keystroke released
+            The keystroke was released.
+            tv_ values hold the timestamp of the occurrence.
+            """
+
+            ...
+class hyprland_surface_manager_v1:
+    """
+    manager for hyprland surface objects
+    This interface allows a client to create hyprland surface objects.
+    """
+    object_id = 0
+    version = 2
+
+    class error(Enum):
+        already_constructed: int
+
+    @staticmethod
+    def get_hyprland_surface(surface: object) -> hyprland_surface_v1:
+        """
+        create a hyprland surface object
+        Create a hyprland surface object for the given wayland surface.
+        If the wl_surface already has an associated hyprland_surface_v1 object,
+        even from a different manager, creation is a protocol error.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the hyprland surface manager
+        Destroy the surface manager.
+        This does not destroy existing surface objects.
+        """
+
+        ...
+class hyprland_surface_v1:
+    """
+    hyprland-specific wl_surface properties
+    This interface allows access to hyprland-specific properties of a wl_surface.
+    Once the wl_surface has been destroyed, the hyprland surface object must be
+    destroyed as well. All other operations are a protocol error.
+    """
+    object_id = 0
+    version = 2
+
+    class error(Enum):
+        no_surface: int
+        out_of_range: int
+
+    @staticmethod
+    def set_opacity(opacity: fixed) -> None:
+        """
+        set the overall opacity of the surface
+        Sets a multiplier for the overall opacity of the surface.
+        This multiplier applies to visual effects such as blur behind the surface
+        in addition to the surface's content.
+        The default value is 1.0.
+        Setting a value outside of the range 0.0 - 1.0 (inclusive) is a protocol error.
+        Does not take effect until wl_surface.commit is called.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the hyprland surface interface
+        Destroy the hyprland surface object, resetting properties provided
+        by this interface to their default values on the next wl_surface.commit.
+        """
+
+        ...
+
+    @staticmethod
+    def set_visible_region(region: object) -> None:
+        """
+        set the visible region of the surface
+        This request sets the region of the surface that contains visible content.
+        Visible content refers to content that has an alpha value greater than zero.
+        The visible region is an optimization hint for the compositor that lets it
+        avoid drawing parts of the surface that are not visible. Setting a visible region
+        that does not contain all content in the surface may result in missing content
+        not being drawn.
+        The visible region is specified in buffer-local coordinates.
+        The compositor ignores the parts of the visible region that fall outside of the surface.
+        When all parts of the region fall outside of the buffer geometry, the compositor may
+        avoid rendering the surface entirely.
+        The initial value for the visible region is empty. Setting the
+        visible region has copy semantics, and the wl_region object can be destroyed immediately.
+        A NULL wl_region causes the visible region to be set to empty.
+        Does not take effect until wl_surface.commit is called.
+        """
+
+        ...
+class hyprland_toplevel_export_manager_v1:
+    """
+    manager to inform clients and begin capturing
+    This object is a manager which offers requests to start capturing from a
+    source.
+    """
+    object_id = 0
+    version = 2
+
+    @staticmethod
+    def capture_toplevel(overlay_cursor: int, handle: uint) -> hyprland_toplevel_export_frame_v1:
+        """
+        capture a toplevel
+        Capture the next frame of a toplevel. (window)
+        The captured frame will not contain any server-side decorations and will
+        ignore the compositor-set geometry, like e.g. rounded corners.
+        It will contain all the subsurfaces and popups, however the latter will be clipped
+        to the geometry of the base surface.
+        The handle parameter refers to the address of the window as seen in `hyprctl clients`.
+        For example, for d161e7b0 it would be 3512854448.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the manager
+        All objects created by the manager will still remain valid, until their
+        appropriate destroy request has been called.
+        """
+
+        ...
+
+    @staticmethod
+    def capture_toplevel_with_wlr_toplevel_handle(overlay_cursor: int, handle: object) -> hyprland_toplevel_export_frame_v1:
+        """
+        capture a toplevel
+        Same as capture_toplevel, but with a zwlr_foreign_toplevel_handle_v1 handle.
+        """
+
+        ...
+class hyprland_toplevel_export_frame_v1:
+    """
+    a frame ready for copy
+    This object represents a single frame.
+    When created, a series of buffer events will be sent, each representing a
+    supported buffer type. The "buffer_done" event is sent afterwards to
+    indicate that all supported buffer types have been enumerated. The client
+    will then be able to send a "copy" request. If the capture is successful,
+    the compositor will send a "flags" followed by a "ready" event.
+    wl_shm buffers are always supported, ie. the "buffer" event is guaranteed to be sent.
+    If the capture failed, the "failed" event is sent. This can happen anytime
+    before the "ready" event.
+    Once either a "ready" or a "failed" event is received, the client should
+    destroy the frame.
+    """
+    object_id = 0
+    version = 2
+
+    class error(Enum):
+        already_used: int
+        invalid_buffer: int
+
+
+    class flags(IntFlag):
+        y_invert: int
+
+    @staticmethod
+    def copy(buffer: object, ignore_damage: int) -> None:
+        """
+        copy the frame
+        Copy the frame to the supplied buffer. The buffer must have the
+        correct size, see hyprland_toplevel_export_frame_v1.buffer and
+        hyprland_toplevel_export_frame_v1.linux_dmabuf. The buffer needs to have a
+        supported format.
+        If the frame is successfully copied, a "flags" and a "ready" event is
+        sent. Otherwise, a "failed" event is sent.
+        This event will wait for appropriate damage to be copied, unless the ignore_damage
+        arg is set to a non-zero value.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        delete this object, used or not
+        Destroys the frame. This request can be sent at any time by the client.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def buffer(format: hyprland_toplevel_export_frame_v1.wl_shm.format, width: uint, height: uint, stride: uint) -> None:
+            """
+            wl_shm buffer information
+            Provides information about wl_shm buffer parameters that need to be
+            used for this frame. This event is sent once after the frame is created
+            if wl_shm buffers are supported.
+            """
+
+            ...
+
+        @staticmethod
+        def damage(x: uint, y: uint, width: uint, height: uint) -> None:
+            """
+            carries the coordinates of the damaged region
+            This event is sent right before the ready event when ignore_damage was
+            not set. It may be generated multiple times for each copy
+            request.
+            The arguments describe a box around an area that has changed since the
+            last copy request that was derived from the current screencopy manager
+            instance.
+            The union of all regions received between the call to copy
+            and a ready event is the total damage since the prior ready event.
+            """
+
+            ...
+
+        @staticmethod
+        def flags(flags: hyprland_toplevel_export_frame_v1.flags) -> None:
+            """
+            frame flags
+            Provides flags about the frame. This event is sent once before the
+            "ready" event.
+            """
+
+            ...
+
+        @staticmethod
+        def ready(tv_sec_hi: uint, tv_sec_lo: uint, tv_nsec: uint) -> None:
+            """
+            indicates frame is available for reading
+            Called as soon as the frame is copied, indicating it is available
+            for reading. This event includes the time at which presentation happened
+            at.
+            The timestamp is expressed as tv_sec_hi, tv_sec_lo, tv_nsec triples,
+            each component being an unsigned 32-bit value. Whole seconds are in
+            tv_sec which is a 64-bit value combined from tv_sec_hi and tv_sec_lo,
+            and the additional fractional part in tv_nsec as nanoseconds. Hence,
+            for valid timestamps tv_nsec must be in [0, 999999999]. The seconds part
+            may have an arbitrary offset at start.
+            After receiving this event, the client should destroy the object.
+            """
+
+            ...
+
+        @staticmethod
+        def failed() -> None:
+            """
+            frame copy failed
+            This event indicates that the attempted frame copy has failed.
+            After receiving this event, the client should destroy the object.
+            """
+
+            ...
+
+        @staticmethod
+        def linux_dmabuf(format: uint, width: uint, height: uint) -> None:
+            """
+            linux-dmabuf buffer information
+            Provides information about linux-dmabuf buffer parameters that need to
+            be used for this frame. This event is sent once after the frame is
+            created if linux-dmabuf buffers are supported.
+            """
+
+            ...
+
+        @staticmethod
+        def buffer_done() -> None:
+            """
+            all buffer types reported
+            This event is sent once after all buffer events have been sent.
+            The client should proceed to create a buffer of one of the supported
+            types, and send a "copy" request.
+            """
+
+            ...
+class hyprland_focus_grab_manager_v1:
+    """
+    manager for focus grab objects
+    This interface allows a client to create surface grab objects.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def create_grab() -> hyprland_focus_grab_v1:
+        """
+        create a focus grab object
+        Create a surface grab object.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the focus grab manager
+        Destroy the focus grab manager.
+        This doesn't destroy existing focus grab objects.
+        """
+
+        ...
+class hyprland_focus_grab_v1:
+    """
+    input focus limiter
+    This interface restricts input focus to a specified whitelist of
+    surfaces as long as the focus grab object exists and has at least
+    one comitted surface.
+    Mouse and touch events inside a whitelisted surface will be passed
+    to the surface normally, while events outside of a whitelisted surface
+    will clear the grab object. Keyboard events will be passed to the client
+    and a compositor-picked surface in the whitelist will receive a
+    wl_keyboard::enter event if a whitelisted surface is not already entered.
+    Upon meeting implementation-defined criteria usually meaning a mouse or
+    touch input outside of any whitelisted surfaces, the compositor will
+    clear the whitelist, rendering the grab inert and sending the cleared
+    event. The same will happen if another focus grab or similar action
+    is started at the compositor's discretion.
+    """
+    object_id = 0
+    version = 1
+
+    @staticmethod
+    def add_surface(surface: object) -> None:
+        """
+        add a surface to the focus whitelist
+        Add a surface to the whitelist. Destroying the surface is treated the
+        same as an explicit call to remove_surface and duplicate additions are
+        ignored.
+        Does not take effect until commit is called.
+        """
+
+        ...
+
+    @staticmethod
+    def remove_surface(surface: object) -> None:
+        """
+        remove a surface from the focus whitelist
+        Remove a surface from the whitelist. Destroying the surface is treated
+        the same as an explicit call to this function.
+        If the grab was active and the removed surface was entered by the
+        keyboard, another surface will be entered on commit.
+        Does not take effect until commit is called.
+        """
+
+        ...
+
+    @staticmethod
+    def commit() -> None:
+        """
+        commit the focus whitelist
+        Commit pending changes to the surface whitelist.
+        If the list previously had no entries and now has at least one, the grab
+        will start. If it previously had entries and now has none, the grab will
+        become inert.
+        """
+
+        ...
+
+    @staticmethod
+    def destroy() -> None:
+        """
+        destroy the focus grab
+        Destroy the grab object and remove the grab if active.
+        """
+
+        ...
+    class events:
+        @staticmethod
+        def cleared() -> None:
+            """
+            the focus grab was cleared
+            Sent when an active grab is cancelled by the compositor,
+            regardless of cause.
+            """
+
+            ...

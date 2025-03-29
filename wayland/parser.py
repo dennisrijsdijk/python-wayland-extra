@@ -31,6 +31,7 @@ from copy import deepcopy
 import requests
 from lxml import etree
 
+from wayland import get_package_root
 from wayland.log import log
 
 
@@ -75,7 +76,12 @@ class WaylandParser:
         return xml_uris
 
     def get_local_files(self) -> list[str]:
-        protocol_dirs = ["/usr/share/wayland", "/usr/share/wayland-protocols"]
+        protocol_dirs = [
+            "/usr/share/wayland",
+            "/usr/share/wayland-protocols",
+            "/usr/share/hyprland-protocols/protocols",
+            f"{get_package_root()}/hyprland-protocols/protocols",
+        ]
         return [
             os.path.join(root, file)
             for directory in protocol_dirs
