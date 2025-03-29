@@ -2,7 +2,6 @@
 
 ### Development (TBD)
 - Rename package to `python-wayland-extra`
-- Add dependency conflict with `python-wayland` package.
 
 ### v0.6.0 (3rd September 2024)
 - Support Wayland enums as Python enums including bitfields.
